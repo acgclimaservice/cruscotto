@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offerte - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
+                <li><a href="{{ url_for('ddt_in_list') }}">📥 DDT IN</a></li>
+                <li><a href="{{ url_for('ddt_out_list') }}">📤 DDT OUT</a></li>
+                <li><a href="{{ url_for('offerte_list') }}" class="active">💰 Offerte</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>💰 Offerte Fornitori</h1>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° Offerta</th>
+                        <th>Data</th>
+                        <th>Fornitore</th>
+                        <th>Validità</th>
+                        <th>Stato</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if offerte %}
+                        {% for offerta in offerte %}
+                        <tr>
+                            <td>{{ offerta.numero_offerta or '-' }}</td>
+                            <td>{{ offerta.data_offerta.strftime('%d/%m/%Y') if offerta.data_offerta else '-' }}</td>
+                            <td>{{ offerta.fornitore or '-' }}</td>
+                            <td>{{ offerta.validita_giorni }} gg</td>
+                            <td><span class="status confirmed">{{ offerta.stato.title() }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #666;">Nessuna offerta presente</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
