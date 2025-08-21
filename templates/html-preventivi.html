@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventivi - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
+                <li><a href="{{ url_for('ddt.ddt_in_list') }}">📥 DDT IN</a></li>
+                <li><a href="{{ url_for('ddt.ddt_out_list') }}">📤 DDT OUT</a></li>
+                <li><a href="{{ url_for('offerte.offerte_list') }}">💰 Offerte</a></li>
+                <li><a href="{{ url_for('preventivi.preventivi_list') }}" class="active">📋 Preventivi</a></li>
+                <li><a href="{{ url_for('catalogo.catalogo_list') }}">📚 Catalogo</a></li>
+                <li><a href="{{ url_for('movimenti.movimenti_list') }}">📊 Movimenti</a></li>
+                <li><a href="{{ url_for('inventario.inventario_home') }}">📦 Inventario</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📋 Preventivi Clienti</h1>
+            <div class="filters">
+                <input type="text" placeholder="Cerca cliente...">
+                <select>
+                    <option>Tutti gli stati</option>
+                    <option>Bozza</option>
+                    <option>Inviato</option>
+                    <option>Accettato</option>
+                    <option>Rifiutato</option>
+                </select>
+                <button class="btn">Filtra</button>
+                <button class="btn btn-secondary">Reset</button>
+                <button class="btn btn-success" onclick="location.href='/preventivi/nuovo'">+ Nuovo Preventivo</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° Preventivo</th>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th>Validità (gg)</th>
+                        <th>Scadenza</th>
+                        <th>N° Articoli</th>
+                        <th>Totale €</th>
+                        <th>Margine %</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for preventivo in preventivi %}
+                    <tr class="{{ 'draft' if preventivo.stato == 'bozza' else '' }}">
+                        <td><strong>{{ preventivo.numero_preventivo }}</strong></td>
+                        <td>{{ preventivo.data_preventivo.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ preventivo.cliente }}</td>
+                        <td>{{ preventivo.validita_giorni }}</td>
+                        <td>{{ (preventivo.data_preventivo + timedelta(days=preventivo.validita_giorni)).strftime('%d/%m/%Y') }}</td>
+                        <td>{{ preventivo.articoli|length }}</td>
+                        <td>€ {{ "{:,.2f}".format(preventivo.totale) }}</td>
+                        <td>{{ "{:.1f}".format(preventivo.margine) }}%</td>
+                        <td>
+                            <span class="status {{ 'confirmed' if preventivo.stato == 'accettato' else 'draft' if preventivo.stato == 'bozza' else 'pending' }}">
+                                {{ preventivo.stato|capitalize }}
+                            </span>
+                        </td>
+                        <td class="actions">
+                            <button class="btn btn-small" onclick="location.href='/preventivi/{{ preventivo.id }}'">Visualizza</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impostazioni - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
+                <li><a href="{{ url_for('ddt.ddt_in_list') }}">📥 DDT IN</a></li>
+                <li><a href="{{ url_for('ddt.ddt_out_list') }}">📤 DDT OUT</a></li>
+                <li><a href="{{ url_for('catalogo.catalogo_list') }}">📚 Catalogo</a></li>
+                <li><a href="{{ url_for('impostazioni.impostazioni_home') }}" class="active">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>⚙️ Impostazioni Sistema</h1>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Sezione Mastrini -->
+            <div class="info-section">
+                <h2 style="margin-bottom: 20px;">📊 Mastrini Contabili</h2>
+                <div style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <input type="text" id="nuovo-mastrino-codice" placeholder="Codice mastrino">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="nuovo-mastrino-descrizione" placeholder="Descrizione">
+                    </div>
+                    <div class="form-group">
+                        <select id="nuovo-mastrino-tipo">
+                            <option value="acquisto">Acquisto</option>
+                            <option value="ricavo">Ricavo</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="aggiungiMastrino()">+ Aggiungi Mastrino</button>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Codice</th>
+                            <th>Descrizione</th>
+                            <th>Tipo</th>
+                            <th>Stato</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mastrino in mastrini %}
+                        <tr>
+                            <td><strong>{{ mastrino.codice }}</strong></td>
+                            <td>{{ mastrino.descrizione }}</td>
+                            <td>
+                                <span class="status {{ 'confirmed' if mastrino.tipo == 'ricavo' else 'draft' }}">
+                                    {{ mastrino.tipo|upper }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status {{ 'confirmed' if mastrino.attivo else '' }}">
+                                    {{ 'Attivo' if mastrino.attivo else 'Disattivo' }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-small btn-secondary" onclick="toggleMastrino({{ mastrino.id }})">
+                                    {{ 'Disattiva' if mastrino.attivo else 'Attiva' }}
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Sezione Magazzini -->
+            <div class="info-section">
+                <h2 style="margin-bottom: 20px;">🏭 Magazzini</h2>
+                <div style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <input type="text" id="nuovo-magazzino-codice" placeholder="Codice magazzino">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="nuovo-magazzino-descrizione" placeholder="Descrizione">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="nuovo-magazzino-indirizzo" placeholder="Indirizzo">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="nuovo-magazzino-responsabile" placeholder="Responsabile">
+                    </div>
+                    <button class="btn btn-success" onclick="aggiungiMagazzino()">+ Aggiungi Magazzino</button>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Codice</th>
+                            <th>Descrizione</th>
+                            <th>Responsabile</th>
+                            <th>Stato</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for magazzino in magazzini %}
+                        <tr>
+                            <td><strong>{{ magazzino.codice }}</strong></td>
+                            <td>{{ magazzino.descrizione }}</td>
+                            <td>{{ magazzino.responsabile }}</td>
+                            <td>
+                                <span class="status {{ 'confirmed' if magazzino.attivo else '' }}">
+                                    {{ 'Attivo' if magazzino.attivo else 'Disattivo' }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-small btn-secondary" onclick="toggleMagazzino({{ magazzino.id }})">
+                                    {{ 'Disattiva' if magazzino.attivo else 'Attiva' }}
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sezione Configurazioni Generali -->
+        <div class="info-section" style="margin-top: 20px;">
+            <h2 style="margin-bottom: 20px;">🔧 Configurazioni Generali</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Azienda</span>
+                    <input type="text" value="Azienda S.r.l." id="config-azienda">
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Partita IVA</span>
+                    <input type="text" value="12345678901" id="config-piva">
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email Aziendale</span>
+                    <input type="email" value="info@azienda.it" id="config-email">
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Backup Automatico</span>
+                    <select id="config-backup">
+                        <option value="giornaliero">Giornaliero</option>
+                        <option value="settimanale">Settimanale</option>
+                        <option value="mensile">Mensile</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn">Salva Configurazioni</button>
+                <button class="btn btn-secondary">Backup Manuale</button>
+                <button class="btn btn-danger">Reset Sistema</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function aggiungiMastrino() {
+        const data = {
+            codice: document.getElementById('nuovo-mastrino-codice').value,
+            descrizione: document.getElementById('nuovo-mastrino-descrizione').value,
+            tipo: document.getElementById('nuovo-mastrino-tipo').value
+        };
+        
+        fetch('/impostazioni/mastrino/nuovo', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    function aggiungiMagazzino() {
+        const data = {
+            codice: document.getElementById('nuovo-magazzino-codice').value,
+            descrizione: document.getElementById('nuovo-magazzino-descrizione').value,
+            indirizzo: document.getElementById('nuovo-magazzino-indirizzo').value,
+            responsabile: document.getElementById('nuovo-magazzino-responsabile').value
+        };
+        
+        fetch('/impostazioni/magazzino/nuovo', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# File del sistema DDT da escludere
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+venv_ddt_production/
+.env
+*.db
+instance/
+.pytest_cache/
+.coverage
+.DS_Store
+Thumbs.db
+
+# File di backup
+backup_*.db
+*.log
+logs/
+
+# File temporanei Excel
+~$*.xlsx
+~$*.xls
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo

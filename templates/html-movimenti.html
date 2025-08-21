@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimenti - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
+                <li><a href="{{ url_for('ddt.ddt_in_list') }}">📥 DDT IN</a></li>
+                <li><a href="{{ url_for('ddt.ddt_out_list') }}">📤 DDT OUT</a></li>
+                <li><a href="{{ url_for('offerte.offerte_list') }}">💰 Offerte</a></li>
+                <li><a href="{{ url_for('preventivi.preventivi_list') }}">📋 Preventivi</a></li>
+                <li><a href="{{ url_for('catalogo.catalogo_list') }}">📚 Catalogo</a></li>
+                <li><a href="{{ url_for('movimenti.movimenti_list') }}" class="active">📊 Movimenti</a></li>
+                <li><a href="{{ url_for('inventario.inventario_home') }}">📦 Inventario</a></li>
+                <li><a href="{{ url_for('impostazioni.impostazioni_home') }}">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📊 Movimenti Magazzino</h1>
+            <div class="filters">
+                <input type="date" name="data_da" value="{{ filtri.get('data_da', '') }}" placeholder="Data da">
+                <input type="date" name="data_a" value="{{ filtri.get('data_a', '') }}" placeholder="Data a">
+                <select name="tipo">
+                    <option value="">Tutti i tipi</option>
+                    <option value="entrata" {{ 'selected' if filtri.get('tipo') == 'entrata' }}>Entrata</option>
+                    <option value="uscita" {{ 'selected' if filtri.get('tipo') == 'uscita' }}>Uscita</option>
+                </select>
+                <select name="magazzino">
+                    <option value="">Tutti i magazzini</option>
+                    {% for mag in magazzini %}
+                    <option value="{{ mag.codice }}" {{ 'selected' if filtri.get('magazzino') == mag.codice }}>{{ mag.descrizione }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" name="articolo" placeholder="Cerca articolo..." value="{{ filtri.get('articolo', '') }}">
+                <button class="btn" onclick="filtraMovimenti()">Filtra</button>
+                <button class="btn btn-secondary" onclick="location.href='/movimenti/report-mastrini'">Report Mastrini</button>
+                <button class="btn btn-secondary" onclick="location.href='/movimenti/rettifica'">Rettifica</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data/Ora</th>
+                        <th>Tipo</th>
+                        <th>Documento</th>
+                        <th>N° Documento</th>
+                        <th>Codice Art.</th>
+                        <th>Descrizione</th>
+                        <th>Q.tà</th>
+                        <th>Valore Unit.</th>
+                        <th>Valore Tot.</th>
+                        <th>Magazzino</th>
+                        <th>Mastrino</th>
+                        <th>Causale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimento in movimenti %}
+                    <tr class="{{ 'entrata' if movimento.tipo == 'entrata' else 'uscita' }}">
+                        <td>{{ movimento.data_movimento.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            <span class="status {{ 'confirmed' if movimento.tipo == 'entrata' else 'draft' }}">
+                                {{ movimento.tipo|upper }}
+                            </span>
+                        </td>
+                        <td>{{ movimento.documento_tipo|upper }}</td>
+                        <td><strong>{{ movimento.documento_numero }}</strong></td>
+                        <td>{{ movimento.codice_articolo }}</td>
+                        <td>{{ movimento.descrizione_articolo }}</td>
+                        <td class="{{ 'text-success' if movimento.tipo == 'entrata' else 'text-danger' }}">
+                            {{ '+' if movimento.tipo == 'entrata' else '-' }}{{ movimento.quantita }}
+                        </td>
+                        <td>€ {{ "{:.2f}".format(movimento.valore_unitario) }}</td>
+                        <td>€ {{ "{:.2f}".format(movimento.valore_totale) }}</td>
+                        <td>{{ movimento.magazzino }}</td>
+                        <td>{{ movimento.mastrino }}</td>
+                        <td>{{ movimento.causale }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <style>
+        .entrata { background: #f0fdf4; }
+        .uscita { background: #fef2f2; }
+        .text-success { color: #065f46; font-weight: bold; }
+        .text-danger { color: #991b1b; font-weight: bold; }
+    </style>
+
+    <script>
+    function filtraMovimenti() {
+        const params = new URLSearchParams();
+        document.querySelectorAll('.filters input, .filters select').forEach(input => {
+            if (input.value) params.append(input.name, input.value);
+        });
+        window.location.href = '/movimenti?' + params.toString();
+    }
+    </script>
+</body>
+</html>

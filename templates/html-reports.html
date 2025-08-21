@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Mastrini - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
+                <li><a href="{{ url_for('reports.reports_home') }}" class="active">📈 Reports</a></li>
+                <li><a href="{{ url_for('movimenti.movimenti_list') }}">📊 Movimenti</a></li>
+                <li><a href="{{ url_for('inventario.inventario_home') }}">📦 Inventario</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📈 Report Mastrini Quotati</h1>
+            <div class="filters">
+                <label>Periodo dal:</label>
+                <input type="date" id="data_da" value="{{ data_da }}">
+                <label>al:</label>
+                <input type="date" id="data_a" value="{{ data_a }}">
+                <button class="btn" onclick="aggiornaReport()">Aggiorna Report</button>
+                <button class="btn btn-secondary" onclick="stampaReport()">Stampa</button>
+                <button class="btn btn-success" onclick="esportaExcel()">Esporta Excel</button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2>Riepilogo per Mastrino</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mastrino</th>
+                        <th>N° Movimenti</th>
+                        <th>Totale Entrate €</th>
+                        <th>Totale Uscite €</th>
+                        <th>Saldo €</th>
+                        <th>% sul Totale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set totale_generale = 0 %}
+                    {% for mastrino, dati in report.items() %}
+                    {% set totale_generale = totale_generale + dati.saldo %}
+                    <tr class="{{ 'positive' if dati.saldo > 0 else 'negative' if dati.saldo < 0 else '' }}">
+                        <td><strong>{{ mastrino }}</strong></td>
+                        <td>{{ dati.movimenti }}</td>
+                        <td class="text-success">€ {{ "{:,.2f}".format(dati.entrate) }}</td>
+                        <td class="text-danger">€ {{ "{:,.2f}".format(dati.uscite) }}</td>
+                        <td class="{{ 'text-success' if dati.saldo > 0 else 'text-danger' }}">
+                            <strong>€ {{ "{:,.2f}".format(dati.saldo) }}</strong>
+                        </td>
+                        <td>{{ "{:.1f}".format((dati.saldo / totale_generale * 100) if totale_generale != 0 else 0) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr style="background: #f8f9fa; font-weight: bold;">
+                        <td>TOTALE</td>
+                        <td>{{ report.values()|sum(attribute='movimenti') }}</td>
+                        <td class="text-success">€ {{ "{:,.2f}".format(report.values()|sum(attribute='entrate')) }}</td>
+                        <td class="text-danger">€ {{ "{:,.2f}".format(report.values()|sum(attribute='uscite')) }}</td>
+                        <td class="{{ 'text-success' if totale_generale > 0 else 'text-danger' }}">
+                            € {{ "{:,.2f}".format(totale_generale) }}
+                        </td>
+                        <td>100%</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Grafico -->
+        <div class="info-section" style="margin-top: 20px;">
+            <h2>Distribuzione Mastrini</h2>
+            <canvas id="graficoMastrini" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <style>
+        .positive { background: #f0fdf4; }
+        .negative { background: #fef2f2; }
+        .text-success { color: #065f46; }
+        .text-danger { color: #991b1b; }
+        tfoot tr { border-top: 2px solid #333; }
+    </style>
+
+    <script>
+    function aggiornaReport() {
+        const dataDA = document.getElementById('data_da').value;
+        const dataA = document.getElementById('data_a').value;
+        window.location.href = `/movimenti/report-mastrini?data_da=${dataDA}&data_a=${dataA}`;
+    }
+    
+    function stampaReport() {
+        window.print();
+    }
+    
+    function esportaExcel() {
+        const dataDA = document.getElementById('data_da').value;
+        const dataA = document.getElementById('data_a').value;
+        window.location.href = `/reports/export-mastrini?data_da=${dataDA}&data_a=${dataA}`;
+    }
+    </script>
+</body>
+</html>

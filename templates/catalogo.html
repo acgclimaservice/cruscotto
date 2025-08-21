@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalogo Articoli - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
+                <li><a href="{{ url_for('ddt.ddt_in_list') }}">📥 DDT IN</a></li>
+                <li><a href="{{ url_for('ddt.ddt_out_list') }}">📤 DDT OUT</a></li>
+                <li><a href="{{ url_for('offerte.offerte_list') }}">💰 Offerte</a></li>
+                <li><a href="{{ url_for('preventivi.preventivi_list') }}">📋 Preventivi</a></li>
+                <li><a href="{{ url_for('catalogo.catalogo_list') }}" class="active">📚 Catalogo</a></li>
+                <li><a href="{{ url_for('movimenti.movimenti_list') }}">📊 Movimenti</a></li>
+                <li><a href="{{ url_for('inventario.inventario_home') }}">📦 Inventario</a></li>
+                <li><a href="{{ url_for('impostazioni.impostazioni_home') }}">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📚 Catalogo Articoli</h1>
+            <div class="filters">
+                <input type="text" placeholder="Cerca codice interno...">
+                <input type="text" placeholder="Cerca descrizione...">
+                <select>
+                    <option>Tutti i fornitori</option>
+                    {% for fornitore in fornitori %}
+                    <option>{{ fornitore.ragione_sociale }}</option>
+                    {% endfor %}
+                </select>
+                <select>
+                    <option>Tutte le categorie</option>
+                    <option>Elettronica</option>
+                    <option>Meccanica</option>
+                    <option>Software</option>
+                </select>
+                <button class="btn">Filtra</button>
+                <button class="btn btn-secondary">Reset</button>
+                <button class="btn btn-secondary" onclick="location.href='/catalogo/template-excel'">📥 Template Excel</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importa Excel</button>
+                <button class="btn btn-success" onclick="location.href='/catalogo/nuovo'">+ Nuovo Articolo</button>
+                <input type="file" id="importFile" style="display:none" accept=".xlsx,.xls" onchange="importaExcel(this)">
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h3>Articoli in Catalogo ({{ articoli|length }})</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codice Interno</th>
+                        <th>Codice Fornitore</th>
+                        <th>Descrizione</th>
+                        <th>Fornitore Principale</th>
+                        <th>Codice Produttore</th>
+                        <th>Nome Produttore</th>
+                        <th>Costo Ultimo €</th>
+                        <th>Costo Medio €</th>
+                        <th>Prezzo Vendita €</th>
+                        <th>Margine %</th>
+                        <th>U.M.</th>
+                        <th>Giacenza</th>
+                        <th>Scorta Min.</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for articolo in articoli %}
+                    <tr class="{{ 'warning' if articolo.giacenza_attuale < articolo.scorta_minima else '' }}">
+                        <td><strong>{{ articolo.codice_interno }}</strong></td>
+                        <td>{{ articolo.codice_fornitore }}</td>
+                        <td>{{ articolo.descrizione }}</td>
+                        <td>{{ articolo.fornitore_principale }}</td>
+                        <td>{{ articolo.codice_produttore }}</td>
+                        <td>{{ articolo.nome_produttore }}</td>
+                        <td>€ {{ "{:.2f}".format(articolo.costo_ultimo) }}</td>
+                        <td>€ {{ "{:.2f}".format(articolo.costo_medio) }}</td>
+                        <td>€ {{ "{:.2f}".format(articolo.prezzo_vendita) }}</td>
+                        <td>{{ "{:.1f}".format(((articolo.prezzo_vendita - articolo.costo_medio) / articolo.prezzo_vendita * 100) if articolo.prezzo_vendita > 0 else 0) }}%</td>
+                        <td>{{ articolo.unita_misura }}</td>
+                        <td class="{{ 'text-danger' if articolo.giacenza_attuale < articolo.scorta_minima else '' }}">
+                            {{ articolo.giacenza_attuale }}
+                        </td>
+                        <td>{{ articolo.scorta_minima }}</td>
+                        <td>
+                            {% if articolo.giacenza_attuale < articolo.scorta_minima %}
+                                <span class="status draft">RIORDINARE</span>
+                            {% elif articolo.giacenza_attuale == 0 %}
+                                <span class="status">ESAURITO</span>
+                            {% else %}
+                                <span class="status confirmed">DISPONIBILE</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            <button class="btn btn-small" onclick="location.href='/catalogo/{{ articolo.id }}'">Visualizza</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- Esempio dati se non ci sono articoli -->
+            {% if not articoli %}
+            <tr>
+                <td><strong>ART-001</strong></td>
+                <td>FOR-12345</td>
+                <td>Monitor LED 27" Full HD</td>
+                <td>Tech Supplies Italia</td>
+                <td>MON-27-FHD</td>
+                <td>Samsung</td>
+                <td>€ 150.00</td>
+                <td>€ 148.50</td>
+                <td>€ 250.00</td>
+                <td>40.6%</td>
+                <td>PZ</td>
+                <td class="text-danger">5</td>
+                <td>10</td>
+                <td><span class="status draft">RIORDINARE</span></td>
+                <td class="actions">
+                    <button class="btn btn-small">Visualizza</button>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>ART-002</strong></td>
+                <td>FOR-67890</td>
+                <td>Tastiera Meccanica RGB</td>
+                <td>Gaming Store</td>
+                <td>KB-MECH-RGB</td>
+                <td>Razer</td>
+                <td>€ 89.00</td>
+                <td>€ 85.50</td>
+                <td>€ 149.00</td>
+                <td>42.6%</td>
+                <td>PZ</td>
+                <td>25</td>
+                <td>5</td>
+                <td><span class="status confirmed">DISPONIBILE</span></td>
+                <td class="actions">
+                    <button class="btn btn-small">Visualizza</button>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>ART-003</strong></td>
+                <td>FOR-11111</td>
+                <td>Mouse Wireless Professional</td>
+                <td>Tech Supplies Italia</td>
+                <td>MS-WL-PRO</td>
+                <td>Logitech</td>
+                <td>€ 45.00</td>
+                <td>€ 43.20</td>
+                <td>€ 75.00</td>
+                <td>42.4%</td>
+                <td>PZ</td>
+                <td>0</td>
+                <td>10</td>
+                <td><span class="status">ESAURITO</span></td>
+                <td class="actions">
+                    <button class="btn btn-small">Visualizza</button>
+                </td>
+            </tr>
+            {% endif %}
+        </div>
+
+        <!-- Riepilogo Catalogo -->
+        <div class="info-section" style="margin-top: 20px;">
+            <h3>Riepilogo Catalogo</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Articoli Totali</span>
+                    <span class="info-value">{{ articoli|length if articoli else 3 }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Valore Magazzino</span>
+                    <span class="info-value">€ {{ "{:,.2f}".format(valore_magazzino) if valore_magazzino else "5,420.00" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Articoli Sotto Scorta</span>
+                    <span class="info-value text-danger">{{ sotto_scorta if sotto_scorta else 2 }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Articoli Esauriti</span>
+                    <span class="info-value text-danger">{{ esauriti if esauriti else 1 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .warning { background: #fef3c7 !important; }
+        .text-danger { color: #991b1b; font-weight: bold; }
+    </style>
+
+    <script>
+    function importaExcel(input) {
+        if (input.files && input.files[0]) {
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            
+            fetch('/catalogo/importa-excel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Importati ${data.importati} articoli`);
+                    if (data.errori.length > 0) {
+                        alert('Errori:\n' + data.errori.join('\n'));
+                    }
+                    location.reload();
+                }
+            });
+        }
+    }
+    </script>
+</body>
+</html>

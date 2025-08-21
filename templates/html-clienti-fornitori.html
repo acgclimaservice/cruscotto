@@ -1,0 +1,197 @@
+<!-- clienti.html -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clienti - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
+                <li><a href="{{ url_for('clienti.clienti_list') }}" class="active">👥 Clienti</a></li>
+                <li><a href="{{ url_for('fornitori.fornitori_list') }}">🏭 Fornitori</a></li>
+                <li><a href="{{ url_for('catalogo.catalogo_list') }}">📚 Catalogo</a></li>
+                <li><a href="{{ url_for('impostazioni.impostazioni_home') }}">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>👥 Anagrafica Clienti</h1>
+            <div class="filters">
+                <input type="text" placeholder="Cerca ragione sociale...">
+                <input type="text" placeholder="Cerca P.IVA...">
+                <button class="btn">Filtra</button>
+                <button class="btn btn-secondary" onclick="location.href='/clienti/template-excel'">📥 Template Excel</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importa Excel</button>
+                <button class="btn btn-success" onclick="location.href='/clienti/nuovo'">+ Nuovo Cliente</button>
+                <input type="file" id="importFile" style="display:none" accept=".xlsx,.xls" onchange="importaExcel(this)">
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ragione Sociale</th>
+                        <th>P.IVA</th>
+                        <th>Codice Fiscale</th>
+                        <th>Città</th>
+                        <th>Provincia</th>
+                        <th>Telefono</th>
+                        <th>Email</th>
+                        <th>PEC</th>
+                        <th>Codice SDI</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clienti %}
+                    <tr>
+                        <td><strong>{{ cliente.ragione_sociale }}</strong></td>
+                        <td>{{ cliente.partita_iva }}</td>
+                        <td>{{ cliente.codice_fiscale }}</td>
+                        <td>{{ cliente.citta }}</td>
+                        <td>{{ cliente.provincia }}</td>
+                        <td>{{ cliente.telefono }}</td>
+                        <td>{{ cliente.email }}</td>
+                        <td>{{ cliente.pec }}</td>
+                        <td>{{ cliente.codice_sdi }}</td>
+                        <td class="actions">
+                            <button class="btn btn-small" onclick="location.href='/clienti/{{ cliente.id }}/modifica'">Modifica</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function importaExcel(input) {
+        if (input.files && input.files[0]) {
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            
+            fetch('/clienti/importa-excel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Importati ${data.importati} clienti`);
+                    if (data.errori.length > 0) {
+                        alert('Errori:\n' + data.errori.join('\n'));
+                    }
+                    location.reload();
+                }
+            });
+        }
+    }
+    </script>
+</body>
+</html>
+
+<!-- fornitori.html -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fornitori - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
+                <li><a href="{{ url_for('clienti.clienti_list') }}">👥 Clienti</a></li>
+                <li><a href="{{ url_for('fornitori.fornitori_list') }}" class="active">🏭 Fornitori</a></li>
+                <li><a href="{{ url_for('catalogo.catalogo_list') }}">📚 Catalogo</a></li>
+                <li><a href="{{ url_for('impostazioni.impostazioni_home') }}">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>🏭 Anagrafica Fornitori</h1>
+            <div class="filters">
+                <input type="text" placeholder="Cerca ragione sociale...">
+                <input type="text" placeholder="Cerca P.IVA...">
+                <button class="btn">Filtra</button>
+                <button class="btn btn-secondary" onclick="location.href='/fornitori/template-excel'">📥 Template Excel</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importa Excel</button>
+                <button class="btn btn-success" onclick="location.href='/fornitori/nuovo'">+ Nuovo Fornitore</button>
+                <input type="file" id="importFile" style="display:none" accept=".xlsx,.xls" onchange="importaExcel(this)">
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ragione Sociale</th>
+                        <th>P.IVA</th>
+                        <th>Codice Fiscale</th>
+                        <th>Città</th>
+                        <th>Provincia</th>
+                        <th>Telefono</th>
+                        <th>Email</th>
+                        <th>PEC</th>
+                        <th>Condizioni Pag.</th>
+                        <th>Lead Time</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fornitore in fornitori %}
+                    <tr>
+                        <td><strong>{{ fornitore.ragione_sociale }}</strong></td>
+                        <td>{{ fornitore.partita_iva }}</td>
+                        <td>{{ fornitore.codice_fiscale }}</td>
+                        <td>{{ fornitore.citta }}</td>
+                        <td>{{ fornitore.provincia }}</td>
+                        <td>{{ fornitore.telefono }}</td>
+                        <td>{{ fornitore.email }}</td>
+                        <td>{{ fornitore.pec }}</td>
+                        <td>{{ fornitore.condizioni_pagamento }}</td>
+                        <td>{{ fornitore.lead_time_giorni }} gg</td>
+                        <td class="actions">
+                            <button class="btn btn-small" onclick="location.href='/fornitori/{{ fornitore.id }}/modifica'">Modifica</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function importaExcel(input) {
+        if (input.files && input.files[0]) {
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            
+            fetch('/fornitori/importa-excel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Importati ${data.importati} fornitori`);
+                    if (data.errori.length > 0) {
+                        alert('Errori:\n' + data.errori.join('\n'));
+                    }
+                    location.reload();
+                }
+            });
+        }
+    }
+    </script>
+</body>
+</html>
