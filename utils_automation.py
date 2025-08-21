@@ -324,4 +324,8 @@ def backup_database():
         return backup_path
     except Exception as e:
         print(f"Errore durante il backup: {e}")
+<<<<<<< HEAD
         return None
+=======
+        return None
+>>>>>>> 111af3d0204a411cbdbb3f165aa8c1457597fdc2
