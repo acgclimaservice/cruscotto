@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema Gestione DDT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Navigation */
+        nav {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        nav li a {
+            text-decoration: none;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: block;
+        }
+        
+        nav li a:hover {
+            background: #f0f0f0;
+        }
+        
+        nav li a.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* Dashboard Grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .card.ddt-in .icon { background: #4ade80; color: white; }
+        .card.ddt-out .icon { background: #f87171; color: white; }
+        .card.summary .icon { background: #60a5fa; color: white; }
+        .card.alerts .icon { background: #fbbf24; color: white; }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 15px 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .quick-links {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.3s;
+            border: none;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        
+        .alert-item {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+        }
+        
+        .alert-danger {
+            background: #fee2e2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav>
+            <ul>
+                <li><a href="dashboard.html" class="active">🏠 Dashboard</a></li>
+                <li><a href="ddt-in.html">📥 DDT IN</a></li>
+                <li><a href="ddt-out.html">📤 DDT OUT</a></li>
+            </ul>
+        </nav>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard">
+            <!-- DDT IN Card -->
+            <div class="card ddt-in">
+                <h2>
+                    <span class="icon">📥</span>
+                    DDT in Entrata
+                </h2>
+                <div class="stat-value">142</div>
+                <div class="stat-label">Documenti questo mese</div>
+                <div class="quick-links">
+                    <a href="ddt-in.html" class="btn">Vai all'archivio</a>
+                </div>
+            </div>
+
+            <!-- DDT OUT Card -->
+            <div class="card ddt-out">
+                <h2>
+                    <span class="icon">📤</span>
+                    DDT in Uscita
+                </h2>
+                <div class="stat-value">89</div>
+                <div class="stat-label">Documenti questo mese</div>
+                <div class="quick-links">
+                    <a href="ddt-out.html" class="btn">Vai all'archivio</a>
+                </div>
+            </div>
+
+            <!-- Summary Card -->
+            <div class="card summary">
+                <h2>
+                    <span class="icon">📊</span>
+                    Riepilogo Mensile
+                </h2>
+                <div style="margin: 20px 0;">
+                    <div class="summary-item">
+                        <span>Totale movimenti:</span>
+                        <strong>231</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>In attesa:</span>
+                        <strong style="color: #f59e0b;">18</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Completati:</span>
+                        <strong style="color: #10b981;">213</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts Card -->
+            <div class="card alerts">
+                <h2>
+                    <span class="icon">⚠️</span>
+                    Avvisi Importanti
+                </h2>
+                <div style="margin: 20px 0;">
+                    <div class="alert-item alert-warning">
+                        <strong>5 DDT</strong> in attesa da oltre 7 giorni
+                    </div>
+                    <div class="alert-item alert-danger">
+                        <strong>2 DDT</strong> con discrepanze da verificare
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
