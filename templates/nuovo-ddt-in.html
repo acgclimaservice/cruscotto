@@ -155,6 +155,7 @@
                             <th>Descrizione</th>
                             <th>Costo Unit.</th>
                             <th>Quantità</th>
+                            <th>Unità Misura</th>
                             <th>Totale</th>
                             <th>Note</th>
                             <th></th>
@@ -165,7 +166,17 @@
                             <td><input type="text" name="articoli[0][codice]"></td>
                             <td><input type="text" name="articoli[0][descrizione]" required></td>
                             <td><input type="number" step="0.01" name="articoli[0][costo]" onchange="calcolaTotale(this)"></td>
-                            <td><input type="number" step="0.01" name="articoli[0][quantita]" onchange="calcolaTotale(this)"></td>
+                            <td><input type="number" step="0.01" name="articoli[0][quantita]" onchange="calcolaTotale(this); controllaDecimali(this)"></td>
+                            <td>
+                                <select name="articoli[0][unita_misura]" onchange="controllaDecimali(this.closest('tr').querySelector('[name*=\"quantita\"]'))">
+                                    <option value="PZ">PZ</option>
+                                    <option value="KG">KG</option>
+                                    <option value="MT">MT</option>
+                                    <option value="LT">LT</option>
+                                    <option value="MQ">MQ</option>
+                                    <option value="MC">MC</option>
+                                </select>
+                            </td>
                             <td class="totale">€ 0.00</td>
                             <td><input type="text" name="articoli[0][note]"></td>
                             <td><button type="button" class="btn btn-danger" onclick="rimuoviRiga(this)">×</button></td>
@@ -425,7 +436,17 @@
                 <td><input type="text" name="articoli[${index}][codice]" value="${art.codice}"></td>
                 <td><input type="text" name="articoli[${index}][descrizione]" value="${art.descrizione}" required></td>
                 <td><input type="number" step="0.01" name="articoli[${index}][costo]" value="${art.costo_unitario}" onchange="calcolaTotale(this)"></td>
-                <td><input type="number" step="0.01" name="articoli[${index}][quantita]" value="${art.quantita}" onchange="calcolaTotale(this)"></td>
+                <td><input type="number" step="0.01" name="articoli[${index}][quantita]" value="${art.quantita}" onchange="calcolaTotale(this); controllaDecimali(this)"></td>
+                <td>
+                    <select name="articoli[${index}][unita_misura]" onchange="controllaDecimali(this.closest('tr').querySelector('[name*=\\"quantita\\"]'))">
+                        <option value="PZ" ${(art.unita_misura === 'PZ' || !art.unita_misura) ? 'selected' : ''}>PZ</option>
+                        <option value="KG" ${art.unita_misura === 'KG' ? 'selected' : ''}>KG</option>
+                        <option value="MT" ${art.unita_misura === 'MT' ? 'selected' : ''}>MT</option>
+                        <option value="LT" ${art.unita_misura === 'LT' ? 'selected' : ''}>LT</option>
+                        <option value="MQ" ${art.unita_misura === 'MQ' ? 'selected' : ''}>MQ</option>
+                        <option value="MC" ${art.unita_misura === 'MC' ? 'selected' : ''}>MC</option>
+                    </select>
+                </td>
                 <td class="totale">€ ${(art.costo_unitario * art.quantita).toFixed(2)}</td>
                 <td><input type="text" name="articoli[${index}][note]"></td>
                 <td><button type="button" class="btn btn-danger" onclick="rimuoviRiga(this)">×</button></td>
@@ -466,7 +487,7 @@
                 descrizione: formData.get(`articoli[${i}][descrizione]`),
                 quantita: parseFloat(formData.get(`articoli[${i}][quantita]`)),
                 costo_unitario: parseFloat(formData.get(`articoli[${i}][costo]`)),
-                unita_misura: 'PZ'
+                unita_misura: formData.get(`articoli[${i}][unita_misura]`) || 'PZ'
             });
             i++;
         }
@@ -498,7 +519,17 @@
             <td><input type="text" name="articoli[${rigaCount}][codice]"></td>
             <td><input type="text" name="articoli[${rigaCount}][descrizione]" required></td>
             <td><input type="number" step="0.01" name="articoli[${rigaCount}][costo]" onchange="calcolaTotale(this)"></td>
-            <td><input type="number" step="0.01" name="articoli[${rigaCount}][quantita]" onchange="calcolaTotale(this)"></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][quantita]" onchange="calcolaTotale(this); controllaDecimali(this)"></td>
+            <td>
+                <select name="articoli[${rigaCount}][unita_misura]" onchange="controllaDecimali(this.closest('tr').querySelector('[name*=\\"quantita\\"]'))">
+                    <option value="PZ">PZ</option>
+                    <option value="KG">KG</option>
+                    <option value="MT">MT</option>
+                    <option value="LT">LT</option>
+                    <option value="MQ">MQ</option>
+                    <option value="MC">MC</option>
+                </select>
+            </td>
             <td class="totale">€ 0.00</td>
             <td><input type="text" name="articoli[${rigaCount}][note]"></td>
             <td><button type="button" class="btn btn-danger" onclick="rimuoviRiga(this)">×</button></td>
@@ -520,6 +551,27 @@
         const quantita = parseFloat(row.querySelector('[name*="quantita"]').value) || 0;
         const totale = costo * quantita;
         row.querySelector('.totale').textContent = '€ ' + totale.toFixed(2);
+    }
+    
+    function controllaDecimali(inputQuantita) {
+        const row = inputQuantita.closest('tr');
+        const unitaMisura = row.querySelector('[name*="unita_misura"]')?.value || 'PZ';
+        
+        if (unitaMisura === 'PZ') {
+            // Per i pezzi, non accettare decimali
+            const valore = parseFloat(inputQuantita.value);
+            if (valore % 1 !== 0) {
+                inputQuantita.value = Math.round(valore);
+                inputQuantita.style.borderColor = '#ffc107';
+                setTimeout(() => {
+                    inputQuantita.style.borderColor = '';
+                }, 1500);
+            }
+            inputQuantita.step = "1";
+        } else {
+            // Per altre unità, consentire decimali
+            inputQuantita.step = "0.01";
+        }
     }
     
     // Funzioni animazione loading

@@ -6,7 +6,11 @@
 * Aggiunte statistiche inventario con valore totale, numero articoli, pezzi totali
 * Aggiunto indicatore per articoli sotto scorta
 * Migliorato layout con stati colorati (Disponibile, Sotto scorta, Esaurito)
-* 2\. nella creazione manuale del ddt in e nell'importazione del ddt in aggiungere la colonna unità di misura. Per gli articoli con Unità di Misura (UM) "pz" (pezzi), il campo quantità non deve accettare valori decimali.
+* 2\. nella creazione manuale del ddt in e nell'importazione del ddt in aggiungere la colonna unità di misura. Per gli articoli con Unità di Misura (UM) "pz" (pezzi), il campo quantità non deve accettare valori decimali. **FATTO** ✅ *18:51 24-08-2025*
+  - Aggiunta colonna "Unità Misura" con opzioni: PZ, KG, MT, LT, MQ, MC
+  - Implementato controllo automatico decimali per articoli "PZ" 
+  - Aggiornato form creazione manuale e modifica dati PDF
+  - Validazione JavaScript per arrotondamento automatico quantità pezzi
 * 3\. l'inventario deve riportare anche le giacenze negative in caso di vendita in eccesso creando i ddt out.
 * 4\. Le liste documenti dei ddt in e dei ddt out devono essere ordinate di default per numero documento in ordine crescente. Implementare un controllo per prevenire "buchi" nella numerazione sequenziale.
 * 5\.  nella sezione ddt out implementare un box di ricerca  (per capirci come  quella della sezione ddt in)
