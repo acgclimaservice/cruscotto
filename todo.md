@@ -26,7 +26,11 @@
   - Aggiunto avviso visivo giallo per numeri mancanti in entrambe le liste
   - Controllo solo su DDT confermati per evitare falsi positivi
 * se provo ad importare un Excel per popolare i clienti o i fornitori mi da errore Errore: SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
-* 5\.  nella sezione ddt out implementare un box di ricerca  (per capirci come  quella della sezione ddt in)
+* 5\.  nella sezione ddt out implementare un box di ricerca  (per capirci come  quella della sezione ddt in) **FATTO** ✅ *19:04 24-08-2025*
+  - Implementato form di ricerca funzionale con filtri: data da/a, cliente, numero DDT, stato
+  - Aggiunta logica backend per filtri con query SQLAlchemy ilike per ricerca parziale
+  - Mantenimento valori filtri nel form dopo la ricerca
+  - Pulsanti Filtra e Reset completamente funzionali
 * 6\. nella lista documenti dei ddt out aggiungi un opzione per la stampa di ogni signolo ddt out
 * 7\. nella sezione catalogo aggiungere un box di ricerca
 * 8\. nella sezione movimenti aggiungi un box di ricerca

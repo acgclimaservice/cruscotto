@@ -231,9 +231,31 @@ def genera_ddt_out_da_ddt_in(id):
 
 @app.route('/ddt-out')
 def ddt_out_list():
-    """Lista DDT OUT"""
+    """Lista DDT OUT con ricerca"""
     try:
-        ddts = DDTOut.query.order_by(DDTOut.numero_ddt.asc()).all()
+        query = DDTOut.query
+        
+        # Filtri di ricerca
+        data_da = request.args.get('data_da')
+        data_a = request.args.get('data_a') 
+        cliente = request.args.get('cliente')
+        numero_ddt = request.args.get('numero_ddt')
+        stato = request.args.get('stato')
+        
+        if data_da:
+            from datetime import datetime as dt
+            query = query.filter(DDTOut.data_ddt >= dt.strptime(data_da, '%Y-%m-%d').date())
+        if data_a:
+            from datetime import datetime as dt
+            query = query.filter(DDTOut.data_ddt <= dt.strptime(data_a, '%Y-%m-%d').date())
+        if cliente:
+            query = query.filter(DDTOut.destinazione.ilike(f'%{cliente}%'))
+        if numero_ddt:
+            query = query.filter(DDTOut.numero_ddt.ilike(f'%{numero_ddt}%'))
+        if stato and stato != 'tutti':
+            query = query.filter(DDTOut.stato == stato)
+            
+        ddts = query.order_by(DDTOut.numero_ddt.asc()).all()
         buchi_numerazione = verifica_buchi_numerazione(ddts, 'OUT')
         return render_template('ddt-out.html', ddts=ddts, buchi_numerazione=buchi_numerazione, datetime=datetime)
     except Exception as e:

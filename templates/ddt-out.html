@@ -16,20 +16,20 @@
 
         <div class="ddt-header">
             <h1>📤 DDT in Uscita</h1>
-            <div class="filters">
-                <input type="date" placeholder="Data da">
-                <input type="date" placeholder="Data a">
-                <input type="text" placeholder="Cerca cliente...">
-                <input type="text" placeholder="N° DDT...">
-                <select>
-                    <option>Tutti gli stati</option>
-                    <option>Bozza</option>
-                    <option>Confermato</option>
+            <form method="GET" action="/ddt-out" class="filters">
+                <input type="date" name="data_da" value="{{ request.args.get('data_da', '') }}" placeholder="Data da">
+                <input type="date" name="data_a" value="{{ request.args.get('data_a', '') }}" placeholder="Data a">
+                <input type="text" name="cliente" value="{{ request.args.get('cliente', '') }}" placeholder="Cerca cliente...">
+                <input type="text" name="numero_ddt" value="{{ request.args.get('numero_ddt', '') }}" placeholder="N° DDT...">
+                <select name="stato">
+                    <option value="tutti" {{ 'selected' if request.args.get('stato') == 'tutti' or not request.args.get('stato') else '' }}>Tutti gli stati</option>
+                    <option value="bozza" {{ 'selected' if request.args.get('stato') == 'bozza' else '' }}>Bozza</option>
+                    <option value="confermato" {{ 'selected' if request.args.get('stato') == 'confermato' else '' }}>Confermato</option>
                 </select>
-                <button class="btn">Filtra</button>
-                <button class="btn btn-secondary">Reset</button>
-                <button class="btn btn-success" onclick="location.href='/ddt/out/nuovo'">+ Nuovo DDT</button>
-            </div>
+                <button type="submit" class="btn">Filtra</button>
+                <button type="button" class="btn btn-secondary" onclick="location.href='/ddt-out'">Reset</button>
+                <button type="button" class="btn btn-success" onclick="location.href='/ddt-out/nuovo'">+ Nuovo DDT</button>
+            </form>
         </div>
 
         {% if buchi_numerazione %}
