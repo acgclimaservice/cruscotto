@@ -41,6 +41,11 @@
             background: #f8d7da;
             color: #721c24;
         }
+        .status-danger {
+            background: #dc3545;
+            color: #ffffff;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -84,6 +89,14 @@
                 </span>
             </div>
             {% endif %}
+            {% if giacenze_negative > 0 %}
+            <div class="stat-card" style="background: #f8d7da; padding: 15px; border-radius: 8px; min-width: 200px;">
+                <h4 style="margin: 0 0 5px 0; color: #721c24;">Giacenze Negative</h4>
+                <span style="font-size: 20px; font-weight: bold; color: #dc3545;">
+                    {{ giacenze_negative }} articoli
+                </span>
+            </div>
+            {% endif %}
         </div>
 
         <div class="table-container">
@@ -115,7 +128,9 @@
                                 <span class="valore">€ {{ "%.2f"|format((articolo.giacenza_calcolata or 0) * (articolo.costo_ultimo or 0)) }}</span>
                             </td>
                             <td>
-                                {% if (articolo.giacenza_calcolata or 0) <= 0 %}
+                                {% if (articolo.giacenza_calcolata or 0) < 0 %}
+                                    <span class="status status-danger">Negativo</span>
+                                {% elif (articolo.giacenza_calcolata or 0) == 0 %}
                                     <span class="status status-inactive">Esaurito</span>
                                 {% elif (articolo.scorta_minima or 0) > 0 and (articolo.giacenza_calcolata or 0) < (articolo.scorta_minima or 0) %}
                                     <span class="status status-warning">Sotto scorta</span>

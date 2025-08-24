@@ -542,24 +542,27 @@ def inventario_page():
        
        statistiche = {
            'valore_totale': valore_totale,
-           'numero_articoli': len([a for a in articoli if a.giacenza_calcolata > 0]),
+           'numero_articoli': len([a for a in articoli if a.giacenza_calcolata != 0]),  # Include giacenze negative
            'pezzi_totali': pezzi_totali,
            'data_riferimento': data_riferimento
        }
        
        sotto_scorta = len([a for a in articoli if (a.giacenza_calcolata or 0) < (a.scorta_minima or 0) and a.scorta_minima > 0])
+       giacenze_negative = len([a for a in articoli if (a.giacenza_calcolata or 0) < 0])
        
    except Exception as e:
        print(f"Errore inventario: {e}")
        articoli = []
        statistiche = {'valore_totale': 0, 'numero_articoli': 0, 'pezzi_totali': 0, 'data_riferimento': data_riferimento}
        sotto_scorta = 0
+       giacenze_negative = 0
        magazzini = []
    
    return render_template('inventario.html',
                         articoli=articoli,
                         statistiche=statistiche,
                         sotto_scorta=sotto_scorta,
+                        giacenze_negative=giacenze_negative,
                         magazzini=magazzini,
                         magazzino_filtro=magazzino_filtro)
 

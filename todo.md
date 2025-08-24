@@ -11,7 +11,11 @@
   - Implementato controllo automatico decimali per articoli "PZ" 
   - Aggiornato form creazione manuale e modifica dati PDF
   - Validazione JavaScript per arrotondamento automatico quantità pezzi
-* 3\. l'inventario deve riportare anche le giacenze negative in caso di vendita in eccesso creando i ddt out.
+* 3\. l'inventario deve riportare anche le giacenze negative in caso di vendita in eccesso creando i ddt out. **FATTO** ✅ *18:56 24-08-2025*
+  - Modifica calcolo statistiche per includere articoli con giacenza ≠ 0 (anche negative)
+  - Aggiunto stato "Negativo" in rosso per giacenze < 0  
+  - Aggiunta card statistica "Giacenze Negative" nell'inventario
+  - Migliorata visualizzazione stati: Negativo, Esaurito, Sotto scorta, Disponibile
 * 4\. Le liste documenti dei ddt in e dei ddt out devono essere ordinate di default per numero documento in ordine crescente. Implementare un controllo per prevenire "buchi" nella numerazione sequenziale.
 * 5\.  nella sezione ddt out implementare un box di ricerca  (per capirci come  quella della sezione ddt in)
 * 6\. nella lista documenti dei ddt out aggiungi un opzione per la stampa di ogni signolo ddt out
