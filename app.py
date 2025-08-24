@@ -90,12 +90,12 @@ def dashboard():
 @app.route('/ddt-in')
 def ddt_in_page():
    ddts = DDTIn.query.order_by(DDTIn.stato.asc(), DDTIn.id.desc()).all()
-   return render_template('ddt-in-list.html', ddts=ddts)
+   return render_template('ddt-in.html', ddts=ddts)
 
 @app.route('/ddt-in/<int:id>')
 def view_ddt_detail(id):
    ddt = DDTIn.query.get_or_404(id)
-   return render_template('ddt-view.html', ddt=ddt)
+   return render_template('ddt-in-page.html', ddt=ddt)
 
 # ========== NUOVO DDT IN CON PARSING AI ==========
 @app.route('/ddt-in/nuovo', methods=['GET', 'POST'])
@@ -210,11 +210,11 @@ def ddt_out_list():
     """Lista DDT OUT"""
     try:
         ddts = DDTOut.query.order_by(DDTOut.stato.desc(), DDTOut.id.desc()).all()
-        return render_template('ddt-out-list.html', ddts=ddts, datetime=datetime)
+        return render_template('ddt-out.html', ddts=ddts, datetime=datetime)
     except Exception as e:
         print(f"Errore lista DDT OUT: {e}")
         ddts = []
-        return render_template('ddt-out-list.html', ddts=ddts)
+        return render_template('ddt-out.html', ddts=ddts)
 
 @app.route('/ddt-out/nuovo', methods=['GET', 'POST'])
 def nuovo_ddt_out():
@@ -282,7 +282,7 @@ def nuovo_ddt_out():
                     'tipo': m.tipo
                 })
             
-            return render_template('ddt-out-nuovo.html',
+            return render_template('nuovo-ddt-out.html',
                                  magazzini=magazzini,
                                  clienti=clienti_json,
                                  mastrini_vendita=mastrini_json,
@@ -394,7 +394,7 @@ def view_ddt_out(id):
     """Visualizza dettaglio DDT OUT"""
     try:
         ddt = DDTOut.query.get_or_404(id)
-        return render_template('ddt-out-view.html', ddt=ddt)
+        return render_template('ddt-out-page.html', ddt=ddt)
     except Exception as e:
         print(f"Errore view DDT OUT: {e}")
         return f"Errore: {str(e)}", 500
