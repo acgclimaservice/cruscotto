@@ -66,7 +66,8 @@
                             </span>
                         </td>
                         <td class="actions">
-                            <button class="btn btn-small">Visualizza</button>
+                            <button class="btn btn-small" onclick="location.href='/ddt-out/{{ ddt.id }}'">Visualizza</button>
+                            <button class="btn btn-small btn-secondary" onclick="stampaDDT('{{ ddt.id }}', 'OUT')" title="Stampa DDT">🖨️</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -74,5 +75,20 @@
             </table>
         </div>
     </div>
+
+<script>
+function stampaDDT(ddtId, tipo) {
+    // Apre finestra di stampa per DDT specifico
+    const url = `/stampa-ddt/${tipo.toLowerCase()}/${ddtId}`;
+    const win = window.open(url, '_blank', 'width=800,height=600');
+    
+    // Dopo caricamento, stampa automaticamente
+    win.onload = function() {
+        setTimeout(function() {
+            win.print();
+        }, 500);
+    };
+}
+</script>
 </body>
 </html>

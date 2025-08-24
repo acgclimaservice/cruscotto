@@ -31,7 +31,11 @@
   - Aggiunta logica backend per filtri con query SQLAlchemy ilike per ricerca parziale
   - Mantenimento valori filtri nel form dopo la ricerca
   - Pulsanti Filtra e Reset completamente funzionali
-* 6\. nella lista documenti dei ddt out aggiungi un opzione per la stampa di ogni signolo ddt out
+* 6\. nella lista documenti dei ddt out aggiungi un opzione per la stampa di ogni signolo ddt out **FATTO** ✅ *19:08 24-08-2025*
+  - Aggiunto pulsante stampa 🖨️ nella colonna azioni per ogni DDT OUT
+  - Implementata route /stampa-ddt/out/<id> per generare versione stampabile
+  - Creato template stampa-ddt-out.html ottimizzato per stampa con CSS print-friendly
+  - Funzione JavaScript per apertura automatica finestra stampa
 * 7\. nella sezione catalogo aggiungere un box di ricerca
 * 8\. nella sezione movimenti aggiungi un box di ricerca
 * 9\. nelle sezioni clienti e fornitori non funziona il tasto modifica per le anagrafiche già create.

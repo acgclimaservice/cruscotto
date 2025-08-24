@@ -227,6 +227,26 @@ def genera_ddt_out_da_ddt_in(id):
         print(f"Errore generazione DDT OUT: {e}")
         return f"Errore: {str(e)}", 500
 
+# ========== STAMPA DDT ==========
+@app.route('/stampa-ddt/<tipo>/<int:ddt_id>')
+def stampa_ddt(tipo, ddt_id):
+    """Stampa DDT in formato ottimizzato per stampa"""
+    try:
+        if tipo == 'out':
+            ddt = DDTOut.query.get_or_404(ddt_id)
+            # Ottieni articoli associati (se implementato)
+            articoli = []  # TODO: implementare query articoli DDT OUT
+            return render_template('stampa-ddt-out.html', ddt=ddt, articoli=articoli)
+        elif tipo == 'in':
+            ddt = DDTIn.query.get_or_404(ddt_id)
+            articoli = ddt.articoli if hasattr(ddt, 'articoli') else []
+            return render_template('stampa-ddt-in.html', ddt=ddt, articoli=articoli)
+        else:
+            return "Tipo DDT non valido", 400
+    except Exception as e:
+        print(f"Errore stampa DDT {tipo}/{ddt_id}: {e}")
+        return f"Errore nella stampa: {e}", 500
+
 # ========== SISTEMA DDT OUT COMPLETO (DA PYTHONANYWHERE) ==========
 
 @app.route('/ddt-out')
