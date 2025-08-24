@@ -22,7 +22,8 @@
       "Bash(copy \"app_merged.py\" \"app.py\")",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []
