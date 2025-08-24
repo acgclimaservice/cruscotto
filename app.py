@@ -570,8 +570,12 @@ def catalogo_page():
 
 @app.route('/movimenti')
 def movimenti_page():
-   movimenti = Movimento.query.order_by(Movimento.data_movimento.desc()).all()
-   return render_template('movimenti.html', movimenti=movimenti)
+   try:
+       movimenti = Movimento.query.order_by(Movimento.data_movimento.desc()).all()
+       return render_template('movimenti.html', movimenti=movimenti, filtri={})
+   except Exception as e:
+       print(f"Errore pagina movimenti: {e}")
+       return render_template('movimenti.html', movimenti=[], filtri={})
 
 @app.route('/inventario')
 def inventario_page():
