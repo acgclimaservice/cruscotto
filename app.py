@@ -7,6 +7,7 @@ from flask_cors import CORS
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+import sys
 
 # Carica variabili d'ambiente
 load_dotenv()
@@ -246,6 +247,114 @@ def stampa_ddt(tipo, ddt_id):
     except Exception as e:
         print(f"Errore stampa DDT {tipo}/{ddt_id}: {e}")
         return f"Errore nella stampa: {e}", 500
+
+# ========== DEBUG PYTHONANYWHERE ==========
+@app.route('/debug-system')
+def debug_system():
+    """Endpoint di diagnosi sistema per PythonAnywhere"""
+    import importlib
+    import sqlite3
+    from pathlib import Path
+    
+    debug_info = {
+        'timestamp': datetime.now().isoformat(),
+        'python_version': f"{sys.version}",
+        'flask_version': 'Unknown',
+        'environment': {},
+        'packages': {},
+        'database': {},
+        'files': {},
+        'errors': []
+    }
+    
+    # Check Flask version
+    try:
+        import flask
+        debug_info['flask_version'] = flask.__version__
+    except:
+        debug_info['errors'].append("Flask version not found")
+    
+    # Check environment variables
+    env_vars = ['CLAUDE_API_KEY', 'ANTHROPIC_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_API_KEY']
+    for var in env_vars:
+        value = os.getenv(var)
+        debug_info['environment'][var] = f"{'✓' if value else '✗'} {'Configured' if value else 'Missing'}"
+    
+    # Check packages
+    packages_to_check = ['anthropic', 'google.generativeai', 'PyMuPDF', 'pdfplumber']
+    for pkg in packages_to_check:
+        try:
+            if pkg == 'google.generativeai':
+                import google.generativeai
+                debug_info['packages'][pkg] = f"✓ v{google.generativeai.__version__}"
+            elif pkg == 'PyMuPDF':
+                import fitz
+                debug_info['packages'][pkg] = f"✓ v{fitz.version}"
+            else:
+                module = importlib.import_module(pkg)
+                version = getattr(module, '__version__', 'unknown')
+                debug_info['packages'][pkg] = f"✓ v{version}"
+        except ImportError:
+            debug_info['packages'][pkg] = "✗ Not installed"
+    
+    # Check database
+    db_paths = ['ddt_database.db', 'instance/ddt_database.db']
+    for db_path in db_paths:
+        if os.path.exists(db_path):
+            try:
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                tables = [row[0] for row in cursor.fetchall()]
+                debug_info['database'][db_path] = f"✓ {len(tables)} tables: {', '.join(tables[:5])}"
+                conn.close()
+                break
+            except Exception as e:
+                debug_info['database'][db_path] = f"✗ Error: {str(e)}"
+        else:
+            debug_info['database'][db_path] = "✗ Not found"
+    
+    # Check essential files
+    files_to_check = ['models.py', 'multi_ai_pdf_parser.py', 'routes/routes_parsing.py']
+    for file_path in files_to_check:
+        if os.path.exists(file_path):
+            size = os.path.getsize(file_path)
+            debug_info['files'][file_path] = f"✓ {size} bytes"
+        else:
+            debug_info['files'][file_path] = "✗ Not found"
+    
+    return f"""
+    <html>
+    <head><title>Debug System - PythonAnywhere</title></head>
+    <body style="font-family: monospace; padding: 20px; background: #1a1a1a; color: #00ff00;">
+    <h1>🔍 Debug System - PythonAnywhere</h1>
+    <h2>📅 Timestamp: {debug_info['timestamp']}</h2>
+    
+    <h3>🐍 Python Version:</h3>
+    <pre>{debug_info['python_version']}</pre>
+    
+    <h3>🌐 Flask Version:</h3>
+    <pre>{debug_info['flask_version']}</pre>
+    
+    <h3>🔑 Environment Variables:</h3>
+    <pre>{'<br>'.join([f"{k}: {v}" for k, v in debug_info['environment'].items()])}</pre>
+    
+    <h3>📦 Python Packages:</h3>
+    <pre>{'<br>'.join([f"{k}: {v}" for k, v in debug_info['packages'].items()])}</pre>
+    
+    <h3>🗄️ Database Status:</h3>
+    <pre>{'<br>'.join([f"{k}: {v}" for k, v in debug_info['database'].items()])}</pre>
+    
+    <h3>📄 Essential Files:</h3>
+    <pre>{'<br>'.join([f"{k}: {v}" for k, v in debug_info['files'].items()])}</pre>
+    
+    <h3>❌ Errors:</h3>
+    <pre>{('<br>'.join(debug_info['errors']) if debug_info['errors'] else '✓ No errors found')}</pre>
+    
+    <p><a href="/" style="color: #00ffff;">← Back to Dashboard</a></p>
+    </body>
+    </html>
+    """
 
 # ========== SISTEMA DDT OUT COMPLETO (DA PYTHONANYWHERE) ==========
 
