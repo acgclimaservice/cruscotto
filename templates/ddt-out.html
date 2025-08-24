@@ -32,6 +32,15 @@
             </div>
         </div>
 
+        {% if buchi_numerazione %}
+        <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+            <h4 style="color: #856404; margin: 0 0 10px 0;">⚠️ Attenzione: Numerazione non sequenziale</h4>
+            <p style="margin: 0; color: #856404;">
+                <strong>Numeri mancanti:</strong> {{ buchi_numerazione | join(', ') }}
+            </p>
+        </div>
+        {% endif %}
+
         <div class="table-container">
             <table>
                 <thead>

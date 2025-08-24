@@ -87,10 +87,34 @@ def dashboard():
                         ddt_out_count=ddt_out_count,
                         bozze_count=bozze_count)
 
+def verifica_buchi_numerazione(ddts, tipo_ddt='IN'):
+    """Verifica buchi nella numerazione sequenziale dei DDT"""
+    buchi = []
+    numeri = []
+    
+    for ddt in ddts:
+        if ddt.numero_ddt and ddt.stato == 'confermato':  # Solo DDT confermati
+            try:
+                # Estrae numero da formato "DDT-001/2024" -> 1
+                numero = int(ddt.numero_ddt.split('-')[1].split('/')[0])
+                numeri.append(numero)
+            except:
+                continue
+    
+    if len(numeri) >= 2:
+        numeri.sort()
+        for i in range(len(numeri) - 1):
+            if numeri[i+1] - numeri[i] > 1:
+                for n in range(numeri[i] + 1, numeri[i+1]):
+                    buchi.append(f"DDT-{n:03d}")
+    
+    return buchi
+
 @app.route('/ddt-in')
 def ddt_in_page():
-   ddts = DDTIn.query.order_by(DDTIn.stato.asc(), DDTIn.id.desc()).all()
-   return render_template('ddt-in.html', ddts=ddts)
+   ddts = DDTIn.query.order_by(DDTIn.numero_ddt.asc()).all()
+   buchi_numerazione = verifica_buchi_numerazione(ddts, 'IN')
+   return render_template('ddt-in.html', ddts=ddts, buchi_numerazione=buchi_numerazione)
 
 @app.route('/ddt-in/<int:id>')
 def view_ddt_detail(id):
@@ -209,12 +233,14 @@ def genera_ddt_out_da_ddt_in(id):
 def ddt_out_list():
     """Lista DDT OUT"""
     try:
-        ddts = DDTOut.query.order_by(DDTOut.stato.desc(), DDTOut.id.desc()).all()
-        return render_template('ddt-out.html', ddts=ddts, datetime=datetime)
+        ddts = DDTOut.query.order_by(DDTOut.numero_ddt.asc()).all()
+        buchi_numerazione = verifica_buchi_numerazione(ddts, 'OUT')
+        return render_template('ddt-out.html', ddts=ddts, buchi_numerazione=buchi_numerazione, datetime=datetime)
     except Exception as e:
         print(f"Errore lista DDT OUT: {e}")
         ddts = []
-        return render_template('ddt-out.html', ddts=ddts)
+        buchi_numerazione = []
+        return render_template('ddt-out.html', ddts=ddts, buchi_numerazione=buchi_numerazione)
 
 @app.route('/ddt-out/nuovo', methods=['GET', 'POST'])
 def nuovo_ddt_out():
