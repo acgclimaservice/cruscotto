@@ -6,6 +6,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventario - Sistema Gestione DDT</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
+    <style>
+        .ubicazione {
+            padding: 4px 8px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #1976d2;
+        }
+        .giacenza {
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        .valore {
+            font-weight: bold;
+            color: #1976d2;
+        }
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -20,6 +56,36 @@
             <p>Gestione completa dell'inventario e delle giacenze di magazzino</p>
         </div>
 
+        <!-- Statistiche Inventario -->
+        <div class="stats-container" style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+            <div class="stat-card" style="background: #f8f9fa; padding: 15px; border-radius: 8px; min-width: 200px;">
+                <h4 style="margin: 0 0 5px 0; color: #666;">Valore Totale</h4>
+                <span style="font-size: 20px; font-weight: bold; color: #007bff;">
+                    € {{ "%.2f"|format(statistiche.valore_totale or 0) }}
+                </span>
+            </div>
+            <div class="stat-card" style="background: #f8f9fa; padding: 15px; border-radius: 8px; min-width: 200px;">
+                <h4 style="margin: 0 0 5px 0; color: #666;">Articoli Attivi</h4>
+                <span style="font-size: 20px; font-weight: bold; color: #28a745;">
+                    {{ statistiche.numero_articoli or 0 }}
+                </span>
+            </div>
+            <div class="stat-card" style="background: #f8f9fa; padding: 15px; border-radius: 8px; min-width: 200px;">
+                <h4 style="margin: 0 0 5px 0; color: #666;">Pezzi Totali</h4>
+                <span style="font-size: 20px; font-weight: bold; color: #6c757d;">
+                    {{ statistiche.pezzi_totali or 0 }}
+                </span>
+            </div>
+            {% if sotto_scorta > 0 %}
+            <div class="stat-card" style="background: #fff3cd; padding: 15px; border-radius: 8px; min-width: 200px;">
+                <h4 style="margin: 0 0 5px 0; color: #856404;">Sotto Scorta</h4>
+                <span style="font-size: 20px; font-weight: bold; color: #ffc107;">
+                    {{ sotto_scorta }} articoli
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
         <div class="table-container">
             <h3>Articoli in Giacenza</h3>
             <table>
@@ -28,16 +94,44 @@
                         <th>Codice</th>
                         <th>Descrizione</th>
                         <th>Giacenza</th>
+                        <th>Ubicazione</th>
+                        <th>Valore €</th>
                         <th>Stato</th>
-                        <th>Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% if articoli %}
+                        {% for articolo in articoli %}
+                        <tr>
+                            <td><strong>{{ articolo.codice_interno or 'N/D' }}</strong></td>
+                            <td>{{ articolo.descrizione or 'N/D' }}</td>
+                            <td>
+                                <span class="giacenza">{{ articolo.giacenza_calcolata or 0 }} {{ articolo.unita_misura or 'PZ' }}</span>
+                            </td>
+                            <td>
+                                <span class="ubicazione">{{ articolo.ubicazione or 'Non specificata' }}</span>
+                            </td>
+                            <td>
+                                <span class="valore">€ {{ "%.2f"|format((articolo.giacenza_calcolata or 0) * (articolo.costo_ultimo or 0)) }}</span>
+                            </td>
+                            <td>
+                                {% if (articolo.giacenza_calcolata or 0) <= 0 %}
+                                    <span class="status status-inactive">Esaurito</span>
+                                {% elif (articolo.scorta_minima or 0) > 0 and (articolo.giacenza_calcolata or 0) < (articolo.scorta_minima or 0) %}
+                                    <span class="status status-warning">Sotto scorta</span>
+                                {% else %}
+                                    <span class="status status-active">Disponibile</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px;">
+                        <td colspan="6" style="text-align: center; padding: 40px;">
                             📦 Nessun articolo in inventario
                         </td>
                     </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
