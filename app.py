@@ -571,11 +571,38 @@ def catalogo_page():
 @app.route('/movimenti')
 def movimenti_page():
    try:
-       movimenti = Movimento.query.order_by(Movimento.data_movimento.desc()).all()
-       return render_template('movimenti.html', movimenti=movimenti, filtri={})
+       query = Movimento.query
+       
+       # Filtri di ricerca
+       data_da = request.args.get('data_da')
+       data_a = request.args.get('data_a')
+       tipo = request.args.get('tipo')
+       articolo = request.args.get('articolo')
+       documento = request.args.get('documento')
+       
+       if data_da:
+           from datetime import datetime as dt
+           query = query.filter(Movimento.data_movimento >= dt.strptime(data_da, '%Y-%m-%d'))
+       if data_a:
+           from datetime import datetime as dt  
+           query = query.filter(Movimento.data_movimento <= dt.strptime(data_a + ' 23:59:59', '%Y-%m-%d %H:%M:%S'))
+       if tipo:
+           query = query.filter(Movimento.tipo == tipo)
+       if articolo:
+           query = query.filter(
+               db.or_(
+                   Movimento.codice_articolo.ilike(f'%{articolo}%'),
+                   Movimento.descrizione_articolo.ilike(f'%{articolo}%')
+               )
+           )
+       if documento:
+           query = query.filter(Movimento.documento_numero.ilike(f'%{documento}%'))
+       
+       movimenti = query.order_by(Movimento.data_movimento.desc()).all()
+       return render_template('movimenti.html', movimenti=movimenti)
    except Exception as e:
        print(f"Errore pagina movimenti: {e}")
-       return render_template('movimenti.html', movimenti=[], filtri={})
+       return render_template('movimenti.html', movimenti=[])
 
 @app.route('/inventario')
 def inventario_page():

@@ -16,18 +16,19 @@
 
         <div class="ddt-header">
             <h1>📊 Movimenti Magazzino</h1>
-            <div class="filters">
-                <input type="date" name="data_da" value="{{ filtri.get('data_da', '') }}" placeholder="Data da">
-                <input type="date" name="data_a" value="{{ filtri.get('data_a', '') }}" placeholder="Data a">
+            <form method="GET" action="/movimenti" class="filters">
+                <input type="date" name="data_da" value="{{ request.args.get('data_da', '') }}" placeholder="Data da">
+                <input type="date" name="data_a" value="{{ request.args.get('data_a', '') }}" placeholder="Data a">
                 <select name="tipo">
                     <option value="">Tutti i tipi</option>
-                    <option value="entrata" {{ 'selected' if filtri.get('tipo') == 'entrata' }}>Entrata</option>
-                    <option value="uscita" {{ 'selected' if filtri.get('tipo') == 'uscita' }}>Uscita</option>
+                    <option value="entrata" {{ 'selected' if request.args.get('tipo') == 'entrata' else '' }}>Entrata</option>
+                    <option value="uscita" {{ 'selected' if request.args.get('tipo') == 'uscita' else '' }}>Uscita</option>
                 </select>
-                <input type="text" name="articolo" placeholder="Cerca articolo..." value="{{ filtri.get('articolo', '') }}">
-                <button class="btn">Filtra</button>
-                <button class="btn btn-secondary">Reset</button>
-            </div>
+                <input type="text" name="articolo" placeholder="Cerca articolo..." value="{{ request.args.get('articolo', '') }}">
+                <input type="text" name="documento" placeholder="N° documento..." value="{{ request.args.get('documento', '') }}">
+                <button type="submit" class="btn">Filtra</button>
+                <button type="button" class="btn btn-secondary" onclick="location.href='/movimenti'">Reset</button>
+            </form>
         </div>
 
         <div class="table-container">

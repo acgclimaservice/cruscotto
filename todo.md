@@ -37,7 +37,11 @@
   - Creato template stampa-ddt-out.html ottimizzato per stampa con CSS print-friendly
   - Funzione JavaScript per apertura automatica finestra stampa
 * 7\. nella sezione catalogo aggiungere un box di ricerca
-* 8\. nella sezione movimenti aggiungi un box di ricerca
+* 8\. nella sezione movimenti aggiungi un box di ricerca **FATTO** ✅ *19:12 24-08-2025*
+  - Risolto errore pagina movimenti con try-catch  
+  - Implementato form di ricerca funzionale con filtri: data da/a, tipo (entrata/uscita), articolo, documento
+  - Aggiunta logica backend per filtri con query SQLAlchemy e ricerca ilike su codice/descrizione
+  - Form completamente funzionale con pulsanti Filtra e Reset
 * 9\. nelle sezioni clienti e fornitori non funziona il tasto modifica per le anagrafiche già create.
 * 10\. nella sezione impostazioni aggiungere la possibilità di creare nuovi mastrini ricavi e nuovi mastrini acquisti
 * 11\. Movimenti Interni: Introdurre una nuova tipologia di documento per la gestione dei "Movimenti Interni", che permetta di tracciare lo spostamento di materiale da un magazzino all'altro.
