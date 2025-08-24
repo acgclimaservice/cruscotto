@@ -16,7 +16,11 @@
       "Bash(copy \"routes\\routes_parsing.py\" \"parsing_package_for_pythonanywhere\"\")",
       "Bash(copy \"multi_ai_pdf_parser.py\" \"parsing_package_for_pythonanywhere/\")",
       "Bash(powershell Compress-Archive:*)",
-      "Bash(powershell Expand-Archive:*)"
+      "Bash(powershell Expand-Archive:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(copy \"app_merged.py\" \"app.py\")",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
