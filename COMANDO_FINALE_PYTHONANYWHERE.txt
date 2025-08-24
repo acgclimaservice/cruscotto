@@ -1,0 +1,19 @@
+COPIA E INCOLLA QUESTI COMANDI UNO ALLA VOLTA SU PYTHONANYWHERE:
+
+# 1. Aggiorna da GitHub
+cd ~/cruscotto && git pull origin main
+
+# 2. Installa pacchetti AI 
+python3.9 -m pip install --user anthropic==0.25.0 google-generativeai==0.5.0 PyMuPDF==1.23.0
+
+# 3. Verifica installazione
+python3.9 -c "import anthropic; import google.generativeai; import fitz; print('✅ AI libs OK')"
+
+# 4. Riavvia webapp
+touch /var/www/acgclimaservice_pythonanywhere_com_wsgi.py
+
+DOPO QUESTI COMANDI:
+- Vai su Files > Web > WSGI configuration file 
+- Sostituisci tutto con il codice in ISTRUZIONI_FINALI_PYTHONANYWHERE.md
+- Riavvia webapp di nuovo
+- Testa su /debug-system
