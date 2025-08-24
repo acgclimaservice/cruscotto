@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuovo DDT OUT - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+            </ul>
+        </nav>
+
+        <form method="POST" action="/ddt/out/nuovo">
+            <div class="ddt-header">
+                <h1>📤 Nuovo DDT in Uscita</h1>
+                <div class="filters">
+                    <button type="submit" class="btn btn-success">Salva Bozza</button>
+                    <button type="button" class="btn btn-secondary" onclick="history.back()">Annulla</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3>Informazioni DDT</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div>
+                        <label>Data DDT Origine *</label>
+                        <input type="date" name="data_ddt_origine" required style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div>
+                        <label>Nome Origine *</label>
+                        <input type="text" name="nome_origine" value="Azienda S.r.l." required style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div>
+                        <label>Riferimento</label>
+                        <input type="text" name="riferimento" placeholder="N° ordine, fattura, ecc." style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div>
+                        <label>Destinazione *</label>
+                        <input type="text" name="destinazione" placeholder="Cliente destinazione" required style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div>
+                        <label>Mastrino DDT</label>
+                        <input type="text" name="mastrino_ddt" placeholder="Codice mastrino" style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div>
+                        <label>Commessa</label>
+                        <input type="text" name="commessa" placeholder="Codice commessa" style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div>
+                        <label>Magazzino Partenza *</label>
+                        <input type="text" name="magazzino_partenza" placeholder="Magazzino di partenza" required style="width: 100%; margin-top: 5px;">
+                    </div>
+                </div>
+
+                <h3>Articoli</h3>
+                <button type="button" class="btn btn-secondary" onclick="aggiungiRiga()" style="margin-bottom: 15px;">+ Aggiungi Articolo</button>
+                
+                <table id="tabella-articoli">
+                    <thead>
+                        <tr>
+                            <th>Codice Interno</th>
+                            <th>Descrizione</th>
+                            <th>Prezzo Unit.</th>
+                            <th>Quantità</th>
+                            <th>Totale</th>
+                            <th>Note</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" name="articoli[0][codice]"></td>
+                            <td><input type="text" name="articoli[0][descrizione]" required></td>
+                            <td><input type="number" step="0.01" name="articoli[0][prezzo]" onchange="calcolaTotale(this)"></td>
+                            <td><input type="number" step="0.01" name="articoli[0][quantita]" onchange="calcolaTotale(this)"></td>
+                            <td class="totale">€ 0.00</td>
+                            <td><input type="text" name="articoli[0][note]"></td>
+                            <td><button type="button" class="btn btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    let rigaCount = 1;
+    
+    function aggiungiRiga() {
+        const tbody = document.querySelector('#tabella-articoli tbody');
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td><input type="text" name="articoli[${rigaCount}][codice]"></td>
+            <td><input type="text" name="articoli[${rigaCount}][descrizione]" required></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][prezzo]" onchange="calcolaTotale(this)"></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][quantita]" onchange="calcolaTotale(this)"></td>
+            <td class="totale">€ 0.00</td>
+            <td><input type="text" name="articoli[${rigaCount}][note]"></td>
+            <td><button type="button" class="btn btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+        `;
+        tbody.appendChild(newRow);
+        rigaCount++;
+    }
+    
+    function rimuoviRiga(button) {
+        const row = button.closest('tr');
+        if (document.querySelectorAll('#tabella-articoli tbody tr').length > 1) {
+            row.remove();
+        }
+    }
+    
+    function calcolaTotale(input) {
+        const row = input.closest('tr');
+        const prezzo = parseFloat(row.querySelector('[name*="prezzo"]').value) || 0;
+        const quantita = parseFloat(row.querySelector('[name*="quantita"]').value) || 0;
+        const totale = prezzo * quantita;
+        row.querySelector('.totale').textContent = '€ ' + totale.toFixed(2);
+    }
+    </script>
+</body>
+</html>

@@ -4,48 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offerte - Sistema Gestione DDT</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
 </head>
 <body>
     <div class="container">
         <nav>
             <ul>
-                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
-                <li><a href="{{ url_for('ddt_in_list') }}">📥 DDT IN</a></li>
-                <li><a href="{{ url_for('ddt_out_list') }}">📤 DDT OUT</a></li>
-                <li><a href="{{ url_for('offerte_list') }}" class="active">💰 Offerte</a></li>
+                <li><a href="/">🏠 Dashboard</a></li>
             </ul>
         </nav>
 
         <div class="ddt-header">
             <h1>💰 Offerte Fornitori</h1>
+            <p style="color: #718096;">Gestione offerte ricevute</p>
         </div>
 
         <div class="table-container">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
+                <h3>Elenco Offerte</h3>
+                <button class="btn btn-success">+ Nuova Offerta</button>
+            </div>
+            
             <table>
                 <thead>
                     <tr>
                         <th>N° Offerta</th>
                         <th>Data</th>
                         <th>Fornitore</th>
-                        <th>Validità</th>
+                        <th>Totale €</th>
                         <th>Stato</th>
+                        <th>Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% if offerte %}
                         {% for offerta in offerte %}
                         <tr>
-                            <td>{{ offerta.numero_offerta or '-' }}</td>
+                            <td><strong>{{ offerta.numero_offerta }}</strong></td>
                             <td>{{ offerta.data_offerta.strftime('%d/%m/%Y') if offerta.data_offerta else '-' }}</td>
-                            <td>{{ offerta.fornitore or '-' }}</td>
-                            <td>{{ offerta.validita_giorni }} gg</td>
-                            <td><span class="status confirmed">{{ offerta.stato.title() }}</span></td>
+                            <td>{{ offerta.fornitore }}</td>
+                            <td>€ {{ "%.2f"|format(offerta.totale or 0) }}</td>
+                            <td><span class="status confirmed">{{ offerta.stato }}</span></td>
+                            <td><button class="btn btn-small">Visualizza</button></td>
                         </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="5" style="text-align: center; color: #666;">Nessuna offerta presente</td>
+                            <td colspan="6" style="text-align: center; padding: 60px;">
+                                <div style="font-size: 48px;">📋</div>
+                                <div>Nessuna offerta presente</div>
+                            </td>
                         </tr>
                     {% endif %}
                 </tbody>

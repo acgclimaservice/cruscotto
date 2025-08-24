@@ -4,16 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Mastrini - Sistema Gestione DDT</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
 </head>
 <body>
     <div class="container">
         <nav>
             <ul>
-                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
-                <li><a href="{{ url_for('reports.reports_home') }}" class="active">📈 Reports</a></li>
-                <li><a href="{{ url_for('movimenti.movimenti_list') }}">📊 Movimenti</a></li>
-                <li><a href="{{ url_for('inventario.inventario_home') }}">📦 Inventario</a></li>
+                <li><a href="/">🏠 Dashboard</a></li>
             </ul>
         </nav>
 

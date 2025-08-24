@@ -3,207 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuovo DDT IN - Sistema Gestione DDT</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>DDT IN - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
 </head>
 <body>
     <div class="container">
         <nav>
             <ul>
-                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
-                <li><a href="{{ url_for('ddt.ddt_in_list') }}">📥 DDT IN</a></li>
-                <li><a href="{{ url_for('ddt.ddt_out_list') }}">📤 DDT OUT</a></li>
+                <li><a href="/">🏠 Dashboard</a></li>
             </ul>
         </nav>
 
-        <form method="POST" action="/ddt/in/nuovo">
-            <div class="ddt-header">
-                <h1>📥 Nuovo DDT in Entrata</h1>
-                <div class="actions-bar">
-                    <button type="submit" class="btn btn-success">Salva Bozza</button>
-                    <button type="button" class="btn btn-secondary" onclick="history.back()">Annulla</button>
-                </div>
+        <div class="ddt-header">
+            <h1>📥 DDT in Entrata</h1>
+            <div class="filters">
+                <input type="date" placeholder="Data da">
+                <input type="date" placeholder="Data a">
+                <input type="text" placeholder="Cerca fornitore...">
+                <input type="text" placeholder="N° DDT...">
+                <select>
+                    <option>Tutti gli stati</option>
+                    <option>Bozza</option>
+                    <option>Confermato</option>
+                </select>
+                <button class="btn">Filtra</button>
+                <button class="btn btn-secondary">Reset</button>
+                <button class="btn btn-success" onclick="location.href='/ddt/in/nuovo'">+ Nuovo DDT</button>
             </div>
+        </div>
 
-            <div class="info-section">
-                <h3>Informazioni DDT</h3>
-                <div class="info-grid">
-                    <div class="form-group">
-                        <label class="form-label">Data DDT Origine *</label>
-                        <input type="date" name="data_ddt_origine" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Fornitore *</label>
-                        <select name="fornitore" required onchange="updateFornitoreFields(this)">
-                            <option value="">Seleziona fornitore...</option>
-                            {% for fornitore in fornitori %}
-                            <option value="{{ fornitore.ragione_sociale }}">{{ fornitore.ragione_sociale }}</option>
-                            {% endfor %}
-                            <option value="nuovo">+ Nuovo fornitore</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Riferimento</label>
-                        <input type="text" name="riferimento" placeholder="N° ordine, bolla, ecc.">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Destinazione *</label>
-                        <select name="destinazione" required>
-                            <option value="">Seleziona magazzino...</option>
-                            {% for magazzino in magazzini %}
-                            <option value="{{ magazzino.descrizione }}">{{ magazzino.descrizione }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Mastrino DDT</label>
-                        <select name="mastrino_ddt">
-                            <option value="">Seleziona mastrino...</option>
-                            {% for mastrino in mastrini if mastrino.tipo == 'acquisto' %}
-                            <option value="{{ mastrino.codice }}">{{ mastrino.codice }} - {{ mastrino.descrizione }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Commessa</label>
-                        <input type="text" name="commessa" placeholder="Codice commessa">
-                    </div>
-                </div>
-            </div>
-
-            <div class="articles-section">
-                <div class="section-title">
-                    <span>Articoli</span>
-                    <button type="button" class="btn btn-small" onclick="aggiungiRigaArticolo()">+ Aggiungi Articolo</button>
-                </div>
-                <table id="tabella-articoli">
-                    <thead>
-                        <tr>
-                            <th>Codice Interno</th>
-                            <th>Codice Fornitore</th>
-                            <th>Descrizione</th>
-                            <th>Costo Unit.</th>
-                            <th>U.M.</th>
-                            <th>Q.tà</th>
-                            <th>Totale</th>
-                            <th>Note</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="riga-articolo">
-                            <td><input type="text" name="articoli[0][codice_interno]" onchange="cercaArticolo(this)"></td>
-                            <td><input type="text" name="articoli[0][codice_fornitore]"></td>
-                            <td><input type="text" name="articoli[0][descrizione]" required></td>
-                            <td><input type="number" step="0.01" name="articoli[0][costo_unitario]" onchange="calcolaTotale(this)"></td>
-                            <td>
-                                <select name="articoli[0][unita_misura]">
-                                    <option value="PZ">PZ</option>
-                                    <option value="KG">KG</option>
-                                    <option value="MT">MT</option>
-                                    <option value="LT">LT</option>
-                                </select>
-                            </td>
-                            <td><input type="number" step="0.01" name="articoli[0][quantita]" onchange="calcolaTotale(this)"></td>
-                            <td class="totale-riga">€ 0.00</td>
-                            <td><input type="text" name="articoli[0][note]"></td>
-                            <td><button type="button" class="btn btn-small btn-danger" onclick="rimuoviRiga(this)">×</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <div class="totals">
-                    <div class="total-row">
-                        <span>Totale Articoli: <span id="count-articoli">1</span></span>
-                        <span>Quantità Totale: <span id="quantita-totale">0</span></span>
-                        <span><strong>Totale Valore: € <span id="valore-totale">0.00</span></strong></span>
-                    </div>
-                </div>
-            </div>
-        </form>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° DDT</th>
+                        <th>Data DDT</th>
+                        <th>Fornitore</th>
+                        <th>Riferimento</th>
+                        <th>Destinazione</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ddt in ddts %}
+                    <tr class="{{ 'draft' if ddt.stato == 'bozza' else '' }}">
+                        <td><strong>{{ ddt.numero_ddt or '-' }}</strong></td>
+                        <td>{{ ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-' }}</td>
+                        <td>{{ ddt.fornitore }}</td>
+                        <td>{{ ddt.riferimento }}</td>
+                        <td>{{ ddt.destinazione }}</td>
+                        <td>
+                            <span class="status {{ 'confirmed' if ddt.stato == 'confermato' else 'draft' }}">
+                                {{ ddt.stato|capitalize }}
+                            </span>
+                        </td>
+                        <td class="actions">
+                            <button class="btn btn-small btn-primary" onclick="visualizzaDDT({{ ddt.id }})">👁️ Visualizza</button>
+                            {% if ddt.stato == 'confermato' %}
+                            <button class="btn btn-small btn-secondary" onclick="scaricaPDF({{ ddt.id }})">📄 PDF</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
-    let rigaCount = 1;
-    
-    function aggiungiRigaArticolo() {
-        const tbody = document.querySelector('#tabella-articoli tbody');
-        const newRow = document.createElement('tr');
-        newRow.className = 'riga-articolo';
-        newRow.innerHTML = `
-            <td><input type="text" name="articoli[${rigaCount}][codice_interno]" onchange="cercaArticolo(this)"></td>
-            <td><input type="text" name="articoli[${rigaCount}][codice_fornitore]"></td>
-            <td><input type="text" name="articoli[${rigaCount}][descrizione]" required></td>
-            <td><input type="number" step="0.01" name="articoli[${rigaCount}][costo_unitario]" onchange="calcolaTotale(this)"></td>
-            <td>
-                <select name="articoli[${rigaCount}][unita_misura]">
-                    <option value="PZ">PZ</option>
-                    <option value="KG">KG</option>
-                    <option value="MT">MT</option>
-                    <option value="LT">LT</option>
-                </select>
-            </td>
-            <td><input type="number" step="0.01" name="articoli[${rigaCount}][quantita]" onchange="calcolaTotale(this)"></td>
-            <td class="totale-riga">€ 0.00</td>
-            <td><input type="text" name="articoli[${rigaCount}][note]"></td>
-            <td><button type="button" class="btn btn-small btn-danger" onclick="rimuoviRiga(this)">×</button></td>
-        `;
-        tbody.appendChild(newRow);
-        rigaCount++;
-        aggiornaTotali();
+    function visualizzaDDT(id) {
+        // Apri pagina dettaglio DDT
+        window.open(`/ddt/in/${id}`, '_blank');
     }
-    
-    function rimuoviRiga(button) {
-        const row = button.closest('tr');
-        if (document.querySelectorAll('.riga-articolo').length > 1) {
-            row.remove();
-            aggiornaTotali();
-        } else {
-            alert('Deve esserci almeno un articolo');
-        }
-    }
-    
-    function calcolaTotale(input) {
-        const row = input.closest('tr');
-        const costo = parseFloat(row.querySelector('[name*="costo_unitario"]').value) || 0;
-        const quantita = parseFloat(row.querySelector('[name*="quantita"]').value) || 0;
-        const totale = costo * quantita;
-        row.querySelector('.totale-riga').textContent = '€ ' + totale.toFixed(2);
-        aggiornaTotali();
-    }
-    
-    function aggiornaTotali() {
-        const righe = document.querySelectorAll('.riga-articolo');
-        let totaleValore = 0;
-        let totaleQuantita = 0;
-        
-        righe.forEach(row => {
-            const costo = parseFloat(row.querySelector('[name*="costo_unitario"]').value) || 0;
-            const quantita = parseFloat(row.querySelector('[name*="quantita"]').value) || 0;
-            totaleValore += costo * quantita;
-            totaleQuantita += quantita;
-        });
-        
-        document.getElementById('count-articoli').textContent = righe.length;
-        document.getElementById('quantita-totale').textContent = totaleQuantita.toFixed(2);
-        document.getElementById('valore-totale').textContent = totaleValore.toFixed(2);
-    }
-    
-    function cercaArticolo(input) {
-        const codice = input.value;
-        if (codice) {
-            fetch(`/api/articolo/cerca/${codice}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.found) {
-                        const row = input.closest('tr');
-                        row.querySelector('[name*="descrizione"]').value = data.descrizione;
-                        row.querySelector('[name*="costo_unitario"]').value = data.costo_ultimo;
-                        row.querySelector('[name*="unita_misura"]').value = data.unita_misura;
-                    }
-                })
-                .catch(err => console.error(err));
-        }
+
+    function scaricaPDF(id) {
+        // Scarica PDF del DDT
+        window.open(`/api/ddt-in/${id}/pdf`, '_blank');
     }
     </script>
 </body>

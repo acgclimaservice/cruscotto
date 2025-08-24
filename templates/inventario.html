@@ -1,53 +1,23 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventario - Sistema Gestione DDT</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
 </head>
 <body>
     <div class="container">
         <nav>
             <ul>
-                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
-                <li><a href="{{ url_for('ddt.ddt_in_list') }}">📥 DDT IN</a></li>
-                <li><a href="{{ url_for('ddt.ddt_out_list') }}">📤 DDT OUT</a></li>
-                <li><a href="{{ url_for('offerte.offerte_list') }}">💰 Offerte</a></li>
-                <li><a href="{{ url_for('preventivi.preventivi_list') }}">📋 Preventivi</a></li>
-                <li><a href="{{ url_for('catalogo.catalogo_list') }}">📚 Catalogo</a></li>
-                <li><a href="{{ url_for('movimenti.movimenti_list') }}">📊 Movimenti</a></li>
-                <li><a href="{{ url_for('inventario.inventario_home') }}" class="active">📦 Inventario</a></li>
-                <li><a href="{{ url_for('impostazioni.impostazioni_home') }}">⚙️ Impostazioni</a></li>
+                <li><a href="/">🏠 Dashboard</a></li>
             </ul>
         </nav>
 
         <div class="ddt-header">
             <h1>📦 Inventario Magazzino</h1>
-            <div class="info-grid" style="margin-top: 20px;">
-                <div class="info-item">
-                    <span class="info-label">Valore Totale Magazzino</span>
-                    <span class="info-value" style="font-size: 1.5em; color: #667eea;">€ {{ "{:,.2f}".format(statistiche.valore_totale) }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Articoli in Giacenza</span>
-                    <span class="info-value" style="font-size: 1.5em;">{{ statistiche.numero_articoli }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Pezzi Totali</span>
-                    <span class="info-value" style="font-size: 1.5em;">{{ "{:,.0f}".format(statistiche.pezzi_totali) }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Articoli Sotto Scorta</span>
-                    <span class="info-value" style="font-size: 1.5em; color: #f87171;">{{ sotto_scorta }}</span>
-                </div>
-            </div>
-            <div class="actions-bar" style="margin-top: 20px;">
-                <button class="btn" onclick="location.href='/inventario/valorizzazione'">Valorizzazione</button>
-                <button class="btn btn-secondary" onclick="location.href='/inventario/inventario-fisico'">Inventario Fisico</button>
-                <button class="btn btn-secondary" onclick="location.href='/catalogo/verifica-giacenze'">Verifica Scorte</button>
-                <button class="btn btn-success" onclick="esportaInventario()">Esporta Excel</button>
-            </div>
+            <p>Gestione completa dell'inventario e delle giacenze di magazzino</p>
         </div>
 
         <div class="table-container">
@@ -57,59 +27,20 @@
                     <tr>
                         <th>Codice</th>
                         <th>Descrizione</th>
-                        <th>Fornitore</th>
-                        <th>Ubicazione</th>
-                        <th>U.M.</th>
                         <th>Giacenza</th>
-                        <th>Scorta Min.</th>
                         <th>Stato</th>
-                        <th>Costo Medio</th>
-                        <th>Valore Giacenza</th>
                         <th>Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for articolo in articoli %}
-                    <tr class="{{ 'warning' if articolo.giacenza_attuale < articolo.scorta_minima else '' }}">
-                        <td><strong>{{ articolo.codice_interno }}</strong></td>
-                        <td>{{ articolo.descrizione }}</td>
-                        <td>{{ articolo.fornitore_principale }}</td>
-                        <td>{{ articolo.ubicazione }}</td>
-                        <td>{{ articolo.unita_misura }}</td>
-                        <td class="{{ 'text-danger' if articolo.giacenza_attuale < articolo.scorta_minima else '' }}">
-                            {{ articolo.giacenza_attuale }}
-                        </td>
-                        <td>{{ articolo.scorta_minima }}</td>
-                        <td>
-                            {% if articolo.giacenza_attuale < articolo.scorta_minima %}
-                                <span class="status draft">RIORDINARE</span>
-                            {% else %}
-                                <span class="status confirmed">OK</span>
-                            {% endif %}
-                        </td>
-                        <td>€ {{ "{:.2f}".format(articolo.costo_medio) }}</td>
-                        <td><strong>€ {{ "{:.2f}".format(articolo.giacenza_attuale * articolo.costo_medio) }}</strong></td>
-                        <td class="actions">
-                            <button class="btn btn-small" onclick="location.href='/catalogo/{{ articolo.id }}'">Dettagli</button>
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px;">
+                            📦 Nessun articolo in inventario
                         </td>
                     </tr>
-                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-
-    <style>
-        .warning { background: #fef3c7 !important; }
-        .text-danger { color: #991b1b; font-weight: bold; }
-    </style>
-
-    <script>
-    function esportaInventario() {
-        if (confirm('Esportare inventario in Excel?')) {
-            window.location.href = '/inventario/export-excel';
-        }
-    }
-    </script>
 </body>
 </html>

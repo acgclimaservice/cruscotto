@@ -1,0 +1,191 @@
+from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+from datetime import datetime, timedelta
+import os
+
+# Inizializzazione app
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ddt_database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'
+app.config['ITEMS_PER_PAGE'] = 50
+app.config['MAX_SEARCH_RESULTS'] = 10
+
+# Inizializza estensioni
+from models import db
+db.init_app(app)
+CORS(app)
+
+# Import dopo inizializzazione db
+with app.app_context():
+    from models import *
+    from utils_automation import get_dashboard_stats
+
+# Import routes
+from routes.routes_ddt import ddt_bp
+from routes.routes_catalogo import catalogo_bp
+from routes.routes_movimenti import movimenti_bp
+from routes.routes_clienti import clienti_bp
+from routes.routes_fornitori import fornitori_bp
+from routes.routes_impostazioni import impostazioni_bp
+from routes.routes_inventario import inventario_bp
+from routes.routes_anagrafiche import anagrafiche_bp
+
+# Import auth
+from auth import auth_bp, AuthManager
+
+# Inizializza auth
+auth_manager = AuthManager(app)
+
+# Registrazione blueprints
+app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(ddt_bp, url_prefix='/ddt')
+app.register_blueprint(catalogo_bp, url_prefix='/catalogo')
+app.register_blueprint(movimenti_bp, url_prefix='/movimenti')
+app.register_blueprint(clienti_bp, url_prefix='/clienti')
+app.register_blueprint(fornitori_bp, url_prefix='/fornitori')
+app.register_blueprint(impostazioni_bp, url_prefix='/impostazioni')
+app.register_blueprint(inventario_bp, url_prefix='/inventario')
+app.register_blueprint(anagrafiche_bp, url_prefix='/anagrafiche')
+
+# Routes principali
+@app.route('/')
+def dashboard():
+    """Dashboard principale con statistiche"""
+    try:
+        stats = get_dashboard_stats()
+        return render_template('dashboard.html', **stats)
+    except Exception as e:
+        app.logger.error(f"Errore dashboard: {e}")
+        return render_template('dashboard.html', 
+                             ddt_in_count=0, 
+                             ddt_out_count=0, 
+                             bozze_count=0)
+
+@app.route('/ddt-in')
+def ddt_in_page():
+    """Pagina DDT IN"""
+    return redirect(url_for('ddt.ddt_in_list'))
+
+@app.route('/ddt-out') 
+def ddt_out_page():
+    """Pagina DDT OUT"""
+    return redirect(url_for('ddt.ddt_out_list'))
+
+@app.route('/offerte')
+def offerte_page():
+    """Pagina offerte"""
+    offerte = OffertaFornitore.query.order_by(OffertaFornitore.data_offerta.desc()).all()
+    return render_template('offerte.html', offerte=offerte)
+
+@app.route('/preventivi')
+def preventivi_page():
+    """Pagina preventivi"""
+    preventivi = Preventivo.query.order_by(Preventivo.data_preventivo.desc()).all()
+    return render_template('preventivi.html', preventivi=preventivi)
+
+@app.route('/api/dashboard/stats')
+def api_dashboard_stats():
+    """API per statistiche dashboard aggiornate"""
+    try:
+        stats = get_dashboard_stats()
+        stats['timestamp'] = datetime.now().isoformat()
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/articolo/cerca/<codice>')
+def cerca_articolo(codice):
+    """API ricerca articolo per codice"""
+    try:
+        articolo = CatalogoArticolo.query.filter_by(codice_interno=codice).first()
+        if articolo:
+            return jsonify({
+                'found': True,
+                'descrizione': articolo.descrizione,
+                'costo_ultimo': articolo.costo_ultimo,
+                'prezzo_vendita': articolo.prezzo_vendita,
+                'unita_misura': articolo.unita_misura,
+                'fornitore_principale': articolo.fornitore_principale,
+                'codice_produttore': articolo.codice_produttore,
+                'nome_produttore': articolo.nome_produttore
+            })
+        return jsonify({'found': False})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('errors/404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('errors/500.html'), 500
+
+# Inizializzazione database
+def init_database():
+    """Inizializza database e dati di base"""
+    with app.app_context():
+        db.create_all()
+        
+        # Verifica se il database è vuoto
+        if not Magazzino.query.first():
+            # Magazzini di default
+            magazzini = [
+                Magazzino(codice='MAG001', descrizione='Magazzino Centrale', 
+                         responsabile='Admin', attivo=True),
+                Magazzino(codice='MAG002', descrizione='Deposito Nord', 
+                         responsabile='Admin', attivo=True),
+                Magazzino(codice='MAG003', descrizione='Deposito Sud', 
+                         responsabile='Admin', attivo=True)
+            ]
+            
+            # Mastrini di default
+            mastrini = [
+                Mastrino(codice='ACQ001', descrizione='Acquisto Materiali', 
+                        tipo='acquisto', attivo=True),
+                Mastrino(codice='ACQ002', descrizione='Acquisto Attrezzature', 
+                        tipo='acquisto', attivo=True),
+                Mastrino(codice='VEN001', descrizione='Vendita Prodotti', 
+                        tipo='ricavo', attivo=True),
+                Mastrino(codice='VEN002', descrizione='Vendita Servizi', 
+                        tipo='ricavo', attivo=True)
+            ]
+            
+            # Configurazioni di default
+            configurazioni = [
+                ConfigurazioneSistema(chiave='azienda_nome', valore='Azienda S.r.l.', 
+                                     descrizione='Nome azienda'),
+                ConfigurazioneSistema(chiave='azienda_piva', valore='12345678901', 
+                                     descrizione='Partita IVA'),
+                ConfigurazioneSistema(chiave='backup_automatico', valore='giornaliero', 
+                                     descrizione='Frequenza backup'),
+                ConfigurazioneSistema(chiave='margine_default', valore='40', 
+                                     descrizione='Margine % default')
+            ]
+            
+            # Salva tutto
+            for mag in magazzini:
+                db.session.add(mag)
+            for mast in mastrini:
+                db.session.add(mast)
+            for conf in configurazioni:
+                db.session.add(conf)
+            
+            db.session.commit()
+            print("Database inizializzato con successo")
+
+# Context processor per template
+@app.context_processor
+def inject_global_vars():
+    """Variabili globali disponibili in tutti i template"""
+    return {
+        'app_name': 'Sistema Gestione DDT',
+        'current_year': datetime.now().year,
+        'version': '2.1.0'
+    }
+
+if __name__ == '__main__':
+    init_database()
+    app.run(debug=True, host='0.0.0.0', port=5000)

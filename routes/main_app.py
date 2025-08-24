@@ -58,7 +58,7 @@ def dashboard():
         bozze_count = bozze_in + bozze_out
         
         # Statistiche magazzino
-        from utils.utils_automation import calcola_valore_magazzino, verifica_scorte_minime
+        from utils_automation import calcola_valore_magazzino, verifica_scorte_minime
         valore_magazzino = calcola_valore_magazzino()
         articoli_sotto_scorta = len(verifica_scorte_minime())
         
@@ -211,17 +211,17 @@ def page_not_found(e):
 def internal_server_error(e):
     return render_template('errors/500.html'), 500
 
-# Inizializzazione database
-@app.before_first_request
+# Inizializzazione database - CORRETTO per Flask 2.3+
 def create_tables():
     """Crea le tabelle del database se non esistono"""
     try:
-        db.create_all()
-        
-        # Inizializzazione dati di base se il database è vuoto
-        if not Magazzino.query.first():
-            init_base_data()
+        with app.app_context():
+            db.create_all()
             
+            # Inizializzazione dati di base se il database è vuoto
+            if not Magazzino.query.first():
+                init_base_data()
+                
     except Exception as e:
         print(f"Errore inizializzazione database: {e}")
 
@@ -281,4 +281,5 @@ def inject_global_vars():
     }
 
 if __name__ == '__main__':
+    create_tables()  # Chiamata diretta invece del decorator deprecato
     app.run(debug=True, host='0.0.0.0', port=5000)

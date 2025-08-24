@@ -1,6 +1,9 @@
 # routes_fornitori.py
 from flask import Blueprint, render_template, request, jsonify, send_file
 from models import db, Fornitore
+import pandas as pd
+from io import BytesIO
+import xlsxwriter
 
 fornitori_bp = Blueprint('fornitori', __name__)
 

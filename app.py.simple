@@ -1,0 +1,89 @@
+from flask import Flask, render_template, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+from datetime import datetime
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ddt_database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'your-secret-key-here'
+
+db = SQLAlchemy(app)
+CORS(app)
+
+# Models
+class DDTIn(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    numero_ddt = db.Column(db.String(50))
+    fornitore = db.Column(db.String(200))
+    stato = db.Column(db.String(20), default='bozza')
+    data_ddt_origine = db.Column(db.Date)
+
+class DDTOut(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    numero_ddt = db.Column(db.String(50))
+    destinazione = db.Column(db.String(200))
+    stato = db.Column(db.String(20), default='bozza')
+
+@app.route('/')
+def dashboard():
+    try:
+        ddt_in_count = DDTIn.query.filter_by(stato='confermato').count()
+        ddt_out_count = DDTOut.query.filter_by(stato='confermato').count()
+        bozze_count = DDTIn.query.filter_by(stato='bozza').count() + DDTOut.query.filter_by(stato='bozza').count()
+    except:
+        ddt_in_count = 0
+        ddt_out_count = 0
+        bozze_count = 0
+    
+    return render_template('dashboard.html', 
+                         ddt_in_count=ddt_in_count,
+                         ddt_out_count=ddt_out_count,
+                         bozze_count=bozze_count)
+
+@app.route('/ddt-in')
+def ddt_in():
+    ddts = DDTIn.query.all()
+    return render_template('ddt-in.html', ddts=ddts)
+
+@app.route('/ddt-out')
+def ddt_out():
+    ddts = DDTOut.query.all()
+    return render_template('ddt-out.html', ddts=ddts)
+
+@app.route('/offerte')
+def offerte():
+    return render_template('offerte.html', offerte=[])
+
+@app.route('/preventivi')
+def preventivi():
+    return render_template('preventivi.html', preventivi=[])
+
+@app.route('/catalogo')
+def catalogo():
+    return render_template('catalogo.html', articoli=[])
+
+@app.route('/movimenti')
+def movimenti():
+    return render_template('movimenti.html', movimenti=[], filtri={})
+
+@app.route('/inventario')
+def inventario():
+    return render_template('inventario.html', articoli=[], statistiche={'valore_totale': 0, 'numero_articoli': 0, 'pezzi_totali': 0}, sotto_scorta=0)
+
+@app.route('/clienti')
+def clienti():
+    return render_template('clienti-fornitori.html', clienti=[])
+
+@app.route('/fornitori')
+def fornitori():
+    return render_template('clienti-fornitori.html', fornitori=[])
+
+@app.route('/impostazioni')
+def impostazioni():
+    return render_template('impostazioni.html', mastrini=[], magazzini=[], configurazioni={})
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)

@@ -1,301 +1,400 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
+from dotenv import load_dotenv
 import os
+from models import db, DDTIn, DDTOut, CatalogoArticolo, Movimento, Cliente, Fornitore, Mastrino, Magazzino, Preventivo, OffertaFornitore
+from document_templates import generate_ddt_in_pdf, generate_ddt_out_pdf, generate_preventivo_pdf, generate_ordine_fornitore_pdf
 
-# Inizializzazione Flask
+# Carica variabili d'ambiente
+load_dotenv()
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ddt_database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'ddt-system-2024-secure-key'
+app.config['SECRET_KEY'] = 'your-secret-key-here'
 
-# Inizializzazione estensioni
+db.init_app(app)
 CORS(app)
 
-# Import modelli (DEVE essere dopo app ma prima di db.init_app)
-from models import db, DDTIn, DDTOut, CatalogoArticolo, Movimento, Cliente, Fornitore, Magazzino, Mastrino
+# Import e registra routes
+try:
+    from routes.routes_ddt import ddt_bp
+    app.register_blueprint(ddt_bp, url_prefix='/ddt')
+except:
+    pass
 
-# Inizializza database
-db.init_app(app)
+try:
+    from routes.routes_clienti import clienti_bp
+    app.register_blueprint(clienti_bp, url_prefix='/api/clienti')
+except:
+    pass
 
-# Import utilities automatiche
-from utils_automation import get_dashboard_stats, verifica_scorte_minime, calcola_valore_magazzino
+try:
+    from routes.routes_fornitori import fornitori_bp
+    app.register_blueprint(fornitori_bp, url_prefix='/api/fornitori')
+except:
+    pass
 
-# Import routes modulari
-from routes_ddt import ddt_bp
+try:
+    from routes.routes_catalogo import catalogo_bp
+    app.register_blueprint(catalogo_bp, url_prefix='/api/catalogo')
+except:
+    pass
 
-# Registrazione blueprints
-app.register_blueprint(ddt_bp, url_prefix='/ddt')
+try:
+    from routes.routes_parsing import parsing_bp
+    app.register_blueprint(parsing_bp, url_prefix='/api/parsing')
+except:
+    pass
 
-# ==================== ROUTES PRINCIPALI ====================
+# Routes base
 @app.route('/')
 def dashboard():
-    """Dashboard principale con statistiche real-time"""
     try:
-        stats = get_dashboard_stats()
-        articoli_sotto_scorta = len(verifica_scorte_minime())
+        ddt_in_count = DDTIn.query.filter_by(stato='confermato').count()
+        ddt_out_count = DDTOut.query.filter_by(stato='confermato').count()
+        bozze_count = DDTIn.query.filter_by(stato='bozza').count() + DDTOut.query.filter_by(stato='bozza').count()
+    except:
+        ddt_in_count = 0
+        ddt_out_count = 0
+        bozze_count = 0
+    
+    return render_template('dashboard.html', 
+                         ddt_in_count=ddt_in_count,
+                         ddt_out_count=ddt_out_count,
+                         bozze_count=bozze_count)
+
+@app.route('/ddt-in')
+def ddt_in():
+    try:
+        ddts = DDTIn.query.all()
+    except:
+        ddts = []
+    return render_template('ddt-in.html', ddts=ddts)
+
+@app.route('/ddt/in/<int:ddt_id>')
+def ddt_in_dettaglio(ddt_id):
+    """Visualizza dettaglio DDT IN"""
+    try:
+        ddt = DDTIn.query.get_or_404(ddt_id)
         
-        return render_template('dashboard.html',
-                             ddt_in_count=stats['ddt_in_confermati'],
-                             ddt_out_count=stats['ddt_out_confermati'],
-                             bozze_count=stats['ddt_in_bozze'] + stats['ddt_out_bozze'],
-                             valore_magazzino=stats['valore_magazzino'],
-                             articoli_sotto_scorta=articoli_sotto_scorta,
-                             movimenti_oggi=stats['movimenti_oggi'])
-    except Exception as e:
-        print(f"Errore dashboard: {e}")
-        # Fallback values
-        return render_template('dashboard.html',
-                             ddt_in_count=0, ddt_out_count=0, bozze_count=0,
-                             valore_magazzino=0, articoli_sotto_scorta=0, movimenti_oggi=0)
+        # TODO: Implementare relazione con articoli
+        articoli = []  # Placeholder per articoli del DDT
+        
+        return render_template('ddt-in-page.html', ddt=ddt, articoli=articoli)
+    except:
+        from flask import abort
+        abort(404)
 
-# ==================== CATALOGO ROUTES ====================
+@app.route('/ddt-out')
+def ddt_out():
+    try:
+        ddts = DDTOut.query.all()
+    except:
+        ddts = []
+    return render_template('ddt-out.html', ddts=ddts)
+
+@app.route('/ddt/out/<int:ddt_id>')
+def ddt_out_dettaglio(ddt_id):
+    """Visualizza dettaglio DDT OUT"""
+    try:
+        ddt = DDTOut.query.get_or_404(ddt_id)
+        
+        # TODO: Implementare relazione con articoli
+        articoli = []  # Placeholder per articoli del DDT
+        
+        return render_template('ddt-out-page.html', ddt=ddt, articoli=articoli)
+    except:
+        from flask import abort
+        abort(404)
+
+@app.route('/ddt/in/nuovo')
+def nuovo_ddt_in():
+    """Pagina creazione nuovo DDT IN"""
+    return render_template('nuovo-ddt-in.html')
+
+@app.route('/ddt/out/nuovo') 
+def nuovo_ddt_out():
+    """Pagina creazione nuovo DDT OUT"""
+    return render_template('nuovo-ddt-out.html')
+
+@app.route('/offerte')
+def offerte():
+    try:
+        offerte = OffertaFornitore.query.all()
+    except:
+        offerte = []
+    return render_template('offerte.html', offerte=offerte)
+
+@app.route('/preventivi')
+def preventivi():
+    try:
+        preventivi = Preventivo.query.all()
+    except:
+        preventivi = []
+    return render_template('preventivi.html', preventivi=preventivi)
+
+@app.route('/ordini')
+def ordini():
+    # Per ora restituiamo una pagina vuota - da implementare il model Ordine
+    return render_template('ordini.html', ordini=[])
+
+@app.route('/reports')
+def reports():
+    # Pagina reports mancante - da implementare
+    return render_template('reports.html', reports=[], report={})
+
+@app.route('/parsing-management')
+def parsing_management():
+    # Pagina gestione parsing e training AI
+    return render_template('parsing-management.html')
+
+@app.route('/mastrini')
+def mastrini():
+    try:
+        mastrini = Mastrino.query.order_by(Mastrino.codice).all()
+        # Aggiungi conteggio utilizzi se necessario
+        for mastrino in mastrini:
+            mastrino.utilizzi = 0  # TODO: implementare conteggio reale
+    except:
+        mastrini = []
+    return render_template('mastrini.html', mastrini=mastrini)
+
 @app.route('/catalogo')
-def catalogo_list():
-    """Lista articoli catalogo"""
-    search = request.args.get('search', '').strip()
-    
-    query = CatalogoArticolo.query.filter_by(attivo=True)
-    if search:
-        query = query.filter(
-            db.or_(
-                CatalogoArticolo.codice_interno.contains(search),
-                CatalogoArticolo.descrizione.contains(search)
-            )
-        )
-    
-    articoli = query.order_by(CatalogoArticolo.codice_interno).all()
-    sotto_scorta = len(verifica_scorte_minime())
-    
-    return render_template('catalogo.html', 
-                         articoli=articoli, 
-                         search=search,
-                         sotto_scorta=sotto_scorta,
-                         valore_magazzino=calcola_valore_magazzino())
+def catalogo():
+    try:
+        articoli = CatalogoArticolo.query.filter_by(attivo=True).all()
+        valore_magazzino = sum(a.giacenza_attuale * (a.costo_medio or 0) for a in articoli)
+        sotto_scorta = len([a for a in articoli if a.giacenza_attuale < a.scorta_minima])
+        esauriti = len([a for a in articoli if a.giacenza_attuale == 0])
+    except:
+        articoli = []
+        valore_magazzino = 0
+        sotto_scorta = 0
+        esauriti = 0
+    return render_template('catalogo.html', articoli=articoli, 
+                          valore_magazzino=valore_magazzino,
+                          sotto_scorta=sotto_scorta, esauriti=esauriti)
 
-@app.route('/catalogo/<int:id>')
-def dettaglio_articolo(id):
-    """Dettaglio articolo catalogo"""
-    articolo = CatalogoArticolo.query.get_or_404(id)
-    
-    # Movimenti recenti
-    movimenti = Movimento.query.filter_by(
-        codice_articolo=articolo.codice_interno
-    ).order_by(Movimento.data_movimento.desc()).limit(20).all()
-    
-    return render_template('dettaglio-articolo.html', 
-                         articolo=articolo, 
-                         movimenti=movimenti)
-
-# ==================== MOVIMENTI ROUTES ====================
 @app.route('/movimenti')
-def movimenti_list():
-    """Lista movimenti con filtri"""
-    filtri = {
-        'data_da': request.args.get('data_da'),
-        'data_a': request.args.get('data_a'),
-        'tipo': request.args.get('tipo'),
-        'articolo': request.args.get('articolo')
-    }
-    
-    query = Movimento.query
-    
-    # Applica filtri
-    if filtri['data_da']:
-        query = query.filter(Movimento.data_movimento >= datetime.strptime(filtri['data_da'], '%Y-%m-%d'))
-    if filtri['data_a']:
-        query = query.filter(Movimento.data_movimento <= datetime.strptime(filtri['data_a'], '%Y-%m-%d'))
-    if filtri['tipo']:
-        query = query.filter_by(tipo=filtri['tipo'])
-    if filtri['articolo']:
-        query = query.filter(Movimento.descrizione_articolo.contains(filtri['articolo']))
-    
-    movimenti = query.order_by(Movimento.data_movimento.desc()).limit(200).all()
-    
-    return render_template('movimenti.html', 
-                         movimenti=movimenti, 
-                         filtri=filtri)
+def movimenti():
+    try:
+        movimenti = Movimento.query.order_by(Movimento.data_movimento.desc()).limit(100).all()
+    except:
+        movimenti = []
+    return render_template('movimenti.html', movimenti=movimenti, filtri={})
 
-# ==================== INVENTARIO ROUTES ====================
 @app.route('/inventario')
-def inventario_home():
-    """Dashboard inventario"""
-    articoli = CatalogoArticolo.query.filter_by(attivo=True).order_by(CatalogoArticolo.codice_interno).all()
-    sotto_scorta = verifica_scorte_minime()
-    
-    statistiche = {
-        'numero_articoli': len(articoli),
-        'valore_totale': calcola_valore_magazzino(),
-        'pezzi_totali': sum(a.giacenza_attuale for a in articoli),
-        'sotto_scorta': len(sotto_scorta)
-    }
-    
-    return render_template('inventario.html',
-                         articoli=articoli,
-                         statistiche=statistiche,
-                         sotto_scorta=len(sotto_scorta))
+def inventario():
+    try:
+        articoli = CatalogoArticolo.query.filter_by(attivo=True).all()
+        valore_totale = sum(a.giacenza_attuale * (a.costo_medio or 0) for a in articoli)
+        pezzi_totali = sum(a.giacenza_attuale for a in articoli)
+        sotto_scorta = len([a for a in articoli if a.giacenza_attuale < a.scorta_minima])
+        statistiche = {
+            'valore_totale': valore_totale,
+            'numero_articoli': len(articoli),
+            'pezzi_totali': pezzi_totali
+        }
+    except:
+        articoli = []
+        statistiche = {'valore_totale': 0, 'numero_articoli': 0, 'pezzi_totali': 0}
+        sotto_scorta = 0
+    return render_template('inventario.html', articoli=articoli, 
+                          statistiche=statistiche, sotto_scorta=sotto_scorta)
 
-# ==================== ANAGRAFICHE ROUTES ====================
 @app.route('/clienti')
-def clienti_list():
-    """Lista clienti"""
-    search = request.args.get('search', '').strip()
-    
-    query = Cliente.query.filter_by(attivo=True)
-    if search:
-        query = query.filter(Cliente.ragione_sociale.contains(search))
-    
-    clienti = query.order_by(Cliente.ragione_sociale).all()
-    return render_template('clienti.html', clienti=clienti, search=search)
+def clienti():
+    try:
+        clienti = Cliente.query.filter_by(attivo=True).all()
+    except:
+        clienti = []
+    return render_template('clienti.html', clienti=clienti)
 
 @app.route('/fornitori')
-def fornitori_list():
-    """Lista fornitori"""
-    search = request.args.get('search', '').strip()
-    
-    query = Fornitore.query.filter_by(attivo=True)
-    if search:
-        query = query.filter(Fornitore.ragione_sociale.contains(search))
-    
-    fornitori = query.order_by(Fornitore.ragione_sociale).all()
-    return render_template('fornitori.html', fornitori=fornitori, search=search)
-
-# ==================== IMPOSTAZIONI ROUTES ====================
-@app.route('/impostazioni')
-def impostazioni_home():
-    """Pagina impostazioni"""
-    mastrini = Mastrino.query.order_by(Mastrino.tipo, Mastrino.codice).all()
-    magazzini = Magazzino.query.order_by(Magazzino.codice).all()
-    
-    return render_template('impostazioni.html',
-                         mastrini=mastrini,
-                         magazzini=magazzini)
-
-# ==================== API GLOBALI ====================
-@app.route('/api/search')
-def api_search():
-    """Ricerca globale nel sistema"""
-    query = request.args.get('q', '').strip()
-    if len(query) < 2:
-        return jsonify({'results': []})
-    
-    results = []
-    
-    # Cerca articoli
-    articoli = CatalogoArticolo.query.filter(
-        db.or_(
-            CatalogoArticolo.codice_interno.contains(query),
-            CatalogoArticolo.descrizione.contains(query)
-        ),
-        CatalogoArticolo.attivo == True
-    ).limit(5).all()
-    
-    for art in articoli:
-        results.append({
-            'type': 'articolo',
-            'title': f"{art.codice_interno} - {art.descrizione}",
-            'url': f"/catalogo/{art.id}",
-            'subtitle': f"Giacenza: {art.giacenza_attuale}"
-        })
-    
-    # Cerca DDT
-    ddts_in = DDTIn.query.filter(
-        db.or_(
-            DDTIn.numero_ddt.contains(query),
-            DDTIn.fornitore.contains(query)
-        )
-    ).limit(3).all()
-    
-    for ddt in ddts_in:
-        results.append({
-            'type': 'ddt_in',
-            'title': f"DDT IN {ddt.numero_ddt or 'Bozza'}",
-            'url': f"/ddt/in/{ddt.id}",
-            'subtitle': f"{ddt.fornitore}"
-        })
-    
-    return jsonify({'results': results[:10]})
-
-@app.route('/api/dashboard/stats')
-def api_dashboard_stats():
-    """API statistiche dashboard real-time"""
+def fornitori():
     try:
-        stats = get_dashboard_stats()
-        return jsonify(stats)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        fornitori = Fornitore.query.filter_by(attivo=True).all()
+    except:
+        fornitori = []
+    return render_template('fornitori.html', fornitori=fornitori)
 
-# ==================== INIZIALIZZAZIONE DATABASE ====================
-def init_database():
-    """Inizializza database con dati base"""
+@app.route('/impostazioni')
+def impostazioni():
+    try:
+        mastrini = Mastrino.query.all()
+        magazzini = Magazzino.query.all()
+    except:
+        mastrini = []
+        magazzini = []
+    return render_template('impostazioni.html', mastrini=mastrini, 
+                          magazzini=magazzini, configurazioni={})
+
+# API endpoints
+@app.route('/api/articolo/cerca/<codice>')
+def cerca_articolo(codice):
+    articolo = CatalogoArticolo.query.filter_by(codice_interno=codice).first()
+    if articolo:
+        return jsonify({
+            'found': True,
+            'descrizione': articolo.descrizione,
+            'costo_ultimo': articolo.costo_ultimo,
+            'prezzo_vendita': articolo.prezzo_vendita,
+            'unita_misura': articolo.unita_misura
+        })
+    return jsonify({'found': False})
+
+@app.route('/api/ddt-in', methods=['POST'])
+def api_nuovo_ddt_in():
+    try:
+        data = request.json
+        nuovo_ddt = DDTIn(
+            data_ddt_origine=datetime.strptime(data['data_ddt_origine'], '%Y-%m-%d').date(),
+            fornitore=data['fornitore'],
+            riferimento=data.get('riferimento', ''),
+            destinazione=data['destinazione'],
+            stato='bozza'
+        )
+        db.session.add(nuovo_ddt)
+        db.session.commit()
+        return jsonify({'success': True, 'id': nuovo_ddt.id, 'message': 'DDT creato'}), 201
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/ddt-out', methods=['POST'])
+def api_nuovo_ddt_out():
+    try:
+        data = request.json
+        nuovo_ddt = DDTOut(
+            data_ddt_origine=datetime.strptime(data['data_ddt_origine'], '%Y-%m-%d').date(),
+            nome_origine=data['nome_origine'],
+            riferimento=data.get('riferimento', ''),
+            destinazione=data['destinazione'],
+            magazzino_partenza=data.get('magazzino_partenza', ''),
+            stato='bozza'
+        )
+        db.session.add(nuovo_ddt)
+        db.session.commit()
+        return jsonify({'success': True, 'id': nuovo_ddt.id, 'message': 'DDT creato'}), 201
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+# Routes per generazione PDF documenti
+@app.route('/api/ddt-in/<int:ddt_id>/pdf')
+def api_ddt_in_pdf(ddt_id):
+    """Genera PDF per DDT IN"""
+    try:
+        ddt = DDTIn.query.get_or_404(ddt_id)
+        
+        # Converti l'oggetto DDT in dict per il template
+        ddt_data = {
+            'numero_ddt': f"IN-{ddt.id:06d}",
+            'fornitore': ddt.fornitore,
+            'data_ddt_origine': ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '',
+            'numero_ddt_origine': ddt.numero_ddt_origine or '',
+            'riferimento': ddt.riferimento or '',
+            'destinazione': ddt.destinazione or '',
+            'stato': ddt.stato or 'bozza',
+            'articoli': []  # TODO: implementare relazione con articoli
+        }
+        
+        html_content = generate_ddt_in_pdf(ddt_data)
+        
+        from flask import Response
+        return Response(
+            html_content,
+            mimetype='text/html',
+            headers={"Content-disposition": f"attachment; filename=DDT_IN_{ddt.id}.html"}
+        )
+        
+    except Exception as e:
+        return jsonify({'error': f'Errore generazione PDF: {str(e)}'}), 500
+
+@app.route('/api/ddt-out/<int:ddt_id>/pdf')
+def api_ddt_out_pdf(ddt_id):
+    """Genera PDF per DDT OUT"""
+    try:
+        ddt = DDTOut.query.get_or_404(ddt_id)
+        
+        ddt_data = {
+            'numero_ddt': f"OUT-{ddt.id:06d}",
+            'nome_origine': ddt.nome_origine,
+            'data_ddt_origine': ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '',
+            'riferimento': ddt.riferimento or '',
+            'destinazione': ddt.destinazione or '',
+            'magazzino_partenza': ddt.magazzino_partenza or '',
+            'stato': ddt.stato or 'bozza'
+        }
+        
+        html_content = generate_ddt_out_pdf(ddt_data)
+        
+        from flask import Response
+        return Response(
+            html_content,
+            mimetype='text/html',
+            headers={"Content-disposition": f"attachment; filename=DDT_OUT_{ddt.id}.html"}
+        )
+        
+    except Exception as e:
+        return jsonify({'error': f'Errore generazione PDF: {str(e)}'}), 500
+
+@app.route('/api/preventivi/<int:preventivo_id>/pdf')
+def api_preventivo_pdf(preventivo_id):
+    """Genera PDF per Preventivo"""
+    try:
+        preventivo = Preventivo.query.get_or_404(preventivo_id)
+        
+        preventivo_data = {
+            'numero': f"PREV-{preventivo.id:06d}",
+            'cliente': preventivo.cliente_nome or 'N/A',
+            'data_creazione': preventivo.data_creazione.strftime('%d/%m/%Y') if preventivo.data_creazione else '',
+            'oggetto': preventivo.oggetto or '',
+            'validita_giorni': 30,
+            'stato': preventivo.stato or 'bozza'
+        }
+        
+        html_content = generate_preventivo_pdf(preventivo_data)
+        
+        from flask import Response
+        return Response(
+            html_content,
+            mimetype='text/html',
+            headers={"Content-disposition": f"attachment; filename=Preventivo_{preventivo.id}.html"}
+        )
+        
+    except Exception as e:
+        return jsonify({'error': f'Errore generazione PDF: {str(e)}'}), 500
+
+@app.route('/api/ordini/<int:ordine_id>/pdf')
+def api_ordine_pdf(ordine_id):
+    """Genera PDF per Ordine (placeholder per futura implementazione)"""
+    try:
+        # TODO: Implementare model Ordine
+        ordine_data = {
+            'numero': f"ORD-{ordine_id:06d}",
+            'fornitore': 'Fornitore da implementare',
+            'data_ordine': datetime.now().strftime('%d/%m/%Y'),
+            'riferimento': '',
+            'data_consegna': 'Da concordare',
+            'stato': 'emesso',
+            'condizioni_pagamento': '30 gg fm'
+        }
+        
+        html_content = generate_ordine_fornitore_pdf(ordine_data)
+        
+        from flask import Response
+        return Response(
+            html_content,
+            mimetype='text/html',
+            headers={"Content-disposition": f"attachment; filename=Ordine_{ordine_id}.html"}
+        )
+        
+    except Exception as e:
+        return jsonify({'error': f'Errore generazione PDF: {str(e)}'}), 500
+
+if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        
-        # Verifica se è già inizializzato
-        if Magazzino.query.first():
-            return
-        
-        print("🔧 Inizializzazione database...")
-        
-        # Magazzini base
-        magazzini = [
-            Magazzino(codice='MAG001', descrizione='Magazzino Centrale', responsabile='Admin', attivo=True),
-            Magazzino(codice='MAG002', descrizione='Deposito Nord', responsabile='Admin', attivo=True),
-            Magazzino(codice='MAG003', descrizione='Deposito Sud', responsabile='Admin', attivo=True)
-        ]
-        
-        # Mastrini base
-        mastrini = [
-            Mastrino(codice='ACQ001', descrizione='Acquisto Materiali', tipo='acquisto', attivo=True),
-            Mastrino(codice='ACQ002', descrizione='Acquisto Attrezzature', tipo='acquisto', attivo=True),
-            Mastrino(codice='VEN001', descrizione='Vendita Prodotti', tipo='ricavo', attivo=True),
-            Mastrino(codice='VEN002', descrizione='Vendita Servizi', tipo='ricavo', attivo=True)
-        ]
-        
-        # Fornitori/clienti esempio
-        fornitore = Fornitore(
-            ragione_sociale='Fornitore Esempio S.r.l.',
-            partita_iva='12345678901',
-            email='info@fornitore.it',
-            citta='Milano',
-            attivo=True
-        )
-        
-        cliente = Cliente(
-            ragione_sociale='Cliente Esempio S.r.l.',
-            partita_iva='10987654321',
-            email='info@cliente.it',
-            citta='Roma',
-            attivo=True
-        )
-        
-        # Salva tutto
-        for item in magazzini + mastrini + [fornitore, cliente]:
-            db.session.add(item)
-        
-        db.session.commit()
-        print("✅ Database inizializzato con successo")
-
-# ==================== ERROR HANDLERS ====================
-@app.errorhandler(404)
-def not_found(error):
-    return render_template('errors/404.html'), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    db.session.rollback()
-    return render_template('errors/500.html'), 500
-
-# ==================== AVVIO APPLICAZIONE ====================
-if __name__ == '__main__':
-    init_database()
-    print("🚀 Sistema DDT avviato!")
-    print("📊 Automatismi attivi:")
-    print("   ✅ Numerazione progressiva DDT")
-    print("   ✅ Popolamento automatico catalogo")
-    print("   ✅ Calcolo costo medio ponderato")
-    print("   ✅ Aggiornamento giacenze automatico")
-    print("   ✅ Generazione movimenti")
-    print("   ✅ Alert scorte minime")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)

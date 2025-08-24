@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordini - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>💰 Ordini Fornitori</h1>
+            <p style="color: #718096; margin-top: 8px;">Gestione completa degli ordini a fornitori</p>
+        </div>
+
+        <div class="table-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h3 style="margin: 0; color: #2d3748;">Elenco Ordini</h3>
+                <button class="btn btn-success">+ Nuovo Ordine</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° Offerta</th>
+                        <th>Data Ricevuta</th>
+                        <th>Fornitore</th>
+                        <th>Validità</th>
+                        <th>Totale €</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if offerte %}
+                        {% for ordine in ordini %}
+                        <tr>
+                            <td><strong>{{ ordine.numero_offerta }}</strong></td>
+                            <td>{{ ordine.data_offerta.strftime('%d/%m/%Y') if offerta.data_offerta else '-' }}</td>
+                            <td>{{ ordine.fornitore }}</td>
+                            <td>{{ ordine.validita_giorni }} giorni</td>
+                            <td><strong>€ {{ "%.2f"|format(offerta.totale) }}</strong></td>
+                            <td><span class="status confirmed">{{ ordine.stato.title() }}</span></td>
+                            <td>
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">Visualizza</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 60px 20px; color: #a0aec0;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Nessuna offerta presente</div>
+                                <div style="font-size: 14px;">Le offerte ricevute dai fornitori appariranno qui</div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

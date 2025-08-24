@@ -4,20 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Preventivi - Sistema Gestione DDT</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
 </head>
 <body>
     <div class="container">
         <nav>
             <ul>
-                <li><a href="{{ url_for('dashboard') }}">🏠 Dashboard</a></li>
-                <li><a href="{{ url_for('ddt.ddt_in_list') }}">📥 DDT IN</a></li>
-                <li><a href="{{ url_for('ddt.ddt_out_list') }}">📤 DDT OUT</a></li>
-                <li><a href="{{ url_for('offerte.offerte_list') }}">💰 Offerte</a></li>
-                <li><a href="{{ url_for('preventivi.preventivi_list') }}" class="active">📋 Preventivi</a></li>
-                <li><a href="{{ url_for('catalogo.catalogo_list') }}">📚 Catalogo</a></li>
-                <li><a href="{{ url_for('movimenti.movimenti_list') }}">📊 Movimenti</a></li>
-                <li><a href="{{ url_for('inventario.inventario_home') }}">📦 Inventario</a></li>
+                <li><a href="/">🏠 Dashboard</a></li>
             </ul>
         </nav>
 

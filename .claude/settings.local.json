@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(curl:*)",
+      "WebSearch",
+      "Read(/C:\\Users\\Alberto.contardi\\Downloads/**)",
+      "Read(/C:\\Users\\Alberto.contardi\\Downloads\\cruscotto-extracted/**)",
+      "Read(/C:\\Users\\Alberto.contardi\\Downloads\\cruscotto-extracted\\cruscotto-main/**)",
+      "Read(/C:\\Users\\Alberto.contardi\\Downloads\\cruscotto-extracted\\cruscotto-main/**)",
+      "Read(/C:\\Users\\Alberto.contardi\\Downloads\\cruscotto-extracted\\cruscotto-main/**)",
+      "Read(/C:\\Users\\Alberto.contardi\\Downloads\\cruscotto-extracted\\cruscotto-main/**)",
+      "Read(/C:\\Users\\Alberto.contardi\\Downloads\\cruscotto-extracted\\cruscotto-main/**)",
+      "Read(/C:\\Users\\Alberto.contardi\\Downloads\\cruscotto-extracted\\cruscotto-main\\routes/**)",
+      "Bash(copy \"routes\\routes_parsing.py\" \"parsing_package_for_pythonanywhere\"\")",
+      "Bash(copy \"multi_ai_pdf_parser.py\" \"parsing_package_for_pythonanywhere/\")",
+      "Bash(powershell Compress-Archive:*)",
+      "Bash(powershell Expand-Archive:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

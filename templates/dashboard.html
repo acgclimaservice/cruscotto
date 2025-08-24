@@ -2,93 +2,70 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Sistema Gestione DDT</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Dashboard - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
 </head>
 <body>
     <div class="container">
-        <!-- Navigation -->
         <nav>
             <ul>
-                <li><a href="{{ url_for('dashboard') }}" class="active">🏠 Dashboard</a></li>
-                <li><a href="{{ url_for('ddt.ddt_in_list') }}">📥 DDT IN</a></li>
-                <li><a href="{{ url_for('ddt.ddt_out_list') }}">📤 DDT OUT</a></li>
-                <li><a href="{{ url_for('offerte.offerte_list') }}">💰 Offerte</a></li>
-                <li><a href="{{ url_for('preventivi.preventivi_list') }}">📋 Preventivi</a></li>
-                <li><a href="{{ url_for('catalogo.catalogo_list') }}">📚 Catalogo</a></li>
-                <li><a href="{{ url_for('movimenti.movimenti_list') }}">📊 Movimenti</a></li>
-                <li><a href="{{ url_for('inventario.inventario_home') }}">📦 Inventario</a></li>
-                <li><a href="{{ url_for('clienti.clienti_list') }}">👥 Clienti</a></li>
-                <li><a href="{{ url_for('fornitori.fornitori_list') }}">🏭 Fornitori</a></li>
-                <li><a href="{{ url_for('impostazioni.impostazioni_home') }}">⚙️ Impostazioni</a></li>
-                <li><a href="{{ url_for('auth.logout') }}">🚪 Logout</a></li>
+                <li><a href="/" class="active">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/ordini">💰 Ordini</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/clienti">👥 Clienti</a></li>
+                <li><a href="/fornitori">🏭 Fornitori</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
             </ul>
         </nav>
 
-        <!-- Dashboard Grid -->
+        <div class="ddt-header">
+            <h1>Sistema Gestione DDT</h1>
+            <p style="color: #8492a6;">Dashboard operativa - Panoramica generale del sistema</p>
+        </div>
+
         <div class="dashboard">
-            <!-- DDT IN Card -->
-            <div class="card ddt-in">
-                <h2>
-                    <span class="icon">📥</span>
-                    DDT in Entrata
-                </h2>
-                <div class="stat-value">{{ ddt_in_count }}</div>
-                <div class="stat-label">Documenti questo mese</div>
-                <div class="quick-links">
-                    <a href="{{ url_for('ddt_in_list') }}" class="btn">Vai all'archivio</a>
+            <div class="card">
+                <h2><span class="icon">📥</span>DDT in Entrata</h2>
+                <div class="stat-value">{{ ddt_in_count|default(0) }}</div>
+                <div class="stat-label">Documenti confermati questo mese</div>
+                <a href="/ddt-in" class="btn">Visualizza archivio</a>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">📤</span>DDT in Uscita</h2>
+                <div class="stat-value">{{ ddt_out_count|default(0) }}</div>
+                <div class="stat-label">Documenti confermati questo mese</div>
+                <a href="/ddt-out" class="btn">Visualizza archivio</a>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">📊</span>Riepilogo</h2>
+                <div class="summary-item">
+                    <span>Totale movimenti</span>
+                    <strong>{{ (ddt_in_count|default(0)) + (ddt_out_count|default(0)) }}</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Bozze in lavorazione</span>
+                    <strong>{{ bozze_count|default(0) }}</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Documenti completati</span>
+                    <strong>{{ (ddt_in_count|default(0)) + (ddt_out_count|default(0)) }}</strong>
                 </div>
             </div>
 
-            <!-- DDT OUT Card -->
-            <div class="card ddt-out">
-                <h2>
-                    <span class="icon">📤</span>
-                    DDT in Uscita
-                </h2>
-                <div class="stat-value">{{ ddt_out_count }}</div>
-                <div class="stat-label">Documenti questo mese</div>
-                <div class="quick-links">
-                    <a href="{{ url_for('ddt_out_list') }}" class="btn">Vai all'archivio</a>
+            <div class="card">
+                <h2><span class="icon">⚠️</span>Avvisi</h2>
+                <div class="alert-item alert-warning">
+                    <strong>{{ alerts_count|default(0) }}</strong> documenti in attesa da oltre 7 giorni
                 </div>
-            </div>
-
-            <!-- Summary Card -->
-            <div class="card summary">
-                <h2>
-                    <span class="icon">📊</span>
-                    Riepilogo Mensile
-                </h2>
-                <div style="margin: 20px 0;">
-                    <div class="summary-item">
-                        <span>Totale movimenti:</span>
-                        <strong>{{ ddt_in_count + ddt_out_count }}</strong>
-                    </div>
-                    <div class="summary-item">
-                        <span>In attesa:</span>
-                        <strong style="color: #f59e0b;">{{ bozze_count|default(0) }}</strong>
-                    </div>
-                    <div class="summary-item">
-                        <span>Completati:</span>
-                        <strong style="color: #10b981;">{{ ddt_in_count + ddt_out_count }}</strong>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alerts Card -->
-            <div class="card alerts">
-                <h2>
-                    <span class="icon">⚠️</span>
-                    Avvisi Importanti
-                </h2>
-                <div style="margin: 20px 0;">
-                    <div class="alert-item alert-warning">
-                        <strong>{{ alerts_count|default(0) }} DDT</strong> in attesa da oltre 7 giorni
-                    </div>
-                    <div class="alert-item alert-danger">
-                        <strong>{{ discrepanze_count|default(0) }} DDT</strong> con discrepanze da verificare
-                    </div>
+                <div class="alert-item alert-danger">
+                    <strong>{{ discrepanze_count|default(0) }}</strong> documenti con discrepanze da verificare
                 </div>
             </div>
         </div>

@@ -1,0 +1,136 @@
+from flask import Flask, render_template, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+from datetime import datetime
+from models import db, DDTIn, DDTOut, CatalogoArticolo, Movimento, Cliente, Fornitore, Mastrino, Magazzino, Preventivo, OffertaFornitore
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ddt_database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'your-secret-key-here'
+
+db.init_app(app)
+CORS(app)
+
+@app.route('/')
+def dashboard():
+    try:
+        ddt_in_count = DDTIn.query.filter_by(stato='confermato').count()
+        ddt_out_count = DDTOut.query.filter_by(stato='confermato').count()
+        bozze_count = DDTIn.query.filter_by(stato='bozza').count() + DDTOut.query.filter_by(stato='bozza').count()
+    except:
+        ddt_in_count = 0
+        ddt_out_count = 0
+        bozze_count = 0
+    
+    return render_template('dashboard.html', 
+                         ddt_in_count=ddt_in_count,
+                         ddt_out_count=ddt_out_count,
+                         bozze_count=bozze_count)
+
+@app.route('/ddt-in')
+def ddt_in():
+    try:
+        ddts = DDTIn.query.all()
+    except:
+        ddts = []
+    return render_template('ddt-in.html', ddts=ddts)
+
+@app.route('/ddt-out')
+def ddt_out():
+    try:
+        ddts = DDTOut.query.all()
+    except:
+        ddts = []
+    return render_template('ddt-out.html', ddts=ddts)
+
+@app.route('/offerte')
+def offerte():
+    try:
+        offerte = OffertaFornitore.query.all()
+    except:
+        offerte = []
+    return render_template('offerte.html', offerte=offerte)
+
+@app.route('/preventivi')
+def preventivi():
+    try:
+        preventivi = Preventivo.query.all()
+    except:
+        preventivi = []
+    return render_template('preventivi.html', preventivi=preventivi)
+
+@app.route('/catalogo')
+def catalogo():
+    try:
+        articoli = CatalogoArticolo.query.filter_by(attivo=True).all()
+        valore_magazzino = sum(a.giacenza_attuale * (a.costo_medio or 0) for a in articoli)
+        sotto_scorta = len([a for a in articoli if a.giacenza_attuale < a.scorta_minima])
+        esauriti = len([a for a in articoli if a.giacenza_attuale == 0])
+    except:
+        articoli = []
+        valore_magazzino = 0
+        sotto_scorta = 0
+        esauriti = 0
+    return render_template('catalogo.html', articoli=articoli, 
+                          valore_magazzino=valore_magazzino,
+                          sotto_scorta=sotto_scorta, esauriti=esauriti)
+
+@app.route('/movimenti')
+def movimenti():
+    try:
+        movimenti = Movimento.query.order_by(Movimento.data_movimento.desc()).limit(100).all()
+    except:
+        movimenti = []
+    return render_template('movimenti.html', movimenti=movimenti, filtri={})
+
+@app.route('/inventario')
+def inventario():
+    try:
+        articoli = CatalogoArticolo.query.filter_by(attivo=True).all()
+        valore_totale = sum(a.giacenza_attuale * (a.costo_medio or 0) for a in articoli)
+        pezzi_totali = sum(a.giacenza_attuale for a in articoli)
+        sotto_scorta = len([a for a in articoli if a.giacenza_attuale < a.scorta_minima])
+        statistiche = {
+            'valore_totale': valore_totale,
+            'numero_articoli': len(articoli),
+            'pezzi_totali': pezzi_totali
+        }
+    except:
+        articoli = []
+        statistiche = {'valore_totale': 0, 'numero_articoli': 0, 'pezzi_totali': 0}
+        sotto_scorta = 0
+    return render_template('inventario.html', articoli=articoli, 
+                          statistiche=statistiche, sotto_scorta=sotto_scorta)
+
+@app.route('/clienti')
+def clienti():
+    try:
+        clienti = Cliente.query.filter_by(attivo=True).all()
+    except:
+        clienti = []
+    return render_template('clienti-fornitori.html', clienti=clienti)
+
+@app.route('/fornitori')
+def fornitori():
+    try:
+        fornitori = Fornitore.query.filter_by(attivo=True).all()
+    except:
+        fornitori = []
+    return render_template('clienti-fornitori.html', fornitori=fornitori)
+
+@app.route('/impostazioni')
+def impostazioni():
+    try:
+        mastrini = Mastrino.query.all()
+        magazzini = Magazzino.query.all()
+    except:
+        mastrini = []
+        magazzini = []
+    return render_template('impostazioni.html', mastrini=mastrini, 
+                          magazzini=magazzini, configurazioni={})
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)
