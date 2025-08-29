@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Fornitori - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclima.it</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Fornitori</h2>
+                <p>Gestione fornitori</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/clienti">👥 Clienti</a></li>
+                <li><a href="/fornitori" class="active">🏭 Fornitori</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>🏭 Anagrafica Fornitori</h1>
+            <div class="filters">
+                <input type="text" id="searchInput" placeholder="Cerca fornitore..." onkeyup="filtraTabella()">
+                <button class="btn btn-secondary" onclick="location.href='/fornitori/template-excel'">📥 Template Excel</button>
+                <input type="file" id="importFile" style="display:none" accept=".xlsx,.xls" onchange="uploadFornitoreFile(this)">
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importa Excel</button>
+                <button class="btn btn-success" onclick="location.href='/fornitori/nuovo'">+ Nuovo Fornitore</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="tabellaFornitori">
+                <thead>
+                    <tr>
+                        <th>Ragione Sociale</th>
+                        <th>P.IVA</th>
+                        <th>Città</th>
+                        <th>Telefono</th>
+                        <th>Email</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fornitore in fornitori %}
+                    <tr>
+                        <td><strong>{{ fornitore.ragione_sociale }}</strong></td>
+                        <td>{{ fornitore.partita_iva or '' }}</td>
+                        <td>{{ fornitore.citta or '' }}</td>
+                        <td>{{ fornitore.telefono or '' }}</td>
+                        <td>{{ fornitore.email or '' }}</td>
+                        <td>
+                            <button class="btn btn-small" onclick="location.href='/fornitori/{{ fornitore.id }}/modifica'">Modifica</button>
+                            <button class="btn btn-small btn-danger" onclick="eliminaFornitore({{ fornitore.id }})">Elimina</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px;">
+                            Nessun fornitore presente
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function filtraTabella() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById('tabellaFornitori');
+        const tr = table.getElementsByTagName('tr');
+        
+        for (let i = 1; i < tr.length; i++) {
+            const tds = tr[i].getElementsByTagName('td');
+            let found = false;
+            
+            for (let j = 0; j < tds.length - 1; j++) {
+                if (tds[j]) {
+                    const txtValue = tds[j].textContent || tds[j].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            
+            tr[i].style.display = found ? '' : 'none';
+        }
+    }
+    
+    function uploadFornitoreFile(input) {
+        if (input.files && input.files[0]) {
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            
+            fetch('/fornitori/importa-excel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Importati ${data.importati} fornitori`);
+                    if (data.errori && data.errori.length > 0) {
+                        console.log('Errori:', data.errori);
+                    }
+                    location.reload();
+                } else {
+                    alert('Errore: ' + (data.error || 'Importazione fallita'));
+                }
+            });
+        }
+    }
+    
+    function eliminaFornitore(id) {
+        if (confirm('Eliminare questo fornitore?')) {
+            fetch(`/fornitori/${id}/elimina`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Errore: ' + (data.error || 'Eliminazione fallita'));
+                }
+            });
+        }
+    }
+    </script>
+</body>
+</html>

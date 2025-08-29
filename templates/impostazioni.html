@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Impostazioni - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .edit-mode { background: #fef3c7; }
+        .selected { background: #dbeafe !important; }
+        input[type="checkbox"] { margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclima.it</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Impostazioni</h2>
+                <p>Configurazione sistema</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/impostazioni" class="active">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>⚙️ Impostazioni Sistema</h1>
+        </div>
+
+        <!-- Mastrini -->
+        <div class="info-section">
+            <h2>📊 Mastrini Contabili</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="file" id="importMastrini" style="display:none" accept=".csv,.xlsx,.xls" onchange="importaMastrini(this)">
+                <button class="btn btn-secondary" onclick="document.getElementById('importMastrini').click()">
+                    📤 Importa Excel/CSV
+                </button>
+                <button class="btn btn-danger" id="btnEliminaSelezionati" onclick="eliminaMastriniSelezionati()" style="display:none;">
+                    Elimina Selezionati
+                </button>
+                <button class="btn btn-success" onclick="mostraFormNuovoMastrino()">
+                    ➕ Nuovo Mastrino
+                </button>
+                <button class="btn btn-primary" onclick="window.location.href='/impostazioni/collegamento-mastrini'">
+                    🔗 Collegamento Mastrini
+                </button>
+            </div>
+
+            <!-- Form per nuovo mastrino -->
+            <div id="formNuovoMastrino" style="display:none; background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h4>➕ Aggiungi Nuovo Mastrino</h4>
+                <div style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 10px; align-items: center;">
+                    <select id="nuovoMastrinoTipo" style="padding: 8px;">
+                        <option value="ACQUISTI">Acquisti</option>
+                        <option value="RICAVI">Ricavi</option>
+                    </select>
+                    <input type="text" id="nuovoMastrinoCodice" placeholder="Codice (es. 510001000)" style="padding: 8px;">
+                    <input type="text" id="nuovoMastrinoDescrizione" placeholder="Descrizione" style="padding: 8px;">
+                    <div>
+                        <button class="btn btn-success" onclick="salvaNuovoMastrino()">💾 Salva</button>
+                        <button class="btn btn-secondary" onclick="nascondiFormNuovoMastrino()">✖️ Annulla</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Acquisti -->
+                <div>
+                    <h3>Acquisti</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="30">
+                                    <input type="checkbox" onchange="selezionaTutti('acquisto', this.checked)">
+                                </th>
+                                <th>Codice</th>
+                                <th>Descrizione</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mastrino in mastrini if mastrino.tipo.lower() == 'acquisti' %}
+                            <tr id="mastrino-row-{{ mastrino.id }}">
+                                <td>
+                                    <input type="checkbox" class="chk-acquisto" value="{{ mastrino.id }}" onchange="aggiornaBottoni()">
+                                </td>
+                                <td><strong>{{ mastrino.codice }}</strong></td>
+                                <td>
+                                    <span id="desc-{{ mastrino.id }}">{{ mastrino.descrizione }}</span>
+                                    <input type="text" id="edit-{{ mastrino.id }}" value="{{ mastrino.descrizione }}" style="display:none; width:100%;">
+                                </td>
+                                <td>
+                                    <button class="btn btn-small btn-secondary" id="btn-edit-{{ mastrino.id }}" onclick="modificaMastrino({{ mastrino.id }})">✏️</button>
+                                    <button class="btn btn-small btn-success" id="btn-save-{{ mastrino.id }}" onclick="salvaMastrino({{ mastrino.id }})" style="display:none;">💾</button>
+                                    <button class="btn btn-small btn-danger" onclick="eliminaMastrino({{ mastrino.id }})">🗑️</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Ricavi -->
+                <div>
+                    <h3>Ricavi</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="30">
+                                    <input type="checkbox" onchange="selezionaTutti('ricavo', this.checked)">
+                                </th>
+                                <th>Codice</th>
+                                <th>Descrizione</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mastrino in mastrini if mastrino.tipo.lower() == 'ricavi' %}
+                            <tr id="mastrino-row-{{ mastrino.id }}">
+                                <td>
+                                    <input type="checkbox" class="chk-ricavo" value="{{ mastrino.id }}" onchange="aggiornaBottoni()">
+                                </td>
+                                <td><strong>{{ mastrino.codice }}</strong></td>
+                                <td>
+                                    <span id="desc-{{ mastrino.id }}">{{ mastrino.descrizione }}</span>
+                                    <input type="text" id="edit-{{ mastrino.id }}" value="{{ mastrino.descrizione }}" style="display:none; width:100%;">
+                                </td>
+                                <td>
+                                    <button class="btn btn-small btn-secondary" id="btn-edit-{{ mastrino.id }}" onclick="modificaMastrino({{ mastrino.id }})">✏️</button>
+                                    <button class="btn btn-small btn-success" id="btn-save-{{ mastrino.id }}" onclick="salvaMastrino({{ mastrino.id }})" style="display:none;">💾</button>
+                                    <button class="btn btn-small btn-danger" onclick="eliminaMastrino({{ mastrino.id }})">🗑️</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Magazzini -->
+        <div class="info-section" style="margin-top: 20px;">
+            <h2>🏭 Magazzini</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="nuovo-mag-codice" placeholder="Codice" style="width: 100px;">
+                <input type="text" id="nuovo-mag-desc" placeholder="Descrizione" style="width: 200px;">
+                <input type="text" id="nuovo-mag-resp" placeholder="Responsabile" style="width: 150px;">
+                <button class="btn btn-success" onclick="aggiungiMagazzino()">+ Aggiungi</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Responsabile</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for magazzino in magazzini %}
+                    <tr id="mag-row-{{ magazzino.id }}">
+                        <td><strong>{{ magazzino.codice }}</strong></td>
+                        <td>
+                            <span id="mag-desc-{{ magazzino.id }}">{{ magazzino.descrizione }}</span>
+                            <input type="text" id="mag-edit-desc-{{ magazzino.id }}" value="{{ magazzino.descrizione }}" style="display:none;">
+                        </td>
+                        <td>
+                            <span id="mag-resp-{{ magazzino.id }}">{{ magazzino.responsabile or '-' }}</span>
+                            <input type="text" id="mag-edit-resp-{{ magazzino.id }}" value="{{ magazzino.responsabile or '' }}" style="display:none;">
+                        </td>
+                        <td>
+                            <button class="btn btn-small btn-secondary" id="mag-btn-edit-{{ magazzino.id }}" onclick="modificaMagazzino({{ magazzino.id }})">✏️</button>
+                            <button class="btn btn-small btn-success" id="mag-btn-save-{{ magazzino.id }}" onclick="salvaMagazzino({{ magazzino.id }})" style="display:none;">💾</button>
+                            <button class="btn btn-small btn-danger" onclick="eliminaMagazzino({{ magazzino.id }})">🗑️</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pulizia Dati di Test (Sezione Temporanea) -->
+        <div class="info-section" style="margin-top: 30px; border: 3px solid #ef4444; border-radius: 8px;">
+            <h2 style="color: #ef4444;">🧪 PULIZIA DATI TEST (TEMPORANEO)</h2>
+            <div style="background: #fef2f2; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                <p><strong>⚠️ ATTENZIONE:</strong> Questa funzione cancella MASSIVAMENTE tutti i dati di test.</p>
+                <p><strong>CANCELLA:</strong> DDT, Preventivi, Ordini, Commesse, Movimenti, Catalogo Articoli</p>
+                <p><strong>MANTIENE:</strong> Clienti, Fornitori, Mastrini, Magazzini</p>
+                <p style="color: #dc2626;"><strong>USARE SOLO IN FASE DI TEST!</strong></p>
+            </div>
+            
+            <div style="text-align: center; padding: 20px;">
+                <button class="btn" style="background: #ef4444; color: white; font-size: 16px; padding: 15px 30px;" 
+                        onclick="confermaRipulituraTest()">
+                    🧹 RIPULISCI TUTTI I DATI TEST
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function importaMastrini(input) {
+        if (input.files && input.files[0]) {
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            
+            fetch('/impostazioni/mastrini/importa-excel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Importati ' + data.importati + ' mastrini');
+                    location.reload();
+                } else {
+                    alert('Errore: ' + (data.error || 'Importazione fallita'));
+                }
+            });
+        }
+    }
+    
+    function selezionaTutti(tipo, checked) {
+        document.querySelectorAll('.chk-' + tipo).forEach(chk => {
+            chk.checked = checked;
+        });
+        aggiornaBottoni();
+    }
+    
+    function aggiornaBottoni() {
+        const checkedCount = document.querySelectorAll('input[type="checkbox"]:checked.chk-acquisto, input[type="checkbox"]:checked.chk-ricavo').length;
+        document.getElementById('btnEliminaSelezionati').style.display = checkedCount > 0 ? 'inline-block' : 'none';
+    }
+    
+    function eliminaMastriniSelezionati() {
+        const ids = [];
+        document.querySelectorAll('input[type="checkbox"]:checked.chk-acquisto, input[type="checkbox"]:checked.chk-ricavo').forEach(chk => {
+            ids.push(parseInt(chk.value));
+        });
+        
+        if (ids.length === 0) return;
+        
+        if (confirm(`Eliminare ${ids.length} mastrini selezionati?`)) {
+            fetch('/impostazioni/mastrini/elimina-multipli', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ids: ids})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Eliminati ${data.eliminati} mastrini`);
+                    if (data.errori && data.errori.length > 0) {
+                        alert('Non eliminati (in uso): ' + data.errori.join(', '));
+                    }
+                    location.reload();
+                }
+            });
+        }
+    }
+    
+    function modificaMastrino(id) {
+        document.getElementById('desc-' + id).style.display = 'none';
+        document.getElementById('edit-' + id).style.display = 'inline';
+        document.getElementById('btn-edit-' + id).style.display = 'none';
+        document.getElementById('btn-save-' + id).style.display = 'inline';
+        document.getElementById('mastrino-row-' + id).classList.add('edit-mode');
+    }
+    
+    function salvaMastrino(id) {
+        const descrizione = document.getElementById('edit-' + id).value;
+        
+        fetch(`/impostazioni/mastrino/${id}/modifica`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({descrizione: descrizione})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    function eliminaMastrino(id) {
+        if (confirm('Eliminare questo mastrino?')) {
+            fetch(`/impostazioni/mastrino/${id}/elimina`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Errore: ' + (data.error || 'Impossibile eliminare'));
+                }
+            });
+        }
+    }
+    
+    function aggiungiMagazzino() {
+        const codice = document.getElementById('nuovo-mag-codice').value;
+        const descrizione = document.getElementById('nuovo-mag-desc').value;
+        const responsabile = document.getElementById('nuovo-mag-resp').value;
+        
+        if (!codice || !descrizione) {
+            alert('Codice e descrizione obbligatori');
+            return;
+        }
+        
+        fetch('/impostazioni/magazzino/nuovo', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                codice: codice,
+                descrizione: descrizione,
+                responsabile: responsabile
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Errore: ' + (data.error || 'Creazione fallita'));
+            }
+        });
+    }
+    
+    function modificaMagazzino(id) {
+        document.getElementById('mag-desc-' + id).style.display = 'none';
+        document.getElementById('mag-resp-' + id).style.display = 'none';
+        document.getElementById('mag-edit-desc-' + id).style.display = 'inline';
+        document.getElementById('mag-edit-resp-' + id).style.display = 'inline';
+        document.getElementById('mag-btn-edit-' + id).style.display = 'none';
+        document.getElementById('mag-btn-save-' + id).style.display = 'inline';
+        document.getElementById('mag-row-' + id).classList.add('edit-mode');
+    }
+    
+    function salvaMagazzino(id) {
+        const descrizione = document.getElementById('mag-edit-desc-' + id).value;
+        const responsabile = document.getElementById('mag-edit-resp-' + id).value;
+        
+        fetch(`/impostazioni/magazzino/${id}/modifica`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                descrizione: descrizione,
+                responsabile: responsabile
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    function eliminaMagazzino(id) {
+        if (confirm('Eliminare questo magazzino?')) {
+            fetch(`/impostazioni/magazzino/${id}/elimina`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Errore: ' + (data.error || 'Impossibile eliminare'));
+                }
+            });
+        }
+    }
+    
+    function mostraFormNuovoMastrino() {
+        document.getElementById('formNuovoMastrino').style.display = 'block';
+        document.getElementById('nuovoMastrinoCodice').focus();
+    }
+    
+    function nascondiFormNuovoMastrino() {
+        document.getElementById('formNuovoMastrino').style.display = 'none';
+        // Pulisci i campi
+        document.getElementById('nuovoMastrinoTipo').value = 'ACQUISTI';
+        document.getElementById('nuovoMastrinoCodice').value = '';
+        document.getElementById('nuovoMastrinoDescrizione').value = '';
+    }
+    
+    function salvaNuovoMastrino() {
+        const tipo = document.getElementById('nuovoMastrinoTipo').value;
+        const codice = document.getElementById('nuovoMastrinoCodice').value.trim();
+        const descrizione = document.getElementById('nuovoMastrinoDescrizione').value.trim();
+        
+        if (!codice || !descrizione) {
+            alert('Codice e descrizione sono obbligatori');
+            return;
+        }
+        
+        fetch('/impostazioni/mastrino/nuovo', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                tipo: tipo,
+                codice: codice,
+                descrizione: descrizione
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Mastrino creato con successo');
+                location.reload();
+            } else {
+                alert('Errore: ' + (data.error || 'Creazione fallita'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Errore durante la creazione del mastrino');
+        });
+    }
+    
+    function confermaRipulituraTest() {
+        const conferma1 = confirm('⚠️ ATTENZIONE!\n\nStai per CANCELLARE TUTTI i dati di test:\n- DDT IN e OUT\n- Preventivi e Ordini\n- Commesse\n- Movimenti e Inventario\n- Catalogo Articoli\n\nI dati di Clienti, Fornitori, Mastrini e Magazzini saranno MANTENUTI.\n\nSei sicuro di voler procedere?');
+        
+        if (!conferma1) return;
+        
+        const conferma2 = confirm('🚨 ULTIMA CONFERMA!\n\nQuesta azione è IRREVERSIBILE!\n\nDigita OK per confermare la pulizia massiva dei dati test.');
+        
+        if (!conferma2) return;
+        
+        // Mostra loader
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '🔄 Pulizia in corso...';
+        button.disabled = true;
+        
+        fetch('/impostazioni/ripulisci-dati-test', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ PULIZIA COMPLETATA!\n\n' + data.message + '\n\nRecord cancellati: ' + data.records_deleted);
+                location.reload();
+            } else {
+                alert('❌ ERRORE durante la pulizia: ' + (data.error || 'Errore sconosciuto'));
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ ERRORE di connessione durante la pulizia');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDT IN - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in" class="active">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📥 DDT in Entrata</h1>
+            <div class="actions-bar">
+                <button class="btn" onclick="window.location.href='/ddt-in/nuovo'">
+                    ✏️ Inserimento Manuale
+                </button>
+                <button class="btn btn-secondary" onclick="window.location.href='/ddt-import'">
+                    📄 Import da PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>Elenco DDT</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° DDT</th>
+                        <th>Data</th>
+                        <th>Fornitore</th>
+                        <th>Riferimento</th>
+                        <th>Destinazione</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if ddts %}
+                        {% for ddt in ddts %}
+                        <tr class="{{ 'draft' if ddt.stato == 'bozza' else '' }}">
+                            <td><strong>{{ ddt.numero_ddt or 'BOZZA-' + ddt.id|string }}</strong></td>
+                            <td>{{ ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-' }}</td>
+                            <td>{{ ddt.fornitore or '-' }}</td>
+                            <td>{{ ddt.riferimento or '-' }}</td>
+                            <td>{{ ddt.destinazione or '-' }}</td>
+                            <td>
+                                <span class="status {{ 'confirmed' if ddt.stato == 'confermato' else 'draft' }}">
+                                    {{ ddt.stato|upper }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/ddt-in/{{ ddt.id }}" class="btn btn-small">
+                                    👁️ Visualizza
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #999;">
+                                <div style="font-size: 48px; margin-bottom: 10px;">📋</div>
+                                <div>Nessun DDT presente</div>
+                                <div style="margin-top: 20px;">
+                                    <button class="btn" onclick="window.location.href='/ddt-in/nuovo'">
+                                        Crea il primo DDT
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            
+            {% if buchi_numerazione %}
+            <div class="alert-item alert-warning" style="margin-top: 20px;">
+                <strong>⚠️ Attenzione:</strong> Rilevati buchi nella numerazione: {{ buchi_numerazione|join(', ') }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

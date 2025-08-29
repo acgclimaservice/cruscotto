@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Stampa DDT Completa</title>
+    <style>
+        @media print {
+            /* Rimuove intestazione e piè di pagina del browser */
+            @page {
+                margin: 0;
+            }
+            body {
+                margin: 0.5cm;
+            }
+            .no-print { display: none; }
+            .page-break { page-break-before: always; }
+        }
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.4;
+            color: #333;
+        }
+        .header {
+            border-bottom: 3px solid #2c5282;
+            padding-bottom: 25px;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .company-logo {
+            height: 60px;
+            width: auto;
+        }
+        
+        .header-text {
+            text-align: center;
+        }
+        h1 { 
+            margin: 0; 
+            font-size: 28px; 
+            color: #2c5282;
+            font-weight: 600;
+        }
+        h2 { 
+            margin: 15px 0 5px 0; 
+            font-size: 22px; 
+            color: #2d3748;
+            font-weight: 500;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 25px 0;
+        }
+        .info-box {
+            border: 1px solid #cbd5e0;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f7fafc;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .info-box strong {
+            color: #2d3748;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: none;
+            padding: 15px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th { 
+            background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+        }
+        tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        tbody tr:hover {
+            background: #e2e8f0;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .no-print {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .no-print button {
+            padding: 12px 24px;
+            margin: 0 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .no-print button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .pdf-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .pdf-download-section {
+            margin: 20px 0;
+        }
+        .pdf-note {
+            background: linear-gradient(135deg, #e6f3ff 0%, #f0f8ff 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border: 1px solid #b3d9ff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .pdf-note strong {
+            color: #1e40af;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button onclick="window.print()">🖨️ Stampa Tutto</button>
+        <button onclick="window.close()">❌ Chiudi</button>
+        {% if ddt.pdf_allegato %}
+        <button onclick="window.open('/ddt-in/{{ ddt.id }}/pdf-allegato', '_blank')">📄 Scarica PDF Originale</button>
+        {% endif %}
+    </div>
+
+    <!-- Sezione DDT -->
+    <div class="header">
+        <div class="header-content">
+            <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="company-logo">
+            <div class="header-text">
+                <h1>ACG CLIMA SERVICE S.R.L.</h1>
+                <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                <p>Tel: 0383/640606 | Email: info@acgclima.it</p>
+                <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                <h2>DOCUMENTO DI TRASPORTO</h2>
+                <p>N. {{ ddt.numero_ddt if ddt.numero_ddt else 'BOZZA-' + ddt.id|string }}</p>
+                <p>Data: {{ ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else 'N/D' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-box">
+            <strong>FORNITORE:</strong><br>
+            {{ ddt.fornitore if ddt.fornitore else 'N/D' }}
+        </div>
+        <div class="info-box">
+            <strong>DESTINAZIONE:</strong><br>
+            {{ ddt.destinazione if ddt.destinazione else 'N/D' }}
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Codice</th>
+                <th>Descrizione</th>
+                <th>Quantità</th>
+                <th>Prezzo Unit.</th>
+                <th>Totale</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if articoli %}
+                {% for articolo in articoli %}
+                <tr>
+                    <td>{{ articolo.codice_interno if articolo.codice_interno else '-' }}</td>
+                    <td>{{ articolo.descrizione }}</td>
+                    <td>{{ articolo.quantita }}</td>
+                    <td>€ {{ "{:.2f}".format(articolo.costo_unitario or 0) }}</td>
+                    <td>€ {{ "{:.2f}".format((articolo.quantita * (articolo.costo_unitario or 0))) }}</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center;">Nessun articolo</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- Sezione PDF Originale -->
+    {% if ddt.pdf_allegato %}
+    <div class="page-break pdf-section">
+        <h2>📄 Documento Originale Fornitore</h2>
+        <div class="pdf-note">
+            <strong>PDF Importato:</strong> {{ ddt.pdf_filename or 'documento.pdf' }}<br>
+            <em>Documento originale ricevuto dal fornitore durante l'importazione</em>
+        </div>
+        
+        <!-- Embed PDF direttamente -->
+        <div style="margin: 20px 0; text-align: center;">
+            <iframe src="/ddt-in/{{ ddt.id }}/pdf-allegato" 
+                    width="100%" 
+                    height="800px" 
+                    style="border: 1px solid #ddd; border-radius: 8px;">
+                <p>Il tuo browser non supporta la visualizzazione PDF inline. 
+                   <a href="/ddt-in/{{ ddt.id }}/pdf-allegato" target="_blank">Clicca qui per aprire il PDF</a>
+                </p>
+            </iframe>
+        </div>
+    </div>
+    {% else %}
+    <div class="pdf-note">
+        <strong>Nota:</strong> Nessun documento PDF originale allegato a questo DDT.
+    </div>
+    {% endif %}
+
+    <script>
+        // Funzione per scaricare il PDF
+        function scaricaPDF() {
+            const link = document.createElement('a');
+            link.href = '/ddt-in/{{ ddt.id }}/pdf-allegato';
+            link.download = '{{ ddt.pdf_filename or "documento.pdf" }}';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Stampa automatica se richiesta
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto_print') === 'true') {
+            setTimeout(() => window.print(), 1000);
+        }
+    </script>
+</body>
+</html>

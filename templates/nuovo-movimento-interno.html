@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Nuovo Movimento Interno</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .form-group {
+            position: relative;
+        }
+        
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .autocomplete-results.show {
+            display: block;
+        }
+        
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .autocomplete-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/movimenti-interni" class="active">🔄 Movimenti Interni</a></li>
+            </ul>
+        </nav>
+
+        <div class="page-header">
+            <h1>➕ Nuovo Movimento Interno</h1>
+            <button class="btn btn-secondary" onclick="window.location.href='/movimenti-interni'">
+                ← Torna ai Movimenti
+            </button>
+        </div>
+
+        <form method="post" id="movimentoForm">
+            <div class="form-section">
+                <h3>📋 Informazioni Generali</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Data Movimento</label>
+                        <input type="date" name="data_movimento" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Numero Documento</label>
+                        <input type="text" name="numero_documento" placeholder="Inserisci numero documento">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>🏢 Magazzini</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Magazzino di Partenza</label>
+                        <input type="text" name="magazzino_partenza" required 
+                               placeholder="Cerca magazzino..." autocomplete="off">
+                        <div class="autocomplete-results" id="magazzino-partenza-results"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Magazzino di Destinazione</label>
+                        <input type="text" name="magazzino_destinazione" required 
+                               placeholder="Cerca magazzino..." autocomplete="off">
+                        <div class="autocomplete-results" id="magazzino-destinazione-results"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Causale</label>
+                    <input type="text" name="causale" placeholder="Motivo del movimento">
+                </div>
+                <div class="form-group">
+                    <label>Note</label>
+                    <textarea name="note" rows="3" placeholder="Note aggiuntive..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>📦 Articoli</h3>
+                <div class="articles-container">
+                    <div class="article-row" id="article-0">
+                        <div class="form-group">
+                            <label>Codice Articolo</label>
+                            <input type="text" name="codice_0" 
+                                   placeholder="Cerca articolo..." autocomplete="off"
+                                   onkeyup="cercaArticolo(this, 0)">
+                            <div class="autocomplete-results" id="articolo-results-0"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Descrizione</label>
+                            <input type="text" name="descrizione_0" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantità</label>
+                            <input type="number" name="quantita_0" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>U.M.</label>
+                            <input type="text" name="unita_misura_0" readonly>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviArticolo(0)">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="aggiungiArticolo()">
+                    ➕ Aggiungi Articolo
+                </button>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">💾 Salva Movimento</button>
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/movimenti-interni'">
+                    ❌ Annulla
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    let articleCount = 1;
+
+    // Setup autocomplete per magazzini
+    function setupMagazziniAutocomplete() {
+        const partenzaInput = document.querySelector('input[name="magazzino_partenza"]');
+        const destinazioneInput = document.querySelector('input[name="magazzino_destinazione"]');
+        
+        partenzaInput.addEventListener('input', function() {
+            cercaMagazzini(this.value, 'magazzino-partenza-results', 'magazzino_partenza');
+        });
+        
+        destinazioneInput.addEventListener('input', function() {
+            cercaMagazzini(this.value, 'magazzino-destinazione-results', 'magazzino_destinazione');
+        });
+    }
+
+    function cercaMagazzini(query, resultsId, inputName) {
+        const resultsDiv = document.getElementById(resultsId);
+        
+        if (query.length < 2) {
+            resultsDiv.innerHTML = '';
+            resultsDiv.classList.remove('show');
+            return;
+        }
+
+        fetch(`/api/magazzini/search?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                resultsDiv.innerHTML = '';
+                
+                if (data.length === 0) {
+                    resultsDiv.classList.remove('show');
+                    return;
+                }
+                
+                data.forEach(magazzino => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.textContent = `${magazzino.codice} - ${magazzino.descrizione}`;
+                    div.onclick = function() {
+                        document.querySelector(`input[name="${inputName}"]`).value = magazzino.codice;
+                        resultsDiv.innerHTML = '';
+                        resultsDiv.classList.remove('show');
+                    };
+                    resultsDiv.appendChild(div);
+                });
+                
+                resultsDiv.classList.add('show');
+            })
+            .catch(error => {
+                console.error('Errore ricerca magazzini:', error);
+                resultsDiv.classList.remove('show');
+            });
+    }
+
+    function cercaArticolo(input, index) {
+        const query = input.value;
+        const resultsDiv = document.getElementById(`articolo-results-${index}`);
+        
+        if (query.length < 2) {
+            resultsDiv.innerHTML = '';
+            resultsDiv.classList.remove('show');
+            return;
+        }
+
+        fetch(`/api/articoli/search?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                resultsDiv.innerHTML = '';
+                
+                if (data.length === 0) {
+                    resultsDiv.classList.remove('show');
+                    return;
+                }
+                
+                data.forEach(articolo => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.textContent = `${articolo.codice_interno} - ${articolo.descrizione}`;
+                    div.onclick = function() {
+                        document.querySelector(`input[name="codice_${index}"]`).value = articolo.codice_interno;
+                        document.querySelector(`input[name="descrizione_${index}"]`).value = articolo.descrizione;
+                        document.querySelector(`input[name="unita_misura_${index}"]`).value = articolo.unita_misura || 'PZ';
+                        resultsDiv.innerHTML = '';
+                        resultsDiv.classList.remove('show');
+                    };
+                    resultsDiv.appendChild(div);
+                });
+                
+                resultsDiv.classList.add('show');
+            })
+            .catch(error => {
+                console.error('Errore ricerca articoli:', error);
+                resultsDiv.classList.remove('show');
+            });
+    }
+
+    function aggiungiArticolo() {
+        const container = document.querySelector('.articles-container');
+        const newRow = document.createElement('div');
+        newRow.className = 'article-row';
+        newRow.id = `article-${articleCount}`;
+        
+        newRow.innerHTML = `
+            <div class="form-group">
+                <label>Codice Articolo</label>
+                <input type="text" name="codice_${articleCount}" 
+                       placeholder="Cerca articolo..." autocomplete="off"
+                       onkeyup="cercaArticolo(this, ${articleCount})">
+                <div class="autocomplete-results" id="articolo-results-${articleCount}"></div>
+            </div>
+            <div class="form-group">
+                <label>Descrizione</label>
+                <input type="text" name="descrizione_${articleCount}" readonly>
+            </div>
+            <div class="form-group">
+                <label>Quantità</label>
+                <input type="number" name="quantita_${articleCount}" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>U.M.</label>
+                <input type="text" name="unita_misura_${articleCount}" readonly>
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviArticolo(${articleCount})">
+                    🗑️
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(newRow);
+        articleCount++;
+    }
+
+    function rimuoviArticolo(index) {
+        const row = document.getElementById(`article-${index}`);
+        if (row) {
+            row.remove();
+        }
+    }
+
+    // Initialize autocomplete
+    document.addEventListener('DOMContentLoaded', function() {
+        setupMagazziniAutocomplete();
+        
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.querySelector('input[name="data_movimento"]').value = today;
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>DDT {{ ddt.numero_ddt if ddt.numero_ddt else 'BOZZA-' + ddt.id|string }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+            body { margin: 0; padding: 0; }
+            .container { box-shadow: none; }
+            .actions-bar { display: none !important; }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 210mm;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 0;
+        }
+
+        /* Header Aziendale */
+        .company-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            position: relative;
+        }
+
+        .company-header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: linear-gradient(45deg, transparent 50%, rgba(102, 126, 234, 0.2) 50%);
+        }
+
+        .company-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .company-details h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .company-details p {
+            margin: 5px 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .document-info {
+            text-align: right;
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .document-info h2 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            font-weight: 400;
+        }
+
+        .doc-number {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Contenuto Principale */
+        .content {
+            padding: 30px;
+        }
+
+        /* Informazioni Generali */
+        .info-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: #f8f9fc;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .info-card h3 {
+            margin: 0 0 15px 0;
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-card p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        /* Tabella Articoli */
+        .articles-section {
+            margin: 30px 0;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .articles-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .articles-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .articles-table th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .articles-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .articles-table tbody tr:nth-child(even) {
+            background: #f8f9fc;
+        }
+
+        .articles-table tbody tr:hover {
+            background: #e8f0fe;
+        }
+
+        .price-cell {
+            text-align: right;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+
+        .quantity-cell {
+            text-align: center;
+            font-weight: 500;
+        }
+
+        /* Footer con Totali */
+        .footer-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+
+        .totals-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .notes-section {
+            background: #f8f9fc;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .notes-section h4 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .totals-box {
+            background: linear-gradient(135deg, #f8f9fc, #e8f0fe);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #e0e7ff;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .total-row:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 18px;
+            color: #2e7d32;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 2px solid #667eea;
+        }
+
+        /* Barra Azioni */
+        .actions-bar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+
+        .action-btn {
+            display: inline-block;
+            padding: 10px 15px;
+            margin: 5px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .action-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-btn.secondary {
+            background: #718096;
+        }
+
+        .action-btn.secondary:hover {
+            background: #4a5568;
+        }
+
+        .action-btn.success {
+            background: #38a169;
+        }
+
+        .action-btn.success:hover {
+            background: #2f855a;
+        }
+
+        /* PDF Info Section */
+        .pdf-info {
+            background: linear-gradient(135deg, #fef5e7, #fed7aa);
+            border: 1px solid #f6ad55;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .pdf-info h4 {
+            margin: 0 0 10px 0;
+            color: #c05621;
+            font-size: 16px;
+        }
+
+        .pdf-info p {
+            margin: 5px 0;
+            color: #744210;
+        }
+
+        /* Badge Status */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-confirmed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-draft {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .company-info {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .info-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .totals-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions-bar {
+                position: relative;
+                right: auto;
+                top: auto;
+                margin: 20px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra Azioni (non stampabile) -->
+    <div class="actions-bar no-print">
+        <button class="action-btn" onclick="window.print()">🖨️ Stampa DDT</button>
+        {% if ddt.pdf_allegato %}
+        <button class="action-btn success" onclick="window.open('/ddt-in/{{ ddt.id }}/pdf-allegato', '_blank')">📄 Scarica PDF Originale</button>
+        <button class="action-btn secondary" onclick="stampaTutto()">📋 Stampa DDT + PDF</button>
+        {% endif %}
+        <button class="action-btn secondary" onclick="window.close()">❌ Chiudi</button>
+    </div>
+
+    <div class="container">
+        <!-- Header Aziendale -->
+        <div class="company-header">
+            <div class="company-info">
+                <div class="company-details">
+                    <h1>ACG Clima Service S.r.l.</h1>
+                    <p>📍 Sede Legale: Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p>📍 Sede Operativa: Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>📞 Tel: 0383/640606 | 📧 info@acgclima.it</p>
+                    <p>🆔 P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+                <div class="document-info">
+                    <h2>DOCUMENTO DI TRASPORTO</h2>
+                    <div class="doc-number">{{ ddt.numero_ddt if ddt.numero_ddt else 'BOZZA-' + ddt.id|string }}</div>
+                    <p>📅 {{ ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else 'Data non specificata' }}</p>
+                    <span class="status-badge {{ 'status-confirmed' if ddt.stato == 'confermato' else 'status-draft' }}">
+                        {{ ddt.stato|upper if ddt.stato else 'BOZZA' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenuto Principale -->
+        <div class="content">
+            <!-- Informazioni Generali -->
+            <div class="info-section">
+                <div class="info-card">
+                    <h3>🏭 Fornitore</h3>
+                    <p><strong>{{ ddt.fornitore if ddt.fornitore else 'Non specificato' }}</strong></p>
+                    {% if ddt.mittente %}
+                    <p>📧 {{ ddt.mittente }}</p>
+                    {% endif %}
+                </div>
+                <div class="info-card">
+                    <h3>📍 Destinazione</h3>
+                    <p><strong>{{ ddt.destinazione if ddt.destinazione else 'Non specificata' }}</strong></p>
+                    {% if ddt.commessa %}
+                    <p>🏗️ Commessa: {{ ddt.commessa }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- PDF Allegato Info -->
+            {% if ddt.pdf_allegato %}
+            <div class="pdf-info">
+                <h4>📄 Documento PDF Allegato</h4>
+                <p><strong>File:</strong> {{ ddt.pdf_filename or 'documento.pdf' }}</p>
+                <p>Documento originale ricevuto dal fornitore durante l'importazione</p>
+                <p><em>Per visualizzare il PDF originale, utilizzare il pulsante "Scarica PDF Originale" sopra</em></p>
+            </div>
+            {% endif %}
+
+            <!-- Tabella Articoli -->
+            <div class="articles-section">
+                <h3 class="section-title">📦 Articoli</h3>
+                <table class="articles-table">
+                    <thead>
+                        <tr>
+                            <th>Codice Interno</th>
+                            <th>Descrizione</th>
+                            <th>Quantità</th>
+                            <th>U.M.</th>
+                            <th>Prezzo Unit.</th>
+                            <th>Totale</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if articoli %}
+                            {% set totale_generale = 0 %}
+                            {% for articolo in articoli %}
+                            {% set totale_riga = (articolo.quantita * (articolo.costo_unitario or 0)) %}
+                            {% set totale_generale = totale_generale + totale_riga %}
+                            <tr>
+                                <td><code>{{ articolo.codice_interno if articolo.codice_interno else '-' }}</code></td>
+                                <td>{{ articolo.descrizione }}</td>
+                                <td class="quantity-cell">{{ articolo.quantita }}</td>
+                                <td class="quantity-cell">{{ articolo.unita_misura or 'PZ' }}</td>
+                                <td class="price-cell">€ {{ "{:.2f}".format(articolo.costo_unitario or 0) }}</td>
+                                <td class="price-cell">€ {{ "{:.2f}".format(totale_riga) }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 30px; color: #666;">
+                                    📭 Nessun articolo presente in questo DDT
+                                </td>
+                            </tr>
+                            {% set totale_generale = 0 %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer con Totali e Note -->
+            <div class="footer-section">
+                <div class="totals-grid">
+                    <div class="notes-section">
+                        <h4>📝 Note</h4>
+                        {% if ddt.note %}
+                            <p>{{ ddt.note }}</p>
+                        {% else %}
+                            <p style="color: #666; font-style: italic;">Nessuna nota aggiunta</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="totals-box">
+                        <div class="total-row">
+                            <span>Articoli:</span>
+                            <strong>{{ articoli|length if articoli else 0 }}</strong>
+                        </div>
+                        {% if articoli %}
+                        <div class="total-row">
+                            <span>Imponibile:</span>
+                            <strong>€ {{ "{:.2f}".format(totale_generale) }}</strong>
+                        </div>
+                        <div class="total-row">
+                            <span>TOTALE GENERALE:</span>
+                            <strong>€ {{ "{:.2f}".format(totale_generale) }}</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Stampa automatica se richiesta
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto_print') === 'true') {
+            setTimeout(() => window.print(), 1500);
+        }
+
+        // Funzione per stampare DDT + PDF separatamente
+        function stampaTutto() {
+            // Prima stampa il DDT
+            window.print();
+            
+            // Poi apre il PDF in una nuova finestra per la stampa
+            setTimeout(() => {
+                const pdfWindow = window.open('/ddt-in/{{ ddt.id }}/pdf-allegato', '_blank');
+                if (pdfWindow) {
+                    pdfWindow.onload = function() {
+                        pdfWindow.print();
+                    };
+                } else {
+                    alert('Impossibile aprire il PDF. Controlla le impostazioni del popup blocker.');
+                }
+            }, 2000);
+        }
+
+        // Migliora l'esperienza di stampa
+        window.addEventListener('beforeprint', function() {
+            document.title = 'DDT_{{ ddt.numero_ddt if ddt.numero_ddt else "BOZZA_" + ddt.id|string }}_{{ ddt.data_ddt.strftime("%Y%m%d") if ddt.data_ddt else "senza_data" }}';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuovo Preventivo - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+    <script src="{{ url_for('static', filename='autocompletamento.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/preventivi" class="active">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📋 Nuovo Preventivo</h1>
+            <p style="color: #8492a6; margin-top: 8px;">Crea un nuovo preventivo per un cliente</p>
+        </div>
+
+        <form method="POST" class="form-container">
+            <!-- Dati testata preventivo -->
+            <div class="card">
+                <h3>📋 Informazioni Generali</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="cliente_nome">Cliente *</label>
+                        <input type="text" id="cliente_nome" name="cliente_nome" placeholder="Digita per cercare cliente..." required>
+                        <input type="hidden" id="cliente_id" name="cliente_id">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="oggetto">Oggetto *</label>
+                        <input type="text" id="oggetto" name="oggetto" required
+                               placeholder="Descrizione preventivo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="data_scadenza">Data Scadenza</label>
+                        <input type="date" id="data_scadenza" name="data_scadenza">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="iva">IVA (%)</label>
+                        <input type="number" id="iva" name="iva" value="22" min="0" max="100" step="0.01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="commessa">Commessa</label>
+                        <input type="text" id="commessa" name="commessa" placeholder="Digita per cercare commessa..." autocomplete="off">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="note">Note</label>
+                    <textarea id="note" name="note" rows="3" placeholder="Note aggiuntive..."></textarea>
+                </div>
+            </div>
+
+            <!-- Dettagli preventivo -->
+            <div class="card">
+                <h3>📦 Dettagli Preventivo</h3>
+                <div id="dettagli-container">
+                    <div class="dettaglio-row" data-index="0">
+                        <div class="form-grid dettaglio-grid">
+                            <div class="form-group">
+                                <label>Codice Articolo</label>
+                                <input type="text" name="dettagli[0][codice]" placeholder="Codice...">
+                            </div>
+                            <div class="form-group">
+                                <label>Descrizione *</label>
+                                <input type="text" name="dettagli[0][descrizione]" required placeholder="Digita per cercare articolo..." 
+                                       autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label>Quantità *</label>
+                                <input type="number" name="dettagli[0][quantita]" value="1" min="0.01" step="0.01" required 
+                                       onchange="calcolaTotaleRiga(0)">
+                            </div>
+                            <div class="form-group">
+                                <label>U.M.</label>
+                                <select name="dettagli[0][unita]">
+                                    <option value="PZ">PZ</option>
+                                    <option value="KG">KG</option>
+                                    <option value="MT">MT</option>
+                                    <option value="MQ">MQ</option>
+                                    <option value="MC">MC</option>
+                                    <option value="LT">LT</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Prezzo Unit. *</label>
+                                <input type="number" name="dettagli[0][prezzo_unitario]" min="0" step="0.01" required
+                                       placeholder="0.00" onchange="calcolaTotaleRiga(0)">
+                            </div>
+                            <div class="form-group">
+                                <label>Costo Unit.</label>
+                                <input type="number" name="dettagli[0][costo]" min="0" step="0.01" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label>Sconto %</label>
+                                <input type="number" name="dettagli[0][sconto]" min="0" max="100" step="0.01" value="0"
+                                       onchange="calcolaTotaleRiga(0)">
+                            </div>
+                            <div class="form-group">
+                                <label>Totale Riga</label>
+                                <input type="number" class="totale-riga" readonly placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviDettaglio(0)">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <button type="button" class="btn btn-secondary" onclick="aggiungiDettaglio()">+ Aggiungi Riga</button>
+                </div>
+            </div>
+
+            <!-- Riepilogo totali -->
+            <div class="card">
+                <h3>💰 Riepilogo Totali</h3>
+                <div class="totali-grid">
+                    <div class="totale-item">
+                        <label>Totale Netto:</label>
+                        <span id="totale-netto">€ 0.00</span>
+                    </div>
+                    <div class="totale-item">
+                        <label>IVA:</label>
+                        <span id="totale-iva">€ 0.00</span>
+                    </div>
+                    <div class="totale-item totale-finale">
+                        <label>Totale Lordo:</label>
+                        <span id="totale-lordo">€ 0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pulsanti azione -->
+            <div class="form-actions">
+                <a href="/preventivi" class="btn btn-secondary">⬅️ Annulla</a>
+                <button type="submit" class="btn btn-success">💾 Salva Preventivo</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let dettaglioIndex = 1;
+
+        function updateClienteNome() {
+            const select = document.getElementById('cliente_id');
+            const hiddenInput = document.getElementById('cliente_nome');
+            const selectedOption = select.options[select.selectedIndex];
+            hiddenInput.value = selectedOption.getAttribute('data-nome') || '';
+        }
+
+        function aggiungiDettaglio() {
+            const container = document.getElementById('dettagli-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'dettaglio-row';
+            newRow.setAttribute('data-index', dettaglioIndex);
+            
+            newRow.innerHTML = `
+                <div class="form-grid dettaglio-grid">
+                    <div class="form-group">
+                        <label>Codice Articolo</label>
+                        <input type="text" name="dettagli[${dettaglioIndex}][codice]" placeholder="Codice...">
+                    </div>
+                    <div class="form-group">
+                        <label>Descrizione *</label>
+                        <input type="text" name="dettagli[${dettaglioIndex}][descrizione]" required placeholder="Digita per cercare articolo..." 
+                               autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantità *</label>
+                        <input type="number" name="dettagli[${dettaglioIndex}][quantita]" value="1" min="0.01" step="0.01" required 
+                               onchange="calcolaTotaleRiga(${dettaglioIndex})">
+                    </div>
+                    <div class="form-group">
+                        <label>U.M.</label>
+                        <select name="dettagli[${dettaglioIndex}][unita]">
+                            <option value="PZ">PZ</option>
+                            <option value="KG">KG</option>
+                            <option value="MT">MT</option>
+                            <option value="MQ">MQ</option>
+                            <option value="MC">MC</option>
+                            <option value="LT">LT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Prezzo Unit. *</label>
+                        <input type="number" name="dettagli[${dettaglioIndex}][prezzo_unitario]" min="0" step="0.01" required
+                               placeholder="0.00" onchange="calcolaTotaleRiga(${dettaglioIndex})">
+                    </div>
+                    <div class="form-group">
+                        <label>Costo Unit.</label>
+                        <input type="number" name="dettagli[${dettaglioIndex}][costo]" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Sconto %</label>
+                        <input type="number" name="dettagli[${dettaglioIndex}][sconto]" min="0" max="100" step="0.01" value="0"
+                               onchange="calcolaTotaleRiga(${dettaglioIndex})">
+                    </div>
+                    <div class="form-group">
+                        <label>Totale Riga</label>
+                        <input type="number" class="totale-riga" readonly placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviDettaglio(${dettaglioIndex})">🗑️</button>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(newRow);
+            dettaglioIndex++;
+            
+            // Notifica che è stata aggiunta una nuova riga per autocompletamento
+            const event = new CustomEvent('nuovaRigaAggiunta', {
+                detail: { riga: newRow }
+            });
+            document.dispatchEvent(event);
+        }
+
+        function rimuoviDettaglio(index) {
+            const row = document.querySelector(`[data-index="${index}"]`);
+            if (row && document.querySelectorAll('.dettaglio-row').length > 1) {
+                row.remove();
+                calcolaTotaliGenerali();
+            }
+        }
+
+        function calcolaTotaleRiga(index) {
+            const row = document.querySelector(`[data-index="${index}"]`);
+            if (!row) return;
+            
+            const quantita = parseFloat(row.querySelector('[name*="[quantita]"]').value) || 0;
+            const prezzo = parseFloat(row.querySelector('[name*="[prezzo_unitario]"]').value) || 0;
+            const sconto = parseFloat(row.querySelector('[name*="[sconto]"]').value) || 0;
+            
+            const totaleRiga = quantita * prezzo * (1 - sconto/100);
+            row.querySelector('.totale-riga').value = totaleRiga.toFixed(2);
+            
+            calcolaTotaliGenerali();
+        }
+
+        function calcolaTotaliGenerali() {
+            const righe = document.querySelectorAll('.totale-riga');
+            let totaleNetto = 0;
+            
+            righe.forEach(riga => {
+                totaleNetto += parseFloat(riga.value) || 0;
+            });
+            
+            const ivaPercentuale = parseFloat(document.getElementById('iva').value) || 0;
+            const totaleIva = totaleNetto * ivaPercentuale / 100;
+            const totaleLordo = totaleNetto + totaleIva;
+            
+            document.getElementById('totale-netto').textContent = `€ ${totaleNetto.toFixed(2)}`;
+            document.getElementById('totale-iva').textContent = `€ ${totaleIva.toFixed(2)}`;
+            document.getElementById('totale-lordo').textContent = `€ ${totaleLordo.toFixed(2)}`;
+        }
+
+        // Ricalcola totali quando cambia l'IVA
+        
+        // Inizializza autocompletamento per esistenti e nuove righe
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup autocompletamento per cliente
+            const clienteInput = document.getElementById('cliente_nome');
+            if (clienteInput && window.AutocompleteHelpers) {
+                window.AutocompleteHelpers.setupClientiAutocomplete(clienteInput);
+            }
+            
+            // Setup autocompletamento per commesse
+            const commessaInput = document.getElementById('commessa');
+            if (commessaInput && window.AutocompleteHelpers) {
+                window.AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
+            }
+            
+            // Setup autocompletamento per articoli esistenti
+            document.querySelectorAll('input[name*="[descrizione]"]').forEach(input => {
+                if (window.AutocompleteHelpers) {
+                    window.AutocompleteHelpers.setupArticoliAutocomplete(input);
+                }
+            });
+        });
+        
+        // Setup autocompletamento per nuove righe
+        function aggiungiDettaglio() {
+            // ... existing code ...
+            container.appendChild(newRow);
+            dettaglioIndex++;
+            
+            // Setup autocompletamento per la nuova riga
+            const descrizioneInput = newRow.querySelector('input[name*="[descrizione]"]');
+            if (descrizioneInput && window.AutocompleteHelpers) {
+                window.AutocompleteHelpers.setupArticoliAutocomplete(descrizioneInput);
+            }
+            
+            // Notifica che è stata aggiunta una nuova riga per autocompletamento
+            const event = new CustomEvent('nuovaRigaAggiunta', {
+                detail: { riga: newRow }
+            });
+            document.dispatchEvent(event);
+        }
+        document.getElementById('iva').addEventListener('change', calcolaTotaliGenerali);
+    </script>
+
+    <style>
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .autocomplete-results.show {
+            display: block;
+        }
+        
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .autocomplete-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .dettaglio-grid {
+            grid-template-columns: 1fr 2fr 80px 60px 100px 100px 80px 100px 50px;
+            gap: 10px;
+            align-items: end;
+        }
+        
+        .dettaglio-row {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .totali-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .totale-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .totale-finale {
+            background: #e8f5e8;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+    </style>
+    
+    <script>
+    // Funzione per aggiornare cliente
+    function updateCliente(id, nome) {
+        document.getElementById('cliente_id').value = id;
+        document.getElementById('cliente_nome').value = nome;
+    }
+    
+    // Inizializza autocompletamento al caricamento
+    document.addEventListener('DOMContentLoaded', function() {
+        const clienteInput = document.getElementById('cliente_nome');
+        if (clienteInput && window.AutocompleteHelpers) {
+            window.AutocompleteHelpers.setupClientiAutocomplete(clienteInput);
+        }
+        
+        // Setup autocompletamento commesse
+        const commessaInput = document.getElementById('commessa');
+        if (commessaInput && window.AutocompleteHelpers) {
+            window.AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
+        }
+    });
+    </script>
+</body>
+</html>

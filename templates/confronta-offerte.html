@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Confronta Offerte - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/offerte" class="active">💰 Offerte</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📊 Confronta Offerte</h1>
+            <div class="buttons">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/offerte'">← Torna alle Offerte</button>
+            </div>
+        </div>
+
+        {% if offerte %}
+        <div class="card">
+            <h3>🔍 Offerte Attive per Confronto</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Numero</th>
+                            <th>Fornitore</th>
+                            <th>Oggetto</th>
+                            <th>Data Ricevuta</th>
+                            <th>Stato</th>
+                            <th>Totale</th>
+                            <th>Priorità</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for offerta in offerte %}
+                        <tr>
+                            <td><strong>{{ offerta.numero_offerta }}</strong></td>
+                            <td>{{ offerta.fornitore_nome }}</td>
+                            <td>{{ offerta.oggetto[:50] }}...</td>
+                            <td>{{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta }}</td>
+                            <td>
+                                <span class="status-badge status-{{ offerta.stato }}">
+                                    {% if offerta.stato == 'ricevuta' %}📨 Ricevuta
+                                    {% elif offerta.stato == 'valutata' %}🔍 Valutata
+                                    {% elif offerta.stato == 'accettata' %}✅ Accettata
+                                    {% else %}{{ offerta.stato }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td><strong>€ {{ "%.2f"|format(offerta.totale_lordo or 0) }}</strong></td>
+                            <td>
+                                <span class="priority-badge priority-{{ offerta.priorita }}">
+                                    {% if offerta.priorita == 'alta' %}🔴 Alta
+                                    {% elif offerta.priorita == 'media' %}🟡 Media
+                                    {% elif offerta.priorita == 'bassa' %}🟢 Bassa
+                                    {% else %}{{ offerta.priorita }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="button-group">
+                                    <button class="btn-icon" onclick="window.location.href='/offerte/{{ offerta.id }}'" title="Visualizza">👁️</button>
+                                    {% if offerta.stato == 'ricevuta' %}
+                                        <button class="btn-icon btn-success" onclick="accettaOfferta({{ offerta.id }})" title="Accetta">✅</button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sezione di confronto rapido -->
+        <div class="card">
+            <h3>⚖️ Analisi Comparativa</h3>
+            
+            {% set offerte_per_stato = offerte|groupby('stato') %}
+            <div class="comparison-stats">
+                <div class="stat-card">
+                    <div class="stat-number">{{ offerte|length }}</div>
+                    <div class="stat-label">Offerte Totali</div>
+                </div>
+                {% for stato, gruppo in offerte_per_stato %}
+                <div class="stat-card">
+                    <div class="stat-number">{{ gruppo|list|length }}</div>
+                    <div class="stat-label">{{ stato|title }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if offerte|length > 1 %}
+            <div class="price-comparison">
+                <h4>💰 Confronto Prezzi</h4>
+                {% set prezzi = offerte|map(attribute='totale_lordo')|select|list %}
+                {% if prezzi %}
+                <div class="price-stats">
+                    <div class="price-item">
+                        <span class="price-label">Prezzo più basso:</span>
+                        <span class="price-value">€ {{ "%.2f"|format(prezzi|min) }}</span>
+                    </div>
+                    <div class="price-item">
+                        <span class="price-label">Prezzo più alto:</span>
+                        <span class="price-value">€ {{ "%.2f"|format(prezzi|max) }}</span>
+                    </div>
+                    <div class="price-item">
+                        <span class="price-label">Prezzo medio:</span>
+                        <span class="price-value">€ {{ "%.2f"|format((prezzi|sum / prezzi|length)) }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        {% else %}
+        <div class="card">
+            <div style="text-align: center; padding: 60px; color: #a0aec0;">
+                <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+                <h3>Nessuna offerta da confrontare</h3>
+                <p>Non ci sono offerte ricevute o valutate al momento.</p>
+                <button class="btn btn-primary" onclick="window.location.href='/offerte/nuova'">➕ Crea Nuova Offerta</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <style>
+        .comparison-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #3b82f6;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .price-comparison {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fefefe;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .price-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .price-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f1f5f9;
+            border-radius: 6px;
+        }
+        
+        .price-label {
+            font-weight: 500;
+            color: #475569;
+        }
+        
+        .price-value {
+            font-weight: 700;
+            color: #1e40af;
+        }
+        
+        .priority-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .priority-alta {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .priority-media {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fed7aa;
+        }
+        
+        .priority-bassa {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-icon {
+            padding: 6px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .btn-icon:hover {
+            background: #e5e7eb;
+        }
+        
+        .btn-icon.btn-success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .btn-icon.btn-success:hover {
+            background: #bbf7d0;
+        }
+    </style>
+    
+    <script>
+    function accettaOfferta(id) {
+        if (confirm('Sei sicuro di voler accettare questa offerta?')) {
+            fetch(`/offerte/${id}/accetta`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Errore nell\'accettazione dell\'offerta');
+                }
+            })
+            .catch(error => {
+                alert('Errore di rete: ' + error.message);
+            });
+        }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Catalogo - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclima.it</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Catalogo Articoli</h2>
+                <p>Gestione prodotti e articoli</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/catalogo" class="active">📚 Catalogo</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📚 Catalogo Articoli</h1>
+            <div class="filters">
+                <input type="text" id="searchInput" placeholder="Cerca articolo..." onkeyup="filtraTabella()">
+                <button class="btn btn-success" onclick="document.getElementById('importFile').click()">📤 Importa Excel</button>
+                <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;" onchange="importaCatalogo(this)">
+                <button class="btn btn-secondary" onclick="esportaCatalogo()">📥 Esporta Excel</button>
+                <button class="btn btn-primary" onclick="stampaCatalogo()">🖨️ Stampa Catalogo</button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Articoli Totali</span>
+                    <span class="info-value">{{ articoli|length }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Valore Magazzino</span>
+                    <span class="info-value">€ {{ "{:,.2f}".format(valore_magazzino) }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Sotto Scorta</span>
+                    <span class="info-value" style="color: #f87171;">{{ sotto_scorta }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Esauriti</span>
+                    <span class="info-value" style="color: #dc2626;">{{ esauriti }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="tabellaCatalogo">
+                <thead>
+                    <tr>
+                        <th>Codice Interno</th>
+                        <th>Codice Fornitore</th>
+                        <th>Descrizione</th>
+                        <th>Fornitore Principale</th>
+                        <th>Codice Produttore</th>
+                        <th>Costo Ultimo €</th>
+                        <th>U.M.</th>
+                        <th>Giacenza</th>
+                        <th>Scorta Min.</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for articolo in articoli %}
+                    <tr class="{{ 'warning' if articolo.giacenza_attuale < articolo.scorta_minima else '' }}">
+                        <td><strong>{{ articolo.codice_interno }}</strong></td>
+                        <td>{{ articolo.codice_fornitore or '-' }}</td>
+                        <td>{{ articolo.descrizione }}</td>
+                        <td>{{ articolo.fornitore_principale or '-' }}</td>
+                        <td>{{ articolo.codice_produttore or '-' }}</td>
+                        <td>€ {{ "{:.2f}".format(articolo.costo_ultimo or 0) }}</td>
+                        <td>{{ articolo.unita_misura or 'PZ' }}</td>
+                        <td class="{{ 'text-danger' if articolo.giacenza_attuale < articolo.scorta_minima else '' }}">
+                            {{ "{:.2f}".format(articolo.giacenza_attuale or 0) }}
+                        </td>
+                        <td>{{ "{:.2f}".format(articolo.scorta_minima or 0) }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-small btn-primary" onclick="window.location.href='/catalogo/modifica/{{ articolo.id }}'">✏️</button>
+                                <button class="btn-small btn-danger" onclick="eliminaArticolo({{ articolo.id }}, '{{ articolo.codice_interno }}', '{{ articolo.descrizione }}')">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" style="text-align: center; padding: 40px;">
+                            Nessun articolo nel catalogo. Gli articoli vengono aggiunti automaticamente dai DDT IN confermati.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <style>
+        .warning { background: #fef3c7 !important; }
+        .text-danger { color: #dc2626; font-weight: bold; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        
+        .btn-small {
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-small.btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-small.btn-primary:hover {
+            background: #5a6fd8;
+        }
+        
+        .btn-small.btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-small.btn-danger:hover {
+            background: #c82333;
+        }
+        
+        /* Responsive per azioni */
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+                gap: 2px;
+            }
+            
+            .btn-small {
+                font-size: 11px;
+                padding: 3px 6px;
+            }
+        }
+        
+        /* Stili per la stampa */
+        @media print {
+            body.print-mode nav,
+            body.print-mode .filters,
+            body.print-mode .action-buttons {
+                display: none !important;
+            }
+            
+            body.print-mode .ddt-header {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            
+            body.print-mode table {
+                font-size: 11px;
+                width: 100%;
+                border-collapse: collapse;
+            }
+            
+            body.print-mode th,
+            body.print-mode td {
+                border: 1px solid #ccc;
+                padding: 4px;
+                text-align: left;
+            }
+            
+            body.print-mode th {
+                background: #f5f5f5;
+                font-weight: bold;
+            }
+            
+            body.print-mode .warning {
+                background: #fef3c7 !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+
+    <script>
+    function filtraTabella() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById('tabellaCatalogo');
+        const tr = table.getElementsByTagName('tr');
+        
+        for (let i = 1; i < tr.length; i++) {
+            const tds = tr[i].getElementsByTagName('td');
+            let found = false;
+            
+            for (let j = 0; j < tds.length; j++) {
+                if (tds[j]) {
+                    const txtValue = tds[j].textContent || tds[j].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            
+            tr[i].style.display = found ? '' : 'none';
+        }
+    }
+    
+    function esportaCatalogo() {
+        window.location.href = '/catalogo/export-excel';
+    }
+    
+    function stampaCatalogo() {
+        // Nascondi elementi non necessari per la stampa
+        const elementiNonStampa = document.querySelectorAll('nav, .filters, .action-buttons');
+        elementiNonStampa.forEach(el => el.style.display = 'none');
+        
+        // Imposta stili per la stampa
+        document.body.classList.add('print-mode');
+        
+        // Stampa
+        window.print();
+        
+        // Ripristina visualizzazione normale
+        elementiNonStampa.forEach(el => el.style.display = '');
+        document.body.classList.remove('print-mode');
+    }
+    
+    function eliminaArticolo(id, codice, descrizione) {
+        if (confirm('Sei sicuro di voler eliminare questo articolo?\n\n"' + codice + ' - ' + descrizione + '"\n\nQuesta azione non può essere annullata.')) {
+            // Crea form nascosto per eliminazione
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/catalogo/elimina/' + id;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+    
+    function importaCatalogo(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            
+            // Verifica che sia un file Excel
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                alert('Seleziona un file Excel (.xlsx o .xls)');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Mostra loading
+            const originalText = document.body.innerHTML;
+            document.body.innerHTML = '<div style="text-align: center; padding: 100px;"><h2>📤 Importazione in corso...</h2><p>Attendere prego, non chiudere la pagina.</p></div>';
+            
+            fetch('/catalogo/import-excel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Importazione completata con successo!\n\n' + 
+                          'Articoli importati: ' + data.imported + '\n' +
+                          'Articoli aggiornati: ' + data.updated);
+                    location.reload();
+                } else {
+                    alert('Errore durante l\'importazione: ' + data.error);
+                    document.body.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore durante l\'importazione: ' + error);
+                document.body.innerHTML = originalText;
+            });
+            
+            // Reset input
+            input.value = '';
+        }
+    }
+    </script>
+</body>
+</html>

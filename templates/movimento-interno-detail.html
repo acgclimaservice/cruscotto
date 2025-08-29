@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Movimento Interno {{ movimento.numero_documento or 'BOZZA' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/movimenti-interni" class="active">🔄 Movimenti Interni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>🔄 Movimento Interno: {{ movimento.numero_documento or 'BOZZA' }}</h1>
+            <div class="actions-bar">
+                {% if movimento.stato == 'bozza' %}
+                <button class="btn btn-success" onclick="confermaMovimento({{ movimento.id }})">
+                    ✅ Conferma Movimento
+                </button>
+                {% endif %}
+                <button class="btn" onclick="window.print()">🖨️ Stampa</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/movimenti-interni'">
+                    ← Torna ai Movimenti
+                </button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Stato</span>
+                    <span class="status {{ 'confirmed' if movimento.stato == 'confermato' else 'draft' }}">
+                        {{ movimento.stato|upper }}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Data Movimento</span>
+                    <span class="info-value">{{ movimento.data_movimento.strftime('%d/%m/%Y') if movimento.data_movimento else '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Numero Documento</span>
+                    <span class="info-value">{{ movimento.numero_documento or 'BOZZA' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Da Magazzino</span>
+                    <span class="info-value">{{ movimento.magazzino_partenza or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">A Magazzino</span>
+                    <span class="info-value">{{ movimento.magazzino_destinazione or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Causale</span>
+                    <span class="info-value">{{ movimento.causale or '-' }}</span>
+                </div>
+            </div>
+            
+            {% if movimento.note %}
+            <div class="notes-section">
+                <h4>📝 Note</h4>
+                <p>{{ movimento.note }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="articles-section">
+            <h3>📦 Articoli</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Quantità</th>
+                        <th>U.M.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for articolo in articoli %}
+                    <tr>
+                        <td>{{ articolo.codice_articolo or '-' }}</td>
+                        <td>{{ articolo.descrizione_articolo or '-' }}</td>
+                        <td>{{ articolo.quantita }}</td>
+                        <td>{{ articolo.unita_misura or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="no-data">Nessun articolo associato</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function confermaMovimento(id) {
+        if (confirm('Confermare questo movimento interno? Le giacenze verranno aggiornate.')) {
+            fetch(`/movimenti-interni/${id}/conferma`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Movimento confermato: ' + data.numero);
+                    location.reload();
+                } else {
+                    alert('Errore: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore durante la conferma del movimento');
+            });
+        }
+    }
+    </script>
+</body>
+</html>

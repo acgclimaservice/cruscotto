@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offerte - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
+    <script src="{{ url_for('static', filename='autocompletamento.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/offerte" class="active">💰 Offerte</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>💰 Gestione Offerte</h1>
+            <p style="color: #8492a6; margin-top: 8px;">Gestione delle offerte ricevute dai fornitori</p>
+        </div>
+
+        <div class="dashboard" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="card">
+                <h2><span class="icon">📨</span>Offerte Ricevute</h2>
+                <div class="stat-value">{{ offerte_ricevute|default(0) }}</div>
+                <div class="stat-label">In attesa di valutazione</div>
+                <a href="#" class="btn">Visualizza Tutte</a>
+            </div>
+            
+            <div class="card">
+                <h2><span class="icon">✅</span>Offerte Accettate</h2>
+                <div class="stat-value">{{ offerte_accettate|default(0) }}</div>
+                <div class="stat-label">Questo mese</div>
+                <a href="#" class="btn">Storico</a>
+            </div>
+            
+            <div class="card">
+                <h2><span class="icon">💡</span>Azioni Rapide</h2>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                    <a href="/offerte/nuova" class="btn btn-success">+ Nuova Offerta</a>
+                    <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">📊 Report Offerte</button>
+                    <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">📤 Importa da Email</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>💰 Lista Offerte</h3>
+                <a href="/offerte/nuova" class="btn btn-success">+ Nuova Offerta</a>
+            </div>
+            
+            {% if offerte %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Numero</th>
+                            <th>Data Ricevuta</th>
+                            <th>Fornitore</th>
+                            <th>Oggetto</th>
+                            <th>Stato</th>
+                            <th>Priorità</th>
+                            <th>Totale</th>
+                            <th>Scadenza</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for offerta in offerte %}
+                        <tr>
+                            <td><strong>{{ offerta.numero_offerta }}</strong></td>
+                            <td>{{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta }}</td>
+                            <td>{{ offerta.fornitore_nome }}</td>
+                            <td>{{ offerta.oggetto }}</td>
+                            <td>
+                                <span class="status-badge status-{{ offerta.stato }}">
+                                    {% if offerta.stato == 'ricevuta' %}📨 Ricevuta
+                                    {% elif offerta.stato == 'valutata' %}🔍 Valutata
+                                    {% elif offerta.stato == 'accettata' %}✅ Accettata
+                                    {% elif offerta.stato == 'rifiutata' %}❌ Rifiutata
+                                    {% elif offerta.stato == 'scaduta' %}⏰ Scaduta
+                                    {% else %}{{ offerta.stato }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="priority-badge priority-{{ offerta.priorita }}">
+                                    {% if offerta.priorita == 'alta' %}🔴 Alta
+                                    {% elif offerta.priorita == 'media' %}🟡 Media
+                                    {% elif offerta.priorita == 'bassa' %}🟢 Bassa
+                                    {% else %}{{ offerta.priorita }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>€ {{ "%.2f"|format(offerta.totale_lordo or 0) }}</td>
+                            <td>
+                                {% if offerta.data_scadenza %}
+                                    {{ offerta.data_scadenza.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    <span style="color: #8492a6;">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/offerte/{{ offerta.id }}" class="btn btn-sm">👁️ Visualizza</a>
+                                    {% if offerta.stato == 'ricevuta' %}
+                                        <button class="btn btn-sm btn-warning" onclick="mostraModalValutazione({{ offerta.id }})">🔍 Valuta</button>
+                                        <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Accettare questa offerta?')">✅ Accetta</button>
+                                        </form>
+                                    {% elif offerta.stato == 'valutata' %}
+                                        <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Accettare questa offerta?')">✅ Accetta</button>
+                                        </form>
+                                    {% elif offerta.stato == 'accettata' %}
+                                        <button class="btn btn-sm btn-primary" onclick="convertiInDDTIn({{ offerta.id }}, '{{ offerta.numero_offerta }}')">📥 Converti in DDT IN</button>
+                                    {% endif %}
+                                    <button class="btn btn-sm btn-danger" onclick="eliminaOfferta({{ offerta.id }}, '{{ offerta.numero_offerta }}')">🗑️ Elimina</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div style="text-align: center; padding: 60px 20px; color: #a0aec0;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">💰</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Nessuna offerta presente</div>
+                    <div style="font-size: 14px; margin-bottom: 20px;">Inizia registrando la tua prima offerta</div>
+                    <a href="/offerte/nuova" class="btn btn-success">+ Registra Prima Offerta</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+<script>
+function convertiInDDTIn(offertaId, numeroOfferta) {
+    if (confirm(`Convertire l'offerta ${numeroOfferta} in DDT IN?\n\nQuesta operazione:\n- Creerà un nuovo DDT IN con gli articoli dell'offerta\n- Cambierà lo stato dell'offerta in "utilizzata"\n\nContinuare?`)) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Convertendo...";
+        btn.disabled = true;
+        
+        fetch(`/offerte/${offertaId}/crea-ddt`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`DDT IN creato con successo!\n\nNumero DDT: ${data.numero_ddt}`);
+                window.location.href = data.redirect_url;
+            } else {
+                alert(`Errore durante la conversione: ${data.errore}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`Errore durante la conversione: ${error}`);
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+    }
+}
+
+function eliminaOfferta(offertaId, numeroOfferta) {
+    if (confirm(`Sei sicuro di voler eliminare l'offerta ${numeroOfferta}?\n\nQuesta operazione:\n- Eliminerà l'offerta e tutti i suoi dettagli\n- NON PUÒ essere annullata!\n\nContinuare?`)) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Eliminando...";
+        btn.disabled = true;
+        
+        fetch(`/offerte/${offertaId}/elimina`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Offerta eliminata con successo!\n\n${data.message}\nDettagli rimossi: ${data.dettagli_rimossi}`);
+                location.reload();
+            } else {
+                alert(`Errore durante l'eliminazione: ${data.error}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`Errore durante l'eliminazione: ${error}`);
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+    }
+}
+</script>
+</body>
+</html>

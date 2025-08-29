@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Stampa DDT OUT</title>
+    <style>
+        @media print {
+            .no-print { display: none; }
+            /* Rimuove intestazione e piè di pagina del browser */
+            @page {
+                margin: 0;
+            }
+            body {
+                margin: 0.5cm;
+            }
+        }
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.4;
+            color: #333;
+        }
+        .header {
+            border-bottom: 3px solid #2c5282;
+            padding-bottom: 25px;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .company-logo {
+            height: 60px;
+            width: auto;
+        }
+        
+        .header-text {
+            text-align: center;
+        }
+        h1 { 
+            margin: 0; 
+            font-size: 28px; 
+            color: #2c5282;
+            font-weight: 600;
+        }
+        h2 { 
+            margin: 15px 0 5px 0; 
+            font-size: 22px; 
+            color: #2d3748;
+            font-weight: 500;
+        }
+        .ddt-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .ddt-info div {
+            flex: 1;
+        }
+        
+        .info-section {
+            margin-bottom: 20px;
+        }
+        
+        .info-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #007bff;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        
+        .info-row .label {
+            font-weight: bold;
+            width: 120px;
+            color: #666;
+        }
+        
+        .info-row .value {
+            flex: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: none;
+            padding: 15px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th { 
+            background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+        }
+        tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        tbody tr:hover {
+            background: #e2e8f0;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .totals {
+            text-align: right;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .no-print {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .no-print button {
+            padding: 12px 24px;
+            margin: 0 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .no-print button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button onclick="window.print()">🖨️ Stampa</button>
+        <button onclick="window.close()">❌ Chiudi</button>
+    </div>
+
+    <div class="header">
+        <div class="header-content">
+            <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="company-logo">
+            <div class="header-text">
+                <h1>DOCUMENTO DI TRASPORTO (USCITA)</h1>
+                <h2>{{ ddt.numero_ddt or ('BOZZA #' + ddt.id|string) }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="company-info">
+        <strong>ACG CLIMA SERVICE S.R.L.</strong><br>
+        <strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)<br>
+        <strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)<br>
+        Tel: 0383/640606 | Email: info@acgclima.it<br>
+        P.IVA: 02735970069 | C.F: 02735970069
+    </div>
+
+    <div class="ddt-info">
+        <div class="info-section">
+            <h3>📋 Informazioni DDT</h3>
+            <div class="info-row">
+                <span class="label">Data DDT:</span>
+                <span class="value">{{ ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Data Creazione:</span>
+                <span class="value">{{ ddt.data_creazione.strftime('%d/%m/%Y') if ddt.data_creazione else '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Stato:</span>
+                <span class="value">
+                    <span class="status-badge status-{{ ddt.stato }}">
+                        {% if ddt.stato == 'bozza' %}BOZZA
+                        {% elif ddt.stato == 'confermato' %}CONFERMATO
+                        {% else %}{{ ddt.stato|upper }}
+                        {% endif %}
+                    </span>
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="label">Magazzino Partenza:</span>
+                <span class="value">{{ ddt.magazzino_partenza or 'N/D' }}</span>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h3>🏢 Cliente/Destinatario</h3>
+            <div class="info-row">
+                <span class="label">Ragione Sociale:</span>
+                <span class="value"><strong>{{ ddt.nome_origine if ddt.nome_origine else (ddt.cliente if ddt.cliente else 'N/D') }}</strong></span>
+            </div>
+            <div class="info-row">
+                <span class="label">Destinazione:</span>
+                <span class="value">{{ ddt.destinazione or 'N/D' }}</span>
+            </div>
+            {% if ddt.commessa %}
+            <div class="info-row">
+                <span class="label">Commessa:</span>
+                <span class="value"><strong>{{ ddt.commessa }}</strong></span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Codice</th>
+                <th>Descrizione</th>
+                <th>Quantità</th>
+                <th>U.M.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if articoli %}
+                {% for articolo in articoli %}
+                <tr>
+                    <td>{{ articolo.codice_interno if articolo.codice_interno else '-' }}</td>
+                    <td>{{ articolo.descrizione }}</td>
+                    <td>{{ articolo.quantita }}</td>
+                    <td>PZ</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center;">Nessun articolo</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <script>
+        // Auto-stampa se richiesta
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto_print') === 'true') {
+            setTimeout(() => window.print(), 500);
+        }
+    </script>
+</body>
+</html>

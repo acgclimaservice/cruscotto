@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuova Commessa - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/movimenti-interni">🔄 Movimenti Interni</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/commesse" class="active">🏗️ Commesse</a></li>
+                <li><a href="/clienti">👥 Clienti</a></li>
+                <li><a href="/fornitori">🏭 Fornitori</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>🏗️ Nuova Commessa</h1>
+            <div class="actions">
+                <a href="/commesse" class="btn btn-secondary">← Torna alle Commesse</a>
+            </div>
+        </div>
+
+        <!-- Form Nuova Commessa -->
+        <div class="form-container">
+            <form method="POST" action="/commesse/nuova">
+                <input type="hidden" name="numero_progressivo" value="{{ numero_proposto }}">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="cliente_nome">Cliente *</label>
+                        <input type="text" name="cliente_nome" id="cliente_nome" required>
+                        <input type="hidden" name="cliente_id" id="cliente_id">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tipologia">Tipologia *</label>
+                        <select name="tipologia" id="tipologia" required>
+                            <option value="">Seleziona tipologia</option>
+                            <option value="Riqualificazione">Riqualificazione</option>
+                            <option value="Manutenzione Ordinaria">Manutenzione Ordinaria</option>
+                            <option value="Manutenzione Straordinaria">Manutenzione Straordinaria</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="descrizione">Descrizione *</label>
+                        <textarea name="descrizione" id="descrizione" rows="4" required placeholder="Descrizione dettagliata della commessa..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="data_apertura">Data Apertura</label>
+                        <input type="date" name="data_apertura" id="data_apertura" value="{{ today }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="data_scadenza">Data Scadenza</label>
+                        <input type="date" name="data_scadenza" id="data_scadenza">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="note">Note aggiuntive</label>
+                        <textarea name="note" id="note" rows="3" placeholder="Note opzionali..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">✅ Crea Commessa</button>
+                    <a href="/commesse" class="btn btn-secondary">Annulla</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+    .form-container {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin: 20px 0;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #374151;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+    </style>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configura autocomplete clienti
+        const clienteInput = document.getElementById('cliente_nome');
+        if (clienteInput) {
+            window.AutocompleteHelpers.setupClientiAutocomplete(clienteInput, {
+                hiddenInput: '#cliente_id'
+            });
+        }
+    });
+    </script>
+</body>
+</html>

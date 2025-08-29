@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventivo {{ preventivo.numero_preventivo or preventivo.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        
+        .company-logo {
+            height: 60px;
+            width: auto;
+        }
+        
+        .header-text {
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #007bff;
+        }
+        
+        .header h2 {
+            margin: 5px 0 0 0;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .company-info {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .preventivo-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .preventivo-info div {
+            flex: 1;
+        }
+        
+        .info-section {
+            margin-bottom: 20px;
+        }
+        
+        .info-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #007bff;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        
+        .info-row .label {
+            font-weight: bold;
+            width: 120px;
+            color: #666;
+        }
+        
+        .info-row .value {
+            flex: 1;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-bozza { background: #f3f4f6; color: #374151; }
+        .status-inviato { background: #dbeafe; color: #1e40af; }
+        .status-accettato { background: #dcfce7; color: #166534; }
+        .status-rifiutato { background: #fee2e2; color: #dc2626; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 11px;
+        }
+        
+        table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .totals-section {
+            margin-top: 30px;
+            text-align: right;
+        }
+        
+        .totals-table {
+            display: inline-block;
+            text-align: left;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            min-width: 200px;
+        }
+        
+        .total-row.final {
+            border-top: 2px solid #007bff;
+            padding-top: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .notes-section {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        
+        .notes-section h3 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        
+        .no-print {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .no-print button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        
+        @media print {
+            /* Rimuove intestazione e piè di pagina del browser */
+            @page {
+                margin: 0;
+            }
+            body { 
+                margin: 0.5cm; 
+                padding: 15px; 
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button onclick="window.print()">🖨️ Stampa</button>
+        <button onclick="window.close()">❌ Chiudi</button>
+    </div>
+
+    <div class="header">
+        <div class="header-content">
+            <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="company-logo">
+            <div class="header-text" style="flex: 1; text-align: center;">
+                <h1>PREVENTIVO</h1>
+                <h2>{{ preventivo.numero_preventivo or ('BOZZA #' + preventivo.id|string) }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="company-info">
+        <strong>ACG CLIMA SERVICE S.R.L.</strong><br>
+        <strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)<br>
+        <strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)<br>
+        Tel: 0383/640606 | Email: info@acgclima.it<br>
+        P.IVA: 02735970069 | C.F: 02735970069
+    </div>
+    
+    <div class="preventivo-info">
+        <div class="info-section">
+            <h3>📋 Informazioni Preventivo</h3>
+            <div class="info-row">
+                <span class="label">Data Preventivo:</span>
+                <span class="value">{{ preventivo.data_preventivo.strftime('%d/%m/%Y') if preventivo.data_preventivo else '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Oggetto:</span>
+                <span class="value">{{ preventivo.oggetto or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Stato:</span>
+                <span class="value">
+                    <span class="status-badge status-{{ preventivo.stato }}">
+                        {% if preventivo.stato == 'bozza' %}BOZZA
+                        {% elif preventivo.stato == 'inviato' %}INVIATO
+                        {% elif preventivo.stato == 'accettato' %}ACCETTATO
+                        {% elif preventivo.stato == 'rifiutato' %}RIFIUTATO
+                        {% else %}{{ preventivo.stato|upper }}
+                        {% endif %}
+                    </span>
+                </span>
+            </div>
+            {% if preventivo.data_scadenza %}
+            <div class="info-row">
+                <span class="label">Scadenza:</span>
+                <span class="value">{{ preventivo.data_scadenza.strftime('%d/%m/%Y') }}</span>
+            </div>
+            {% endif %}
+            {% if preventivo.commessa %}
+            <div class="info-row">
+                <span class="label">Commessa:</span>
+                <span class="value"><strong>{{ preventivo.commessa }}</strong></span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="info-section">
+            <h3>🏢 Cliente</h3>
+            <div class="info-row">
+                <span class="label">Ragione Sociale:</span>
+                <span class="value"><strong>{{ preventivo.cliente_nome }}</strong></span>
+            </div>
+            {% if preventivo.cliente %}
+            <div class="info-row">
+                <span class="label">Indirizzo:</span>
+                <span class="value">{{ preventivo.cliente.indirizzo or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Città:</span>
+                <span class="value">{{ preventivo.cliente.citta or '-' }} {{ preventivo.cliente.cap or '' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">P.IVA:</span>
+                <span class="value">{{ preventivo.cliente.partita_iva or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Telefono:</span>
+                <span class="value">{{ preventivo.cliente.telefono or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Email:</span>
+                <span class="value">{{ preventivo.cliente.email or '-' }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if preventivo.dettagli %}
+    <div class="info-section">
+        <h3>📦 Dettagli Articoli</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Codice</th>
+                    <th>Descrizione</th>
+                    <th style="width: 60px;">Qty</th>
+                    <th style="width: 40px;">U.M.</th>
+                    <th style="width: 80px;">Prezzo Unit.</th>
+                    <th style="width: 60px;">Sconto %</th>
+                    <th style="width: 90px;">Totale</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dettaglio in preventivo.dettagli %}
+                <tr>
+                    <td><strong>{{ dettaglio.codice_articolo or '-' }}</strong></td>
+                    <td>
+                        {{ dettaglio.descrizione }}
+                        {% if dettaglio.note %}
+                        <br><small style="color: #666; font-style: italic;">{{ dettaglio.note }}</small>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">{{ "{:.2f}".format(dettaglio.quantita) }}</td>
+                    <td style="text-align: center;">{{ dettaglio.unita_misura or 'PZ' }}</td>
+                    <td style="text-align: right;">€ {{ "{:.2f}".format(dettaglio.prezzo_unitario or 0) }}</td>
+                    <td style="text-align: right;">{{ "{:.1f}".format(dettaglio.sconto_percentuale or 0) }}%</td>
+                    <td style="text-align: right;"><strong>€ {{ "{:.2f}".format(dettaglio.totale_riga or 0) }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    <div class="totals-section">
+        <div class="totals-table">
+            <div class="total-row">
+                <span>Totale Netto:</span>
+                <strong>€ {{ "{:.2f}".format(preventivo.totale_netto or 0) }}</strong>
+            </div>
+            <div class="total-row">
+                <span>IVA ({{ preventivo.iva or 22 }}%):</span>
+                <strong>€ {{ "{:.2f}".format((preventivo.totale_lordo or 0) - (preventivo.totale_netto or 0)) }}</strong>
+            </div>
+            <div class="total-row final">
+                <span>TOTALE LORDO:</span>
+                <strong>€ {{ "{:.2f}".format(preventivo.totale_lordo or 0) }}</strong>
+            </div>
+        </div>
+    </div>
+    
+    {% if preventivo.note %}
+    <div class="notes-section">
+        <h3>📝 Note</h3>
+        <div>{{ preventivo.note }}</div>
+    </div>
+    {% endif %}
+    
+    {% if preventivo.stato != 'bozza' %}
+    <div class="info-section" style="margin-top: 30px;">
+        <h3>📅 Cronologia</h3>
+        <div style="font-size: 11px;">
+            <div class="info-row">
+                <span class="label">Creato il:</span>
+                <span class="value">{{ preventivo.data_preventivo.strftime('%d/%m/%Y') if preventivo.data_preventivo else '-' }}</span>
+            </div>
+            {% if preventivo.data_invio %}
+            <div class="info-row">
+                <span class="label">Inviato il:</span>
+                <span class="value">{{ preventivo.data_invio.strftime('%d/%m/%Y') }}</span>
+            </div>
+            {% endif %}
+            {% if preventivo.data_accettazione %}
+            <div class="info-row">
+                <span class="label">Accettato il:</span>
+                <span class="value">{{ preventivo.data_accettazione.strftime('%d/%m/%Y') }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="footer">
+        <div>Documento generato automaticamente il {{ moment().format('DD/MM/YYYY [alle] HH:mm') if moment else '' }}</div>
+        <div style="margin-top: 5px;">ACG CLIMA SERVICE S.R.L. - Sistema Gestione Preventivi v2.1</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Articoli - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/reports">📊 Report</a></li>
+                <li><a href="/reports/articoli" class="active">📋 Report Articoli</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📋 Report Articoli</h1>
+            <p>Analisi articoli più movimentati e giacenze critiche</p>
+            <div style="margin-top: 15px;">
+                <button onclick="window.print()" class="btn btn-secondary">🖨️ Stampa</button>
+                <button onclick="exportArticoli()" class="btn btn-success">📊 Export Excel</button>
+                <button onclick="window.location.href='/inventario'" class="btn btn-info">📦 Vai a Inventario</button>
+            </div>
+        </div>
+
+        <!-- Statistiche Rapide -->
+        <div class="info-grid" style="margin-bottom: 30px;">
+            <div class="info-item">
+                <span class="info-label">Articoli Totali</span>
+                <span class="info-value">{{ top_articoli|length }}</span>
+            </div>
+            <div class="info-item {{ 'warning' if articoli_critici|length > 5 else 'success' }}">
+                <span class="info-label">Articoli Critici</span>
+                <span class="info-value">{{ articoli_critici|length }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Totale Movimenti</span>
+                <span class="info-value">{{ top_articoli|sum(attribute='entrate')|int + top_articoli|sum(attribute='uscite')|int }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Valore Giacenze</span>
+                <span class="info-value">€ {{ "{:,.2f}".format(top_articoli|sum(attribute='valore_giacenza') or 0) }}</span>
+            </div>
+        </div>
+
+        <!-- Top Articoli Movimentati -->
+        <div class="card">
+            <h3>🔥 Articoli Più Movimentati</h3>
+            <p>Articoli con maggiori movimentazioni (entrate + uscite)</p>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Codice</th>
+                            <th>Descrizione</th>
+                            <th>Entrate</th>
+                            <th>Uscite</th>
+                            <th>Totale Mov.</th>
+                            <th>Giacenza</th>
+                            <th>Costo Medio</th>
+                            <th>Valore Giacenza</th>
+                            <th>Rotazione</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for articolo in top_articoli %}
+                        {% set totale_movimenti = (articolo.entrate or 0) + (articolo.uscite or 0) %}
+                        {% set valore_giacenza = (articolo.giacenza_attuale or 0) * (articolo.costo_medio or 0) %}
+                        {% set rotazione = (articolo.uscite or 0) / (articolo.giacenza_attuale or 1) if articolo.giacenza_attuale and articolo.giacenza_attuale > 0 else 0 %}
+                        <tr class="{{ 'warning' if totale_movimenti > 50 else '' }}">
+                            <td><strong>{{ loop.index }}</strong></td>
+                            <td><strong>{{ articolo.codice_interno or '-' }}</strong></td>
+                            <td>{{ articolo.descrizione[:50] + '...' if articolo.descrizione and articolo.descrizione|length > 50 else (articolo.descrizione or '-') }}</td>
+                            <td style="color: #28a745;">+{{ articolo.entrate or 0 }}</td>
+                            <td style="color: #dc3545;">-{{ articolo.uscite or 0 }}</td>
+                            <td><strong>{{ totale_movimenti }}</strong></td>
+                            <td>{{ articolo.giacenza_attuale or 0 }}</td>
+                            <td>€ {{ "{:.2f}".format(articolo.costo_medio or 0) }}</td>
+                            <td>€ {{ "{:.2f}".format(valore_giacenza) }}</td>
+                            <td>
+                                {% if rotazione > 2 %}
+                                    <span style="color: #28a745;">Alta ({{ "{:.1f}".format(rotazione) }})</span>
+                                {% elif rotazione > 0.5 %}
+                                    <span style="color: #ffc107;">Media ({{ "{:.1f}".format(rotazione) }})</span>
+                                {% else %}
+                                    <span style="color: #dc3545;">Bassa ({{ "{:.1f}".format(rotazione) }})</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Articoli Critici (Sotto Scorta) -->
+        {% if articoli_critici %}
+        <div class="card" style="margin-top: 30px;">
+            <h3>⚠️ Articoli Sotto Scorta Minima</h3>
+            <p style="color: #dc3545;">Articoli che richiedono riordino immediato</p>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Priorità</th>
+                            <th>Codice</th>
+                            <th>Descrizione</th>
+                            <th>Giacenza Attuale</th>
+                            <th>Scorta Minima</th>
+                            <th>Deficit</th>
+                            <th>Costo Unitario</th>
+                            <th>Costo Riordino</th>
+                            <th>Ubicazione</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for articolo in articoli_critici %}
+                        {% set deficit = (articolo.scorta_minima or 0) - (articolo.giacenza_attuale or 0) %}
+                        {% set costo_riordino = deficit * (articolo.costo_medio or 0) %}
+                        <tr class="warning">
+                            <td>
+                                {% if deficit > 50 %}
+                                    <span style="color: #dc3545; font-weight: bold;">CRITICO</span>
+                                {% elif deficit > 10 %}
+                                    <span style="color: #ffc107; font-weight: bold;">ALTO</span>
+                                {% else %}
+                                    <span style="color: #28a745;">MEDIO</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ articolo.codice_interno or '-' }}</strong></td>
+                            <td>{{ articolo.descrizione[:40] + '...' if articolo.descrizione and articolo.descrizione|length > 40 else (articolo.descrizione or '-') }}</td>
+                            <td style="color: #dc3545;"><strong>{{ articolo.giacenza_attuale or 0 }}</strong></td>
+                            <td>{{ articolo.scorta_minima or 0 }}</td>
+                            <td style="color: #dc3545; font-weight: bold;">-{{ deficit }}</td>
+                            <td>€ {{ "{:.2f}".format(articolo.costo_medio or 0) }}</td>
+                            <td style="font-weight: bold;">€ {{ "{:.2f}".format(costo_riordino) }}</td>
+                            <td>{{ articolo.ubicazione or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Totale Costo Riordini -->
+            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107;">
+                <h4 style="margin: 0; color: #856404;">💰 Costo Totale Riordini Necessari</h4>
+                <p style="margin: 10px 0 0 0; font-size: 1.2em; font-weight: bold; color: #856404;">
+                    € {{ "{:,.2f}".format(articoli_critici|sum(attribute='costo_medio') or 0) }}
+                </p>
+            </div>
+        </div>
+        {% else %}
+        <div class="card" style="margin-top: 30px; text-align: center; padding: 40px;">
+            <h3 style="color: #28a745;">✅ Situazione Normale</h3>
+            <p>Tutti gli articoli sono sopra la scorta minima</p>
+        </div>
+        {% endif %}
+
+        <!-- Analisi Rotazioni -->
+        <div class="card" style="margin-top: 30px;">
+            <h3>📊 Analisi Rotazioni Magazzino</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+                
+                <div style="padding: 20px; border-left: 4px solid #28a745; background: #f8f9fa;">
+                    <h4 style="color: #28a745; margin: 0 0 10px 0;">🔄 Rotazione Alta</h4>
+                    <p style="margin: 0; color: #666;">
+                        <strong>{{ top_articoli|selectattr('rotazione_categoria', 'equalto', 'alta')|list|length }}</strong> articoli<br>
+                        Rotazione > 2.0
+                    </p>
+                </div>
+
+                <div style="padding: 20px; border-left: 4px solid #ffc107; background: #fff8e1;">
+                    <h4 style="color: #ff8f00; margin: 0 0 10px 0;">⚡ Rotazione Media</h4>
+                    <p style="margin: 0; color: #666;">
+                        <strong>{{ top_articoli|selectattr('rotazione_categoria', 'equalto', 'media')|list|length }}</strong> articoli<br>
+                        Rotazione 0.5 - 2.0
+                    </p>
+                </div>
+
+                <div style="padding: 20px; border-left: 4px solid #dc3545; background: #fff5f5;">
+                    <h4 style="color: #dc3545; margin: 0 0 10px 0;">🐌 Rotazione Bassa</h4>
+                    <p style="margin: 0; color: #666;">
+                        <strong>{{ top_articoli|selectattr('rotazione_categoria', 'equalto', 'bassa')|list|length }}</strong> articoli<br>
+                        Rotazione < 0.5
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Collegamenti Rapidi -->
+        <div class="card" style="margin-top: 20px;">
+            <h3>🔗 Azioni Rapide</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                <button onclick="window.location.href='/inventario'" class="btn btn-primary">
+                    📦 Gestisci Inventario
+                </button>
+                <button onclick="window.location.href='/catalogo'" class="btn btn-secondary">
+                    📚 Visualizza Catalogo
+                </button>
+                <button onclick="window.location.href='/reports/dashboard'" class="btn btn-info">
+                    🎯 Dashboard Esecutivo
+                </button>
+                <button onclick="window.location.href='/reports/movimenti'" class="btn btn-success">
+                    📊 Report Movimenti
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    function exportArticoli() {
+        window.location.href = '/reports/export/articoli';
+    }
+
+    // Calcola totali per le statistiche
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aggiorna timestamp
+        console.log('Report Articoli caricato');
+    });
+    </script>
+
+    <style>
+    .table-container {
+        overflow-x: auto;
+        margin-top: 15px;
+    }
+
+    .warning {
+        background-color: #fff3cd !important;
+    }
+
+    .info-item.success .info-value {
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    .info-item.warning .info-value {
+        color: #ffc107;
+        font-weight: bold;
+    }
+
+    @media print {
+        nav { display: none; }
+        .btn { display: none; }
+        .card { page-break-inside: avoid; }
+        .table-container { overflow: visible; }
+    }
+    </style>
+</body>
+</html>

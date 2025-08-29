@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stampa DDT OUT {{ ddt.numero_ddt }}</title>
+    <style>
+        @media print {
+            @page { margin: 1cm; }
+            .no-print { display: none; }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #000;
+            background: white;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .company-logo {
+            height: 60px;
+            width: auto;
+        }
+        
+        .header-text {
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #007bff;
+        }
+        
+        .header h2 {
+            margin: 5px 0 0 0;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .company-info {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .ddt-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .info-section {
+            width: 45%;
+        }
+        
+        .info-section h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .articoli-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .articoli-table th,
+        .articoli-table td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .articoli-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        
+        .totale {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .no-print {
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px;">🖨️ Stampa</button>
+        <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; margin-left: 10px;">❌ Chiudi</button>
+    </div>
+
+    <div class="header">
+        <div class="header-content">
+            <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="company-logo">
+            <div class="header-text">
+                <h1>DOCUMENTO DI TRASPORTO - USCITA</h1>
+                <h2>{{ ddt.numero_ddt or 'N/A' }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="company-info">
+        <strong>ACG CLIMA SERVICE S.R.L.</strong><br>
+        <strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)<br>
+        <strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)<br>
+        Tel: 0383/640606 | Email: info@acgclima.it<br>
+        P.IVA: 02735970069 | C.F: 02735970069
+    </div>
+    
+    <div class="ddt-info">
+        <div class="info-section">
+            <h4>Mittente</h4>
+            <p><strong>{{ ddt.nome_origine or 'Azienda' }}</strong></p>
+            
+            <h4 style="margin-top: 20px;">Dettagli DDT</h4>
+            <p><strong>Data:</strong> {{ ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else 'N/A' }}</p>
+            <p><strong>Riferimento:</strong> {{ ddt.riferimento or 'N/A' }}</p>
+            <p><strong>Commessa:</strong> {{ ddt.commessa or 'N/A' }}</p>
+        </div>
+        
+        <div class="info-section">
+            <h4>Destinatario</h4>
+            <p><strong>{{ ddt.destinazione or 'N/A' }}</strong></p>
+            
+            <h4 style="margin-top: 20px;">Magazzino</h4>
+            <p><strong>Partenza:</strong> {{ ddt.magazzino_partenza or 'N/A' }}</p>
+            <p><strong>Mastrino:</strong> {{ ddt.mastrino_ddt or 'N/A' }}</p>
+        </div>
+    </div>
+    
+    <table class="articoli-table">
+        <thead>
+            <tr>
+                <th>Codice</th>
+                <th>Descrizione</th>
+                <th>Quantità</th>
+                <th>Unità Misura</th>
+                <th>Note</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if articoli %}
+                {% for articolo in articoli %}
+                <tr>
+                    <td>{{ articolo.codice or '-' }}</td>
+                    <td>{{ articolo.descrizione or '-' }}</td>
+                    <td style="text-align: right;">{{ articolo.quantita or 0 }}</td>
+                    <td>{{ articolo.unita_misura or 'PZ' }}</td>
+                    <td>{{ articolo.note or '' }}</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; font-style: italic; color: #666;">
+                        Nessun articolo disponibile per la stampa
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    
+    <div class="totale">
+        <p><strong>Stato:</strong> {{ ddt.stato|capitalize }}</p>
+    </div>
+    
+    <div class="footer">
+        <p>Documento generato in data {{ moment().format('DD/MM/YYYY HH:mm') if moment else '' }}</p>
+        <p>Sistema Gestione DDT - Cruscotto 1.1</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuovo DDT OUT - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+    <style>
+        .autocomplete-container { position: relative; width: 100%; }
+        .autocomplete-suggestions {
+            position: absolute; top: 100%; left: 0; right: 0; background: white;
+            border: 1px solid #ddd; border-radius: 4px; max-height: 200px;
+            overflow-y: auto; z-index: 1000; display: none;
+        }
+        .autocomplete-suggestion {
+            padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;
+        }
+        .autocomplete-suggestion:hover { background: #f0f3f6; }
+        .giacenza-info { font-size: 11px; color: #666; }
+        .giacenza-warning { color: #e53e3e; font-weight: bold; }
+        table input, table select { width: 100%; padding: 4px 6px; border: 1px solid #ddd; border-radius: 3px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; margin-bottom: 5px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out" class="active">📤 DDT OUT</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <form method="POST">
+            <div class="ddt-header">
+                <h1>📤 Nuovo DDT in Uscita</h1>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-success">💾 Salva DDT</button>
+                    <button type="button" class="btn btn-secondary" onclick="history.back()">⬅️ Annulla</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Informazioni DDT</h3>
+                <div class="info-grid">
+                    <div class="form-group">
+                        <label class="form-label">Data DDT Origine *</label>
+                        <input type="date" name="data_ddt_origine" value="{{ today or '' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nome Origine</label>
+                        <input type="text" name="nome_origine" value="ACG Clima Service S.r.l." readonly 
+                               style="background: #f5f5f5;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cliente/Destinazione *</label>
+                        <input type="text" name="cliente" required placeholder="Nome cliente..." 
+                               value="{{ cliente_default or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Riferimento</label>
+                        <input type="text" name="riferimento" placeholder="Ordine, fattura..." 
+                               value="{{ riferimento_default or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Commessa</label>
+                        <input type="text" name="commessa" placeholder="Codice commessa...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Magazzino Partenza *</label>
+                        <select name="magazzino_partenza" required>
+                            {% for mag in magazzini %}
+                            <option value="{{ mag.descrizione }}" 
+                                {{ 'selected' if mag.descrizione == magazzino_default else '' }}>
+                                {{ mag.descrizione }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mastrino Vendita</label>
+                        <input type="text" name="mastrino_vendita" placeholder="Digita codice o descrizione mastrino...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>📦 Articoli</h3>
+                    <button type="button" class="btn btn-success" onclick="aggiungiArticolo()">+ Aggiungi</button>
+                </div>
+
+                <table id="tabella-articoli">
+                    <thead>
+                        <tr>
+                            <th>Codice Interno</th>
+                            <th>Descrizione</th>
+                            <th>Giacenza</th>
+                            <th>U.M.</th>
+                            <th>Q.tà</th>
+                            <th>Prezzo Unit.</th>
+                            <th>Totale</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if articoli_from_ddt %}
+                            {% for articolo in articoli_from_ddt %}
+                            <tr class="riga-articolo">
+                                <td>
+                                    <div class="autocomplete-container">
+                                        <input type="text" name="articoli[{{ loop.index0 }}][codice_interno]" 
+                                               value="{{ articolo.codice }}" 
+                                               onkeyup="cercaArticolo(this, {{ loop.index0 }})" 
+                                               placeholder="Cerca codice...">
+                                        <div class="autocomplete-suggestions" id="suggestions-{{ loop.index0 }}"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="autocomplete-container">
+                                        <input type="text" name="articoli[{{ loop.index0 }}][descrizione]" 
+                                               value="{{ articolo.descrizione }}" 
+                                               onkeyup="cercaDescrizione(this, {{ loop.index0 }})" 
+                                               placeholder="Descrizione..." required>
+                                        <div class="autocomplete-suggestions" id="desc-suggestions-{{ loop.index0 }}"></div>
+                                    </div>
+                                </td>
+                                <td><span class="giacenza-info" id="giacenza-{{ loop.index0 }}">-</span></td>
+                                <td>
+                                    <select name="articoli[{{ loop.index0 }}][unita_misura]">
+                                        <option value="PZ" {{ 'selected' if articolo.unita_misura == 'PZ' else '' }}>PZ</option>
+                                        <option value="KG" {{ 'selected' if articolo.unita_misura == 'KG' else '' }}>KG</option>
+                                        <option value="MT" {{ 'selected' if articolo.unita_misura == 'MT' else '' }}>MT</option>
+                                        <option value="LT" {{ 'selected' if articolo.unita_misura == 'LT' else '' }}>LT</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" step="0.01" name="articoli[{{ loop.index0 }}][quantita]" 
+                                           value="{{ articolo.quantita }}" min="0" onchange="calcolaTotale({{ loop.index0 }})"></td>
+                                <td><input type="number" step="0.01" name="articoli[{{ loop.index0 }}][prezzo_unitario]" 
+                                           value="{{ articolo.prezzo }}" min="0" onchange="calcolaTotale({{ loop.index0 }})"></td>
+                                <td><span id="totale-{{ loop.index0 }}">€ {{ "%.2f"|format(articolo.quantita * articolo.prezzo) }}</span></td>
+                                <td><button type="button" class="btn btn-danger btn-small" onclick="rimuoviArticolo({{ loop.index0 }})">🗑️</button></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="riga-articolo">
+                                <td>
+                                    <div class="autocomplete-container">
+                                        <input type="text" name="articoli[0][codice_interno]" 
+                                               onkeyup="cercaArticolo(this, 0)" placeholder="Cerca codice...">
+                                        <div class="autocomplete-suggestions" id="suggestions-0"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="autocomplete-container">
+                                        <input type="text" name="articoli[0][descrizione]" 
+                                               onkeyup="cercaDescrizione(this, 0)" placeholder="Descrizione..." required>
+                                        <div class="autocomplete-suggestions" id="desc-suggestions-0"></div>
+                                    </div>
+                                </td>
+                                <td><span class="giacenza-info" id="giacenza-0">-</span></td>
+                                <td>
+                                    <select name="articoli[0][unita_misura]">
+                                        <option value="PZ">PZ</option>
+                                        <option value="KG">KG</option>
+                                        <option value="MT">MT</option>
+                                        <option value="LT">LT</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" step="0.01" name="articoli[0][quantita]" value="1" min="0" onchange="calcolaTotale(0)"></td>
+                                <td><input type="number" step="0.01" name="articoli[0][prezzo_unitario]" value="0" min="0" onchange="calcolaTotale(0)"></td>
+                                <td><span id="totale-0">€ 0.00</span></td>
+                                <td><button type="button" class="btn btn-danger btn-small" onclick="rimuoviArticolo(0)">🗑️</button></td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <strong>Totale Generale: <span id="totale-generale">€ 0.00</span></strong>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    let contatore = {{ articoli_from_ddt|length if articoli_from_ddt else 1 }};
+    let searchTimeout = null;
+
+    function cercaArticolo(input, index) {
+        clearTimeout(searchTimeout);
+        const query = input.value.trim();
+        
+        if (query.length < 2) {
+            nascondiSuggerimenti(index);
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            fetch(`/api/articoli/disponibili?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(articoli => mostraSuggerimenti(articoli, index, 'codice'))
+                .catch(console.error);
+        }, 300);
+    }
+
+    function cercaDescrizione(input, index) {
+        clearTimeout(searchTimeout);
+        const query = input.value.trim();
+        
+        if (query.length < 3) {
+            nascondiSuggerimenti(index, 'desc');
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            fetch(`/api/articoli/disponibili?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(articoli => mostraSuggerimenti(articoli, index, 'desc'))
+                .catch(console.error);
+        }, 300);
+    }
+
+    function mostraSuggerimenti(articoli, index, tipo) {
+        const suffisso = tipo === 'desc' ? 'desc-' : '';
+        const suggestionsDiv = document.getElementById(`${suffisso}suggestions-${index}`);
+        
+        if (!suggestionsDiv) return;
+        
+        suggestionsDiv.innerHTML = '';
+        
+        articoli.forEach(art => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-suggestion';
+            
+            const giacenzaClass = art.giacenza <= 0 ? 'giacenza-warning' : 'giacenza-info';
+            
+            div.innerHTML = `
+                <strong>${art.codice}</strong> - ${art.descrizione}<br>
+                <small class="${giacenzaClass}">Giacenza: ${art.giacenza} | Prezzo: €${art.prezzo.toFixed(2)}</small>
+            `;
+            
+            div.onclick = () => selezionaArticolo(art, index);
+            suggestionsDiv.appendChild(div);
+        });
+        
+        suggestionsDiv.style.display = articoli.length > 0 ? 'block' : 'none';
+    }
+
+    function selezionaArticolo(articolo, index) {
+        document.querySelector(`[name="articoli[${index}][codice_interno]"]`).value = articolo.codice;
+        document.querySelector(`[name="articoli[${index}][descrizione]"]`).value = articolo.descrizione;
+        document.querySelector(`[name="articoli[${index}][prezzo_unitario]"]`).value = articolo.prezzo;
+        
+        const giacenzaSpan = document.getElementById(`giacenza-${index}`);
+        giacenzaSpan.textContent = articolo.giacenza;
+        giacenzaSpan.className = articolo.giacenza <= 0 ? 'giacenza-warning' : 'giacenza-info';
+        
+        nascondiSuggerimenti(index);
+        nascondiSuggerimenti(index, 'desc');
+        calcolaTotale(index);
+    }
+
+    function nascondiSuggerimenti(index, tipo = '') {
+        const suffisso = tipo === 'desc' ? 'desc-' : '';
+        const suggestionsDiv = document.getElementById(`${suffisso}suggestions-${index}`);
+        if (suggestionsDiv) {
+            suggestionsDiv.style.display = 'none';
+        }
+    }
+
+    function aggiungiArticolo() {
+        const tbody = document.querySelector('#tabella-articoli tbody');
+        const row = document.createElement('tr');
+        row.className = 'riga-articolo';
+        row.innerHTML = `
+            <td>
+                <div class="autocomplete-container">
+                    <input type="text" name="articoli[${contatore}][codice_interno]" 
+                           onkeyup="cercaArticolo(this, ${contatore})" placeholder="Cerca codice...">
+                    <div class="autocomplete-suggestions" id="suggestions-${contatore}"></div>
+                </div>
+            </td>
+            <td>
+                <div class="autocomplete-container">
+                    <input type="text" name="articoli[${contatore}][descrizione]" 
+                           onkeyup="cercaDescrizione(this, ${contatore})" placeholder="Descrizione..." required>
+                    <div class="autocomplete-suggestions" id="desc-suggestions-${contatore}"></div>
+                </div>
+            </td>
+            <td><span class="giacenza-info" id="giacenza-${contatore}">-</span></td>
+            <td>
+                <select name="articoli[${contatore}][unita_misura]">
+                    <option value="PZ">PZ</option>
+                    <option value="KG">KG</option>
+                    <option value="MT">MT</option>
+                    <option value="LT">LT</option>
+                </select>
+            </td>
+            <td><input type="number" step="0.01" name="articoli[${contatore}][quantita]" value="1" min="0" onchange="calcolaTotale(${contatore})"></td>
+            <td><input type="number" step="0.01" name="articoli[${contatore}][prezzo_unitario]" value="0" min="0" onchange="calcolaTotale(${contatore})"></td>
+            <td><span id="totale-${contatore}">€ 0.00</span></td>
+            <td><button type="button" class="btn btn-danger btn-small" onclick="rimuoviArticolo(${contatore})">🗑️</button></td>
+        `;
+        tbody.appendChild(row);
+        contatore++;
+    }
+
+    function rimuoviArticolo(index) {
+        const righe = document.querySelectorAll('.riga-articolo');
+        if (righe.length > 1) {
+            document.querySelector(`[name="articoli[${index}][codice_interno]"]`).closest('tr').remove();
+            calcolaTotaleGenerale();
+        }
+    }
+
+    function calcolaTotale(index) {
+        const quantita = parseFloat(document.querySelector(`[name="articoli[${index}][quantita]"]`).value) || 0;
+        const prezzo = parseFloat(document.querySelector(`[name="articoli[${index}][prezzo_unitario]"]`).value) || 0;
+        const totale = quantita * prezzo;
+        
+        document.getElementById(`totale-${index}`).textContent = `€ ${totale.toFixed(2)}`;
+        calcolaTotaleGenerale();
+    }
+
+    function calcolaTotaleGenerale() {
+        let totale = 0;
+        document.querySelectorAll('.riga-articolo').forEach((row, index) => {
+            const quantita = parseFloat(row.querySelector(`[name*="[quantita]"]`).value) || 0;
+            const prezzo = parseFloat(row.querySelector(`[name*="[prezzo_unitario]"]`).value) || 0;
+            totale += quantita * prezzo;
+        });
+        
+        document.getElementById('totale-generale').textContent = `€ ${totale.toFixed(2)}`;
+    }
+
+    // Calcola totale iniziale
+    document.addEventListener('DOMContentLoaded', function() {
+        calcolaTotaleGenerale();
+        
+        // Inizializza nuovo sistema autocomplete
+        const mastrinoInput = document.querySelector('input[name="mastrino_vendita"]');
+        if (mastrinoInput) {
+            window.AutocompleteHelpers.setupMastriniAutocomplete(mastrinoInput, 'RICAVO');
+        }
+        
+        const commessaInput = document.querySelector('input[name="commessa"]');
+        if (commessaInput) {
+            window.AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
+        }
+    });
+
+    // Nasconde suggerimenti quando si clicca altrove
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.autocomplete-container')) {
+            document.querySelectorAll('.autocomplete-suggestions').forEach(div => {
+                div.style.display = 'none';
+            });
+        }
+    });
+    </script>
+</body>
+</html>
+
+<script>
+// Autocompletamento clienti
+function setupClienteAutocomplete() {
+    const clienteInput = document.querySelector('input[name="cliente"]');
+    if (!clienteInput) return;
+    
+    let timeout;
+    
+    clienteInput.addEventListener('input', function() {
+        clearTimeout(timeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            hideClientiSuggestions();
+            return;
+        }
+        
+        timeout = setTimeout(() => {
+            fetch(`/api/clienti/search?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(clienti => showClientiSuggestions(clienti))
+                .catch(console.error);
+        }, 300);
+    });
+}
+
+function showClientiSuggestions(clienti) {
+    let suggestionsDiv = document.getElementById('clienti-suggestions');
+    
+    if (!suggestionsDiv) {
+        suggestionsDiv = document.createElement('div');
+        suggestionsDiv.id = 'clienti-suggestions';
+        suggestionsDiv.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        `;
+        
+        const clienteInput = document.querySelector('input[name="cliente"]');
+        clienteInput.parentElement.style.position = 'relative';
+        clienteInput.parentElement.appendChild(suggestionsDiv);
+    }
+    
+    suggestionsDiv.innerHTML = '';
+    
+    clienti.forEach(cliente => {
+        const div = document.createElement('div');
+        div.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;';
+        div.innerHTML = `<strong>${cliente.ragione_sociale}</strong><br><small>P.IVA: ${cliente.partita_iva} - ${cliente.citta}</small>`;
+        
+        div.addEventListener('click', () => {
+            document.querySelector('input[name="cliente"]').value = cliente.ragione_sociale;
+            hideClientiSuggestions();
+        });
+        
+        div.addEventListener('mouseenter', () => div.style.backgroundColor = '#f0f0f0');
+        div.addEventListener('mouseleave', () => div.style.backgroundColor = 'white');
+        
+        suggestionsDiv.appendChild(div);
+    });
+    
+    suggestionsDiv.style.display = clienti.length > 0 ? 'block' : 'none';
+}
+
+function hideClientiSuggestions() {
+    const suggestionsDiv = document.getElementById('clienti-suggestions');
+    if (suggestionsDiv) {
+        suggestionsDiv.style.display = 'none';
+    }
+}
+
+// Inizializza al caricamento  
+document.addEventListener('DOMContentLoaded', setupClienteAutocomplete);
+
+// Nascondi suggerimenti cliccando altrove
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#clienti-suggestions') && !e.target.matches('input[name="cliente"]')) {
+        hideClientiSuggestions();
+    }
+});
+</script>
+

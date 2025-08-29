@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifica DDT IN - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in" class="active">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+            </ul>
+        </nav>
+
+        <form method="POST" action="/ddt-in/{{ ddt.id }}/modifica">
+            <div class="ddt-header">
+                <h1>✏️ Modifica DDT IN (Bozza)</h1>
+                <div class="actions-bar">
+                    <button type="submit" class="btn btn-success">💾 Salva Modifiche</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/ddt-in/{{ ddt.id }}'">❌ Annulla</button>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>Informazioni DDT</h3>
+                <div class="info-grid">
+                    <div class="form-group">
+                        <label class="form-label">Fornitore *</label>
+                        <input type="text" name="fornitore" value="{{ ddt.fornitore or '' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Riferimento</label>
+                        <input type="text" name="riferimento" value="{{ ddt.riferimento or '' }}" placeholder="N° ordine, bolla, ecc.">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Destinazione *</label>
+                        <select name="destinazione" required>
+                            <option value="">Seleziona magazzino...</option>
+                            {% if magazzini %}
+                                {% for magazzino in magazzini %}
+                                <option value="{{ magazzino.descrizione }}" {% if ddt.destinazione == magazzino.descrizione %}selected{% endif %}>
+                                    {{ magazzino.descrizione }}
+                                </option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="Magazzino Centrale" {% if ddt.destinazione == 'Magazzino Centrale' %}selected{% endif %}>Magazzino Centrale</option>
+                                <option value="Deposito Nord" {% if ddt.destinazione == 'Deposito Nord' %}selected{% endif %}>Deposito Nord</option>
+                                <option value="Deposito Sud" {% if ddt.destinazione == 'Deposito Sud' %}selected{% endif %}>Deposito Sud</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mastrino DDT</label>
+                        <select name="mastrino_ddt">
+                            <option value="">Seleziona mastrino...</option>
+                            {% if mastrini %}
+                                {% for mastrino in mastrini %}
+                                <option value="{{ mastrino.codice }}" {% if ddt.mastrino_ddt == mastrino.codice %}selected{% endif %}>
+                                    {{ mastrino.codice }} - {{ mastrino.descrizione }}
+                                </option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Commessa</label>
+                        <input type="text" name="commessa" value="{{ ddt.commessa or '' }}" placeholder="Codice commessa">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Data DDT Origine</label>
+                        <input type="date" name="data_ddt_origine" value="{{ ddt.data_ddt_origine.strftime('%Y-%m-%d') if ddt.data_ddt_origine else '' }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="articles-section">
+                <div class="section-title">
+                    <span>Articoli</span>
+                    <button type="button" class="btn btn-small" onclick="aggiungiRigaArticolo()">+ Aggiungi Articolo</button>
+                </div>
+                <table id="tabella-articoli">
+                    <thead>
+                        <tr>
+                            <th>Codice Interno</th>
+                            <th>Descrizione</th>
+                            <th>Quantità</th>
+                            <th>Costo Unit.</th>
+                            <th>Totale</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if ddt.articoli %}
+                            {% for articolo in ddt.articoli %}
+                            <tr class="riga-articolo">
+                                <td><input type="text" name="articoli[{{ loop.index0 }}][codice]" value="{{ articolo.codice_interno or '' }}"></td>
+                                <td><input type="text" name="articoli[{{ loop.index0 }}][descrizione]" value="{{ articolo.descrizione }}" required></td>
+                                <td><input type="number" step="0.01" name="articoli[{{ loop.index0 }}][quantita]" value="{{ articolo.quantita }}" onchange="calcolaTotale(this)" required></td>
+                                <td><input type="number" step="0.01" name="articoli[{{ loop.index0 }}][costo]" value="{{ articolo.costo_unitario or 0 }}" onchange="calcolaTotale(this)"></td>
+                                <td class="totale-riga">€ {{ "%.2f"|format((articolo.quantita * (articolo.costo_unitario or 0))) }}</td>
+                                <td><button type="button" class="btn btn-small btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="riga-articolo">
+                                <td><input type="text" name="articoli[0][codice]"></td>
+                                <td><input type="text" name="articoli[0][descrizione]" required></td>
+                                <td><input type="number" step="0.01" name="articoli[0][quantita]" value="1" onchange="calcolaTotale(this)" required></td>
+                                <td><input type="number" step="0.01" name="articoli[0][costo]" value="0" onchange="calcolaTotale(this)"></td>
+                                <td class="totale-riga">€ 0.00</td>
+                                <td><button type="button" class="btn btn-small btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                
+                <div class="totals">
+                    <div class="total-row">
+                        <span>Totale Articoli: <span id="count-articoli">{{ ddt.articoli|length if ddt.articoli else 1 }}</span></span>
+                        <span>Quantità Totale: <span id="quantita-totale">0</span></span>
+                        <span><strong>Totale Valore: € <span id="valore-totale">0.00</span></strong></span>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    let rigaCount = {{ ddt.articoli|length if ddt.articoli else 1 }};
+    
+    function aggiungiRigaArticolo() {
+        const tbody = document.querySelector('#tabella-articoli tbody');
+        const newRow = document.createElement('tr');
+        newRow.className = 'riga-articolo';
+        newRow.innerHTML = `
+            <td><input type="text" name="articoli[${rigaCount}][codice]"></td>
+            <td><input type="text" name="articoli[${rigaCount}][descrizione]" required></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][quantita]" value="1" onchange="calcolaTotale(this)" required></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][costo]" value="0" onchange="calcolaTotale(this)"></td>
+            <td class="totale-riga">€ 0.00</td>
+            <td><button type="button" class="btn btn-small btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+        `;
+        tbody.appendChild(newRow);
+        rigaCount++;
+        aggiornaTotali();
+    }
+    
+    function rimuoviRiga(button) {
+        const row = button.closest('tr');
+        if (document.querySelectorAll('.riga-articolo').length > 1) {
+            row.remove();
+            aggiornaTotali();
+        } else {
+            alert('Deve esserci almeno un articolo');
+        }
+    }
+    
+    function calcolaTotale(input) {
+        const row = input.closest('tr');
+        const costo = parseFloat(row.querySelector('[name*="[costo]"]').value) || 0;
+        const quantita = parseFloat(row.querySelector('[name*="[quantita]"]').value) || 0;
+        const totale = costo * quantita;
+        row.querySelector('.totale-riga').textContent = '€ ' + totale.toFixed(2);
+        aggiornaTotali();
+    }
+    
+    function aggiornaTotali() {
+        const righe = document.querySelectorAll('.riga-articolo');
+        let totaleValore = 0;
+        let totaleQuantita = 0;
+        
+        righe.forEach(row => {
+            const costo = parseFloat(row.querySelector('[name*="[costo]"]').value) || 0;
+            const quantita = parseFloat(row.querySelector('[name*="[quantita]"]').value) || 0;
+            totaleValore += costo * quantita;
+            totaleQuantita += quantita;
+        });
+        
+        document.getElementById('count-articoli').textContent = righe.length;
+        document.getElementById('quantita-totale').textContent = totaleQuantita.toFixed(2);
+        document.getElementById('valore-totale').textContent = totaleValore.toFixed(2);
+    }
+    
+    // Calcola totali al caricamento
+    window.addEventListener('DOMContentLoaded', aggiornaTotali);
+    </script>
+</body>
+</html>

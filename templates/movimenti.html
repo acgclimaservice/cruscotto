@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimenti - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
+    <style>
+        .movimento-entrata { background-color: #f0fdf4; }
+        .movimento-uscita { background-color: #fef2f2; }
+        .text-success { color: #065f46; font-weight: bold; }
+        .text-danger { color: #991b1b; font-weight: bold; }
+        
+        /* Stili per la stampa */
+        @media print {
+            body.print-mode nav,
+            body.print-mode .filters {
+                display: none !important;
+            }
+            
+            body.print-mode .ddt-header {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            
+            body.print-mode .ddt-header h1 {
+                margin-bottom: 10px;
+            }
+            
+            body.print-mode table {
+                font-size: 9px;
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }
+            
+            body.print-mode th,
+            body.print-mode td {
+                border: 1px solid #ccc;
+                padding: 3px;
+                text-align: left;
+                vertical-align: top;
+            }
+            
+            body.print-mode th {
+                background: #f5f5f5;
+                font-weight: bold;
+                font-size: 8px;
+            }
+            
+            body.print-mode .movimento-entrata {
+                background: #f0fdf4 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            body.print-mode .movimento-uscita {
+                background: #fef2f2 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            body.print-mode .text-success {
+                color: #065f46 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            body.print-mode .text-danger {
+                color: #991b1b !important;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            /* Aggiungi data stampa */
+            body.print-mode .ddt-header:after {
+                content: "Stampato il " attr(data-print-date);
+                display: block;
+                font-size: 10px;
+                color: #666;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclima.it</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Movimenti</h2>
+                <p>Storico movimenti articoli</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti" class="active">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📊 Movimenti Magazzino</h1>
+            <div class="filters">
+                <input type="date" name="data_da" placeholder="Data da" value="{{ request.args.get('data_da', '') }}">
+                <input type="date" name="data_a" placeholder="Data a" value="{{ request.args.get('data_a', '') }}">
+                <select name="tipo">
+                    <option value="">Tutti i tipi</option>
+                    <option value="entrata" {{ 'selected' if request.args.get('tipo') == 'entrata' else '' }}>Entrata</option>
+                    <option value="uscita" {{ 'selected' if request.args.get('tipo') == 'uscita' else '' }}>Uscita</option>
+                </select>
+                <input type="text" name="articolo" placeholder="Cerca articolo..." value="{{ request.args.get('articolo', '') }}">
+                <button class="btn" onclick="applicaFiltri()">Filtra</button>
+                <button class="btn btn-secondary" onclick="resetFiltri()">Reset</button>
+                <button class="btn btn-success" onclick="exportMovimenti()">📊 Export Excel</button>
+                <button class="btn btn-primary" onclick="stampaMovimenti()">🖨️ Stampa</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h3>Movimenti Magazzino ({{ movimenti|length }})</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data/Ora</th>
+                        <th>Tipo</th>
+                        <th>Documento</th>
+                        <th>Codice Art.</th>
+                        <th>Descrizione</th>
+                        <th>Q.tà</th>
+                        <th>Valore Unit.</th>
+                        <th>Valore Tot.</th>
+                        <th>DA</th>
+                        <th>A</th>
+                        <th>Mastrino</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimento in movimenti %}
+                    <tr class="{{ 'movimento-entrata' if movimento.tipo == 'entrata' else 'movimento-uscita' }}">
+                        <td>{{ movimento.data_movimento.strftime('%d/%m/%Y %H:%M') if movimento.data_movimento else '-' }}</td>
+                        <td>
+                            <span class="status {{ 'confirmed' if movimento.tipo == 'entrata' else 'draft' }}">
+                                {{ movimento.tipo|upper }}
+                            </span>
+                        </td>
+                        <td>{{ movimento.documento_numero or '-' }}</td>
+                        <td>{{ movimento.codice_articolo or '-' }}</td>
+                        <td>{{ movimento.descrizione_articolo or '-' }}</td>
+                        <td class="{{ 'text-success' if movimento.tipo == 'entrata' else 'text-danger' }}">
+                            {{ '+' if movimento.tipo == 'entrata' else '-' }}{{ movimento.quantita or 0 }}
+                        </td>
+                        <td>€ {{ "%.2f"|format(movimento.valore_unitario or 0) }}</td>
+                        <td>€ {{ "%.2f"|format(movimento.valore_totale or 0) }}</td>
+                        <td>
+                            {% if movimento.tipo == 'entrata' %}
+                                {% if movimento.documento_tipo == 'ddt_in' %}
+                                    {% set ddt = movimento.documento_numero %}
+                                    {% if ddt %}
+                                        {% set ddt_obj = movimento.get_ddt_in() %}
+                                        {{ ddt_obj.fornitore if ddt_obj else 'Fornitore' }}
+                                    {% else %}
+                                        Fornitore
+                                    {% endif %}
+                                {% else %}
+                                    {{ movimento.provenienza or 'Esterno' }}
+                                {% endif %}
+                            {% else %}
+                                {{ movimento.magazzino or 'Magazzino' }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if movimento.tipo == 'entrata' %}
+                                {{ movimento.magazzino or 'Magazzino' }}
+                            {% else %}
+                                {% if movimento.documento_tipo == 'ddt_out' %}
+                                    {% set ddt = movimento.documento_numero %}
+                                    {% if ddt %}
+                                        {% set ddt_obj = movimento.get_ddt_out() %}
+                                        {{ ddt_obj.destinazione if ddt_obj else 'Cliente' }}
+                                    {% else %}
+                                        Cliente
+                                    {% endif %}
+                                {% else %}
+                                    {{ movimento.destinazione or 'Cliente' }}
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ movimento.mastrino or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                    {% if not movimenti %}
+                    <tr>
+                        <td colspan="11" style="text-align: center; padding: 40px; color: #888;">
+                            Nessun movimento trovato con i filtri attuali
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function applicaFiltri() {
+        const params = new URLSearchParams();
+        
+        const dataDA = document.querySelector('input[name="data_da"]').value;
+        const dataA = document.querySelector('input[name="data_a"]').value;
+        const tipo = document.querySelector('select[name="tipo"]').value;
+        const articolo = document.querySelector('input[name="articolo"]').value;
+        
+        if (dataDA) params.set('data_da', dataDA);
+        if (dataA) params.set('data_a', dataA);
+        if (tipo) params.set('tipo', tipo);
+        if (articolo) params.set('articolo', articolo);
+        
+        const url = '/movimenti' + (params.toString() ? '?' + params.toString() : '');
+        window.location.href = url;
+    }
+    
+    function resetFiltri() {
+        window.location.href = '/movimenti';
+    }
+    
+    function exportMovimenti() {
+        // Costruisce URL con parametri attuali per export Excel
+        const params = new URLSearchParams(window.location.search);
+        const url = '/movimenti/export-excel' + (params.toString() ? '?' + params.toString() : '');
+        window.location.href = url;
+    }
+    
+    function stampaMovimenti() {
+        // Nascondi elementi non necessari per la stampa
+        const elementiNonStampa = document.querySelectorAll('nav, .filters');
+        elementiNonStampa.forEach(el => el.style.display = 'none');
+        
+        // Aggiungi classe per stili di stampa
+        document.body.classList.add('print-mode');
+        
+        // Stampa
+        window.print();
+        
+        // Ripristina visualizzazione normale
+        elementiNonStampa.forEach(el => el.style.display = '');
+        document.body.classList.remove('print-mode');
+    }
+    
+    // Submit con Enter
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            applicaFiltri();
+        }
+    });
+    </script>
+</body>
+</html>

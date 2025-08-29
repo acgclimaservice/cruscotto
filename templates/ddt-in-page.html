@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDT IN - Sistema Gestione DDT</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Navigation */
+        nav {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        nav li a {
+            text-decoration: none;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: block;
+        }
+        
+        nav li a:hover {
+            background: #f0f0f0;
+        }
+        
+        nav li a.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* Header Section */
+        .ddt-header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .ddt-header h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filters input, .filters select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.3s;
+            border: none;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+        }
+        
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        
+        .btn-success {
+            background: #4ade80;
+            margin-left: auto;
+        }
+        
+        .btn-success:hover {
+            background: #22c55e;
+        }
+        
+        /* Table Container */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f8f9fa;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: 13px;
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        tr.draft {
+            background: #fef3c7;
+        }
+        
+        tr.draft:hover {
+            background: #fde68a;
+        }
+        
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status.confirmed { background: #d1fae5; color: #065f46; }
+        .status.draft { background: #fed7aa; color: #92400e; }
+        
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .pagination button:hover {
+            background: #f0f0f0;
+        }
+        
+        .pagination button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav>
+            <ul>
+                <li><a href="dashboard.html">🏠 Dashboard</a></li>
+                <li><a href="ddt-in.html" class="active">📥 DDT IN</a></li>
+                <li><a href="ddt-out.html">📤 DDT OUT</a></li>
+            </ul>
+        </nav>
+
+        <!-- Header with Filters -->
+        <div class="ddt-header">
+            <h1>📥 DDT in Entrata</h1>
+            <div class="filters">
+                <input type="date" placeholder="Data da">
+                <input type="date" placeholder="Data a">
+                <input type="text" placeholder="Cerca fornitore...">
+                <input type="text" placeholder="N° DDT...">
+                <select>
+                    <option>Tutti gli stati</option>
+                    <option>Bozza</option>
+                    <option>Confermato</option>
+                </select>
+                <button class="btn">Filtra</button>
+                <button class="btn btn-secondary">Reset</button>
+                <button class="btn btn-success">+ Nuovo DDT</button>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° DDT</th>
+                        <th>Data DDT</th>
+                        <th>Data DDT Origine</th>
+                        <th>Fornitore</th>
+                        <th>Riferimento</th>
+                        <th>Destinazione</th>
+                        <th>Mastrino DDT</th>
+                        <th>Commessa</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Bozze in alto -->
+                    <tr class="draft">
+                        <td><strong>-</strong></td>
+                        <td>-</td>
+                        <td>15/08/2024</td>
+                        <td>Tech Supplies Italia</td>
+                        <td>PO-2024-456</td>
+                        <td>Magazzino Centrale</td>
+                        <td>MST-2024-789</td>
+                        <td>COM-2024-015</td>
+                        <td><span class="status draft">Bozza</span></td>
+                        <td class="actions">
+                            <button class="btn btn-small" onclick="location.href='dettaglio-ddt-in.html'">Visualizza</button>
+                        </td>
+                    </tr>
+                    <tr class="draft">
+                        <td><strong>-</strong></td>
+                        <td>-</td>
+                        <td>18/08/2024</td>
+                        <td>Materiali Express</td>
+                        <td>ORD-789</td>
+                        <td>Deposito Nord</td>
+                        <td>MST-2024-790</td>
+                        <td>COM-2024-018</td>
+                        <td><span class="status draft">Bozza</span></td>
+                        <td class="actions">
+                            <button class="btn btn-small" onclick="location.href='dettaglio-ddt-in.html'">Visualizza</button>
+                        </td>
+                    </tr>
+                    <!-- DDT Confermati ordinati per numero -->
+                    <tr>
+                        <td><strong>IN/0001/2024</strong></td>
+                        <td>03/01/2024</td>
+                        <td>02/01/2024</td>
+                        <td>Fornitore ABC S.r.l.</td>
+                        <td>PO-2024-001</td>
+                        <td>Magazzino Centrale</td>
+                        <td>MST-2024-001</td>
+                        <td>COM-2024-001</td>
+                        <td><span class="status confirmed">Confermato</span></td>
+                        <td class="actions">
+                            <button class="btn btn-small" onclick="location.href='dettaglio-ddt-in.html'">Visualizza</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>IN/0002/2024</strong></td>
+                        <td>06/01/2024</td>
+                        <td>05/01/2024</td>
+                        <td>Global Trade Co.</td>
+                        <td>REF-123</td>
+                        <td>Deposito Sud</td>
+                        <td>MST-2024-002</td>
+                        <td>COM-2024-002</td>
+                        <td><span class="status confirmed">Confermato</span></td>
+                        <td class="actions">
+                            <button class="btn btn-small" onclick="location.href='dettaglio-ddt-in.html'">Visualizza</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>IN/0142/2024</strong></td>
+                        <td>20/08/2024</td>
+                        <td>19/08/2024</td>
+                        <td>Logistica Nord</td>
+                        <td>DOC-567</td>
+                        <td>Magazzino B</td>
+                        <td>MST-2024-788</td>
+                        <td>COM-2024-014</td>
+                        <td><span class="status confirmed">Confermato</span></td>
+                        <td class="actions">
+                            <button class="btn btn-small" onclick="location.href='dettaglio-ddt-in.html'">Visualizza</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- Pagination -->
+            <div class="pagination">
+                <button>←</button>
+                <button class="active">1</button>
+                <button>2</button>
+                <button>3</button>
+                <button>4</button>
+                <button>5</button>
+                <button>→</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

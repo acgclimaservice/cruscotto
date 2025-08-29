@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>DDT OUT {{ ddt.numero_ddt or 'BOZZA' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        @media print {
+            /* Rimuove intestazione e piè di pagina del browser */
+            @page {
+                margin: 0;
+            }
+            body {
+                margin: 0.5cm;
+            }
+            nav, .actions-bar {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out" class="active">📤 DDT OUT</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>DDT OUT: {{ ddt.numero_ddt or 'BOZZA' }}</h1>
+            <div class="actions-bar">
+                {% if ddt.stato == 'bozza' %}
+                <button class="btn btn-success" onclick="confermaDDT({{ ddt.id }})">✅ Conferma DDT</button>
+                {% endif %}
+                <button class="btn" onclick="window.print()">🖨️ Stampa</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/ddt-out'">← Torna a DDT OUT</button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Stato</span>
+                    <span class="status {{ 'confirmed' if ddt.stato == 'confermato' else 'draft' }}">
+                        {{ ddt.stato|upper }}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Cliente</span>
+                    <span class="info-value">{{ ddt.destinazione }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="articles-section">
+            <h3>Articoli</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Quantità</th>
+                        <th>Prezzo</th>
+                        <th>Totale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for articolo in articoli %}
+                    <tr>
+                        <td>{{ articolo.codice_interno or '-' }}</td>
+                        <td>{{ articolo.descrizione }}</td>
+                        <td>{{ articolo.quantita }}</td>
+                        <td>€ {{ articolo.costo_unitario }}</td>
+                        <td>€ {{ (articolo.quantita * articolo.costo_unitario)|round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function confermaDDT(id) {
+        if (confirm('Confermare questo DDT OUT?')) {
+            fetch(`/ddt-out/${id}/conferma`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('DDT confermato: ' + data.numero);
+                    location.reload();
+                } else {
+                    alert('Errore: ' + data.error);
+                }
+            });
+        }
+    }
+    </script>
+</body>
+</html>

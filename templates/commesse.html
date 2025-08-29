@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commesse - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclima.it</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Commesse</h2>
+                <p>Gestione progetti e commesse</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/movimenti-interni">🔄 Movimenti Interni</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/commesse" class="active">🏗️ Commesse</a></li>
+                <li><a href="/clienti">👥 Clienti</a></li>
+                <li><a href="/fornitori">🏭 Fornitori</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>🏗️ Gestione Commesse</h1>
+            <div class="actions">
+                <a href="/commesse/nuova" class="btn">+ Nuova Commessa</a>
+            </div>
+        </div>
+
+        <!-- Statistiche -->
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 30px;">
+            <div class="stat-card">
+                <h3>{{ stats.total }}</h3>
+                <p>Totale Commesse</p>
+            </div>
+            <div class="stat-card">
+                <h3 style="color: #059669;">{{ stats.aperte }}</h3>
+                <p>Aperte</p>
+            </div>
+            <div class="stat-card">
+                <h3 style="color: #dc2626;">{{ stats.chiuse }}</h3>
+                <p>Chiuse</p>
+            </div>
+        </div>
+
+        <!-- Filtri -->
+        <div class="filters" style="margin-bottom: 20px;">
+            <select id="filtro-stato" onchange="applicaFiltri()">
+                <option value="">Tutti gli stati</option>
+                <option value="aperta" {{ 'selected' if stato_filtro == 'aperta' else '' }}>Aperte</option>
+                <option value="chiusa" {{ 'selected' if stato_filtro == 'chiusa' else '' }}>Chiuse</option>
+            </select>
+            <select id="filtro-cliente" onchange="applicaFiltri()">
+                <option value="">Tutti i clienti</option>
+                {% for cliente in clienti_disponibili %}
+                <option value="{{ cliente }}" {{ 'selected' if cliente_filtro == cliente else '' }}>{{ cliente }}</option>
+                {% endfor %}
+            </select>
+            <select id="filtro-tipologia" onchange="applicaFiltri()">
+                <option value="">Tutte le tipologie</option>
+                <option value="Riqualificazione" {{ 'selected' if tipologia_filtro == 'Riqualificazione' else '' }}>Riqualificazione</option>
+                <option value="Manutenzione Ordinaria" {{ 'selected' if tipologia_filtro == 'Manutenzione Ordinaria' else '' }}>Manutenzione Ordinaria</option>
+                <option value="Manutenzione Straordinaria" {{ 'selected' if tipologia_filtro == 'Manutenzione Straordinaria' else '' }}>Manutenzione Straordinaria</option>
+            </select>
+        </div>
+
+        <!-- Lista Commesse -->
+        <div class="table-container">
+            <h3>Commesse ({{ commesse|length }})</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Numero</th>
+                        <th>Cliente</th>
+                        <th>Tipologia</th>
+                        <th>Descrizione</th>
+                        <th>Data Apertura</th>
+                        <th>Stato</th>
+                        <th>DDT Collegati</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for commessa in commesse %}
+                    <tr>
+                        <td><strong>{{ commessa.numero_progressivo }}</strong></td>
+                        <td>{{ commessa.cliente_nome }}</td>
+                        <td>
+                            <span class="badge badge-{{ commessa.tipologia|lower|replace(' ', '-') }}">
+                                {{ commessa.tipologia }}
+                            </span>
+                        </td>
+                        <td>{{ (commessa.descrizione[:50] + '...') if commessa.descrizione|length > 50 else commessa.descrizione }}</td>
+                        <td>{{ commessa.data_apertura.strftime('%d/%m/%Y') if commessa.data_apertura else '-' }}</td>
+                        <td>
+                            <span class="status {{ 'confirmed' if commessa.stato == 'aperta' else 'draft' }}">
+                                {{ commessa.stato|upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <!-- TODO: Conteggio DDT collegati -->
+                            <span style="color: #6b7280;">-</span>
+                        </td>
+                        <td class="actions">
+                            <a href="/commesse/{{ commessa.id }}" class="btn btn-sm">Visualizza</a>
+                            {% if commessa.stato == 'aperta' %}
+                                <button class="btn btn-sm btn-danger" onclick="chiudiCommessa({{ commessa.id }})">Chiudi</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    
+                    {% if not commesse %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #888;">
+                            Nessuna commessa trovata
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function applicaFiltri() {
+        const params = new URLSearchParams();
+        
+        const stato = document.getElementById('filtro-stato').value;
+        const cliente = document.getElementById('filtro-cliente').value;
+        const tipologia = document.getElementById('filtro-tipologia').value;
+        
+        if (stato) params.set('stato', stato);
+        if (cliente) params.set('cliente', cliente);
+        if (tipologia) params.set('tipologia', tipologia);
+        
+        const url = '/commesse' + (params.toString() ? '?' + params.toString() : '');
+        window.location.href = url;
+    }
+    
+    function chiudiCommessa(id) {
+        if (confirm('Sei sicuro di voler chiudere questa commessa?')) {
+            fetch(`/commesse/${id}/chiudi`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Commessa chiusa con successo');
+                    location.reload();
+                } else {
+                    alert('Errore: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore durante la chiusura della commessa');
+            });
+        }
+    }
+    </script>
+
+    <style>
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    .badge-riqualificazione { background: #dbeafe; color: #1d4ed8; }
+    .badge-manutenzione-ordinaria { background: #d1fae5; color: #065f46; }
+    .badge-manutenzione-straordinaria { background: #fef3c7; color: #92400e; }
+    </style>
+</body>
+</html>

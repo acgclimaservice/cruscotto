@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offerta {{ offerta.numero_offerta }} - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
+    <script src="{{ url_for('static', filename='autocompletamento.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/offerte" class="active">💰 Offerte</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>💰 Offerta {{ offerta.numero_offerta }}</h1>
+            <p style="color: #8492a6; margin-top: 8px;">
+                Dettaglio offerta ricevuta il {{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta }}
+            </p>
+        </div>
+
+        <!-- Informazioni testata -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
+                <h3>📨 Informazioni Generali</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span class="priority-badge priority-{{ offerta.priorita }}">
+                        {% if offerta.priorita == 'alta' %}🔴 Alta
+                        {% elif offerta.priorita == 'media' %}🟡 Media
+                        {% elif offerta.priorita == 'bassa' %}🟢 Bassa
+                        {% else %}{{ offerta.priorita }}
+                        {% endif %}
+                    </span>
+                    <span class="status-badge status-{{ offerta.stato }}">
+                        {% if offerta.stato == 'ricevuta' %}📨 Ricevuta
+                        {% elif offerta.stato == 'valutata' %}🔍 Valutata
+                        {% elif offerta.stato == 'accettata' %}✅ Accettata
+                        {% elif offerta.stato == 'rifiutata' %}❌ Rifiutata
+                        {% elif offerta.stato == 'scaduta' %}⏰ Scaduta
+                        {% else %}{{ offerta.stato }}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Numero Offerta</label>
+                    <span><strong>{{ offerta.numero_offerta }}</strong></span>
+                </div>
+                <div class="info-item">
+                    <label>Data Ricevuta</label>
+                    <span>{{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Fornitore</label>
+                    <span>{{ offerta.fornitore_nome }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Oggetto</label>
+                    <span>{{ offerta.oggetto }}</span>
+                </div>
+                {% if offerta.data_offerta %}
+                <div class="info-item">
+                    <label>Data Offerta</label>
+                    <span>{{ offerta.data_offerta.strftime('%d/%m/%Y') }}</span>
+                </div>
+                {% endif %}
+                {% if offerta.data_scadenza %}
+                <div class="info-item">
+                    <label>Data Scadenza</label>
+                    <span>{{ offerta.data_scadenza.strftime('%d/%m/%Y') }}</span>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <label>IVA</label>
+                    <span>{{ offerta.iva }}%</span>
+                </div>
+                {% if offerta.riferimento_fornitore %}
+                <div class="info-item">
+                    <label>Riferimento Fornitore</label>
+                    <span>{{ offerta.riferimento_fornitore }}</span>
+                </div>
+                {% endif %}
+                {% if offerta.data_valutazione %}
+                <div class="info-item">
+                    <label>Data Valutazione</label>
+                    <span>{{ offerta.data_valutazione.strftime('%d/%m/%Y') }}</span>
+                </div>
+                {% endif %}
+                {% if offerta.data_accettazione %}
+                <div class="info-item">
+                    <label>Data Accettazione</label>
+                    <span>{{ offerta.data_accettazione.strftime('%d/%m/%Y') }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if offerta.note %}
+            <div style="margin-top: 15px;">
+                <label style="font-weight: 600; color: #374151;">Note:</label>
+                <p style="margin: 5px 0; color: #6b7280;">{{ offerta.note }}</p>
+            </div>
+            {% endif %}
+            
+            {% if offerta.valutazione %}
+            <div style="margin-top: 15px;">
+                <label style="font-weight: 600; color: #374151;">Valutazione:</label>
+                <p style="margin: 5px 0; color: #6b7280;">{{ offerta.valutazione }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Dettagli offerta -->
+        <div class="card">
+            <h3>📦 Dettagli Offerta</h3>
+            
+            {% if offerta.dettagli %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Cod. Interno</th>
+                            <th>Cod. Fornitore</th>
+                            <th>Descrizione</th>
+                            <th>Quantità</th>
+                            <th>U.M.</th>
+                            <th>Prezzo Unit.</th>
+                            <th>Sconto %</th>
+                            <th>Totale</th>
+                            <th>Disponibilità</th>
+                            <th>Consegna</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dettaglio in offerta.dettagli %}
+                        <tr>
+                            <td>{{ dettaglio.codice_articolo or '-' }}</td>
+                            <td>{{ dettaglio.codice_fornitore or '-' }}</td>
+                            <td>{{ dettaglio.descrizione }}</td>
+                            <td>{{ dettaglio.quantita }}</td>
+                            <td>{{ dettaglio.unita_misura }}</td>
+                            <td>€ {{ "%.2f"|format(dettaglio.prezzo_unitario or 0) }}</td>
+                            <td>{{ dettaglio.sconto_percentuale or 0 }}%</td>
+                            <td><strong>€ {{ "%.2f"|format(dettaglio.totale_riga or 0) }}</strong></td>
+                            <td>
+                                {% if dettaglio.disponibilita %}
+                                    <span class="availability-badge">{{ dettaglio.disponibilita }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if dettaglio.tempo_consegna %}
+                                    <span class="delivery-badge">{{ dettaglio.tempo_consegna }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div style="text-align: center; padding: 40px; color: #a0aec0;">
+                    <div style="font-size: 24px; margin-bottom: 8px;">📦</div>
+                    <div>Nessun dettaglio presente</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Riepilogo totali -->
+        <div class="card">
+            <h3>💰 Riepilogo Totali</h3>
+            <div class="totali-summary">
+                <div class="totale-row">
+                    <span class="totale-label">Totale Netto:</span>
+                    <span class="totale-value">€ {{ "%.2f"|format(offerta.totale_netto or 0) }}</span>
+                </div>
+                <div class="totale-row">
+                    <span class="totale-label">IVA ({{ offerta.iva }}%):</span>
+                    <span class="totale-value">€ {{ "%.2f"|format((offerta.totale_netto or 0) * (offerta.iva or 0) / 100) }}</span>
+                </div>
+                <div class="totale-row totale-finale">
+                    <span class="totale-label">Totale Lordo:</span>
+                    <span class="totale-value">€ {{ "%.2f"|format(offerta.totale_lordo or 0) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pulsanti azione -->
+        <div class="form-actions">
+            <a href="/offerte" class="btn btn-secondary">⬅️ Torna alle Offerte</a>
+            
+            {% if offerta.stato == 'ricevuta' %}
+                <button class="btn btn-warning" onclick="mostraModalValutazione({{ offerta.id }})">🔍 Valuta Offerta</button>
+                <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
+                    <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
+                </form>
+                <button class="btn btn-danger" onclick="mostraModalRifiuto('offerta', {{ offerta.id }})">❌ Rifiuta</button>
+            {% elif offerta.stato == 'valutata' %}
+                <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
+                    <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
+                </form>
+                <button class="btn btn-danger" onclick="mostraModalRifiuto('offerta', {{ offerta.id }})">❌ Rifiuta</button>
+                <button class="btn btn-primary" onclick="mostraModalValutazione({{ offerta.id }})">✍️ Aggiorna Valutazione</button>
+            {% endif %}
+            
+            <a href="/offerte/confronta" class="btn btn-secondary">📋 Confronta Offerte</a>
+            <a href="/offerte/{{ offerta.id }}/pdf" class="btn btn-secondary" target="_blank">📄 Stampa PDF</a>
+            
+            {% if offerta.stato == 'accettata' %}
+                <button class="btn btn-primary" onclick="creaDDTDaOfferta({{ offerta.id }})">🔄 Crea DDT IN</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-item label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .info-item span {
+            color: #1f2937;
+        }
+        
+        .totali-summary {
+            max-width: 400px;
+            margin-left: auto;
+        }
+        
+        .totale-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .totale-finale {
+            background: #f0f9ff;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 6px;
+            border: 2px solid #3b82f6;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .priority-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .priority-alta {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .priority-media {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fed7aa;
+        }
+        
+        .priority-bassa {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .availability-badge, .delivery-badge {
+            padding: 2px 6px;
+            background: #f3f4f6;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            color: #374151;
+        }
+        
+        .delivery-badge {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+    </style>
+    
+    <script>
+    function creaDDTDaOfferta(offertaId) {
+        if (confirm('Vuoi creare un DDT IN da questa offerta?\\n\\nL\'offerta verrà marcata come utilizzata.')) {
+            // Mostra loading
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Creazione...';
+            btn.disabled = true;
+            
+            fetch(`/offerte/${offertaId}/crea-ddt`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`DDT IN creato con successo!\\nNumero: ${data.numero_ddt}`);
+                    window.location.href = data.redirect_url;
+                } else {
+                    alert('Errore: ' + (data.errore || 'Errore sconosciuto'));
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore di rete: ' + error.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+    }
+    </script>
+</body>
+</html>
