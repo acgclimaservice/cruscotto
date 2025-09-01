@@ -3001,6 +3001,70 @@ def elimina_articolo(articolo_id):
         db.session.rollback()
         return redirect('/catalogo')
 
+@app.route('/catalogo/qr/<int:articolo_id>')
+def genera_qr_articolo(articolo_id):
+    """Genera QR code per un articolo del catalogo"""
+    try:
+        import qrcode
+        from io import BytesIO
+        import base64
+        
+        # Trova l'articolo
+        articolo = CatalogoArticolo.query.get_or_404(articolo_id)
+        
+        # Crea i dati del QR code (JSON con informazioni articolo)
+        qr_data = {
+            'type': 'articolo',
+            'id': articolo.id,
+            'codice_interno': articolo.codice_interno,
+            'descrizione': articolo.descrizione,
+            'ubicazione': articolo.ubicazione,
+            'giacenza': articolo.giacenza_attuale or 0
+        }
+        
+        # Converti in stringa JSON
+        import json
+        qr_text = json.dumps(qr_data, ensure_ascii=False)
+        
+        # Genera QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(qr_text)
+        qr.make(fit=True)
+        
+        # Crea immagine
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Converti in base64
+        buffer = BytesIO()
+        img.save(buffer, format='PNG')
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+        qr_data_url = f"data:image/png;base64,{qr_base64}"
+        
+        return jsonify({
+            'success': True,
+            'codice_interno': articolo.codice_interno,
+            'descrizione': articolo.descrizione,
+            'qr_code': qr_data_url,
+            'qr_data': qr_data
+        })
+        
+    except ImportError:
+        return jsonify({
+            'success': False,
+            'error': 'Libreria QR Code non installata. Installare con: pip install qrcode[pil]'
+        }), 500
+    except Exception as e:
+        print(f"Errore generazione QR code: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Errore nella generazione del QR code: {str(e)}'
+        }), 500
+
 @app.route('/catalogo/export-excel')
 def export_catalogo_excel():
     """Esporta catalogo in Excel"""
