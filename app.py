@@ -6479,8 +6479,12 @@ def invia_richiesta_offerta_email(id):
         if not email_fornitore:
             return jsonify({'error': 'Email destinatario richiesta. Inserire email del fornitore nel form.'}), 400
         
-        if not offerta.fornitore_nome:
-            return jsonify({'error': 'Nome fornitore mancante nella richiesta'}), 400
+        # Determina nome fornitore per email - usa fornitore_nome, relazione o fallback
+        nome_fornitore_email = offerta.fornitore_nome
+        if not nome_fornitore_email and offerta.fornitore:
+            nome_fornitore_email = offerta.fornitore.ragione_sociale
+        if not nome_fornitore_email:
+            nome_fornitore_email = email_fornitore.split('@')[0]  # Usa parte prima della @ come fallback
         
         messaggio_personalizzato = data.get('messaggio', '').strip()
         includi_allegati = data.get('includi_allegati', True)
@@ -6504,7 +6508,7 @@ def invia_richiesta_offerta_email(id):
         msg['Subject'] = f"Richiesta Offerta {offerta.numero_offerta} - ACG Clima Service"
         
         # Corpo email
-        corpo_base = f"""Gentile Fornitore {offerta.fornitore_nome},
+        corpo_base = f"""Gentile Fornitore {nome_fornitore_email},
 
 Vi inviamo richiesta di offerta per i seguenti articoli:
 
