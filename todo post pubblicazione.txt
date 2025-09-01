@@ -37,12 +37,13 @@ Errore di connessione: SyntaxError: Unexpected token '<', "
 35 nei movimenti interni, per il campo magazzino di destinazione devi indicare la descrizione del magazzino e non i codice del magazzino, esattamente come succede per il campo magazzino di partenza
 36 quando confermo un ddt in che si trova nello stato di bozza viene erroneamente modificato il campo codice articolo fornitore,  al posto del campo codice articolo fornitore e viene erronemante messo il codice articolo interno, per precisione il codice articolo fornitore deve rimanere quello importato dal ddt fornitore (in caso di parsing) oppure quello inserito manualmente. come ulteriore precisazione il campo codice articolo fornitore nel ddt confermato deve restare quello del ddt bozza
 37 per quanto riguarda l'invio delle mail non devi utilizzare l'smtp ma creare una mail in Outlook pronta per l'invio
-38 nella sezione inventario, nel campo ubicazione vedo il codice del magazzino ma vorrei vedere la descrizione del magazzino
-39 nella creazione delle mail per richiesta offerta allega i file alla mail
-40 in questa pagina c'è una animazione da eliminare https://acgclimaservice.pythonanywhere.com/ordini/import
+38 nella sezione inventario, nel campo ubicazione vedo il codice del magazzino ma vorrei vedere la descrizione del magazzino FATTO - CONTROLLATO OK
+39 nella creazione delle mail per richiesta offerta allega i file alla mail FATTO - CONTROLLATO OK
+40 in questa pagina c'è una animazione da eliminare https://acgclimaservice.pythonanywhere.com/ordini/import FATTO - CONTROLLATO OK
 41 vedi questa situazione nel catalogo? Codice Interno	Codice Fornitore	Descrizione	Fornitore Principale	Codice Produttore	Costo Ultimo €	U.M.	Giacenza	Scorta Min.	QR Code	Azioni
 CLER5555	CLER5555	tubo giallo 1	CLERICI SPA A SOCIO UNICO	-	€ 10.00	PZ	10.00	0.00	📱 QR	
 ✏️
 🗑️
-42
+42 qui https://acgclimaservice.pythonanywhere.com/offerte/1 mi da 1:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
+
 

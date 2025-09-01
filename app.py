@@ -1328,7 +1328,12 @@ def create_ddt_from_import():
             
             # Estrae prime 4 lettere del fornitore (solo caratteri alfabetici)
             prefisso_fornitore = ''.join(c.upper() for c in fornitore_nome if c.isalpha())[:4]
-            codice_interno_generato = f"{prefisso_fornitore}{codice_fornitore}" if prefisso_fornitore and codice_fornitore else art_data.get('codice_interno') or art_data.get('codice', '')
+            if prefisso_fornitore and codice_fornitore:
+                codice_interno_generato = f"{prefisso_fornitore}{codice_fornitore}"
+            elif codice_fornitore:
+                codice_interno_generato = f"ART{codice_fornitore}"
+            else:
+                codice_interno_generato = art_data.get('codice_interno') or art_data.get('codice', '') or f"ART{datetime.now().strftime('%Y%m%d%H%M%S')}"
             
             articolo = ArticoloIn(
                 ddt_id=nuovo_ddt.id,
@@ -1779,7 +1784,12 @@ def nuovo_ddt_in():
                 if not codice_interno_esistente:
                     # Genera codice interno automaticamente: prime 4 lettere fornitore + codice fornitore
                     prefisso_fornitore = ''.join(c.upper() for c in fornitore_nome if c.isalpha())[:4]
-                    codice_interno_esistente = f"{prefisso_fornitore}{codice_fornitore}" if prefisso_fornitore and codice_fornitore else request.form.get(f'articoli[{i}][codice]', '')
+                    if prefisso_fornitore and codice_fornitore:
+                        codice_interno_esistente = f"{prefisso_fornitore}{codice_fornitore}"
+                    elif codice_fornitore:
+                        codice_interno_esistente = f"ART{codice_fornitore}"
+                    else:
+                        codice_interno_esistente = request.form.get(f'articoli[{i}][codice]', '') or f"ART{datetime.now().strftime('%Y%m%d%H%M%S')}"
                     print(f"Nuovo codice interno generato: {codice_interno_esistente}")
                 
                 articolo = ArticoloIn(
@@ -2101,7 +2111,12 @@ def modifica_ddt_in(id):
                 
                 # Estrae prime 4 lettere del fornitore (solo caratteri alfabetici)
                 prefisso_fornitore = ''.join(c.upper() for c in fornitore_nome if c.isalpha())[:4]
-                codice_interno_generato = f"{prefisso_fornitore}{codice_fornitore}" if prefisso_fornitore and codice_fornitore else request.form.get(f'articoli[{i}][codice]', '')
+                if prefisso_fornitore and codice_fornitore:
+                    codice_interno_generato = f"{prefisso_fornitore}{codice_fornitore}"
+                elif codice_fornitore:
+                    codice_interno_generato = f"ART{codice_fornitore}"
+                else:
+                    codice_interno_generato = request.form.get(f'articoli[{i}][codice]', '') or f"ART{datetime.now().strftime('%Y%m%d%H%M%S')}"
                 
                 articolo = ArticoloIn(
                     ddt_id=ddt.id,
@@ -2552,9 +2567,12 @@ def process_batch_files(job_id):
                                 # Genera codice interno: prime 4 lettere fornitore + codice fornitore
                                 if prefisso_fornitore and codice_fornitore:
                                     codice_interno_generato = f"{prefisso_fornitore}{codice_fornitore}"
+                                elif codice_fornitore:
+                                    # Fallback con prefisso generico per evitare duplicazione
+                                    codice_interno_generato = f"ART{codice_fornitore}"
                                 else:
-                                    # Fallback se mancano dati
-                                    codice_interno_generato = codice_fornitore or 'UNKNOWN'
+                                    # Ultimo fallback
+                                    codice_interno_generato = f"ART{datetime.now().strftime('%Y%m%d%H%M%S')}"
                                 
                                 articolo = ArticoloIn(
                                     ddt_id=nuovo_ddt.id,
