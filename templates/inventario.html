@@ -111,7 +111,23 @@
                             <td><strong>{{ articolo.codice_interno }}</strong></td>
                             <td>{{ articolo.descrizione }}</td>
                             <td>{{ articolo.fornitore_principale|default('-') }}</td>
-                            <td>{{ 'Magazzino principale' if articolo.ubicazione == 'None' or not articolo.ubicazione else articolo.ubicazione }}</td>
+                            <td>
+                                {% set mag_desc = 'Magazzino principale' %}
+                                {% if articolo.ubicazione and articolo.ubicazione != 'None' and articolo.ubicazione != '' %}
+                                    {% for magazzino in magazzini %}
+                                        {% if magazzino.codice == articolo.ubicazione %}
+                                            {% set mag_desc = magazzino.descrizione %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if mag_desc == 'Magazzino principale' %}
+                                        {{ articolo.ubicazione }}
+                                    {% else %}
+                                        {{ mag_desc }}
+                                    {% endif %}
+                                {% else %}
+                                    {{ mag_desc }}
+                                {% endif %}
+                            </td>
                             <td>{{ articolo.unita_misura|default('PZ') }}</td>
                             <td>{{ "{:.2f}".format(articolo.giacenza_attuale|default(0)) }}</td>
                             <td>{{ "{:.2f}".format(articolo.scorta_minima|default(0)) }}</td>

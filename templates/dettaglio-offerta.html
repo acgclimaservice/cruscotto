@@ -596,7 +596,22 @@
             
             // Crea oggetto e corpo email per Outlook
             const oggetto = `Richiesta Offerta ${document.querySelector('h1').textContent.trim()}`;
-            const corpoEmail = `Gentile Fornitore,\n\nVi inviamo in allegato la richiesta di offerta.\n\n${messaggio.trim() ? messaggio + '\n\n' : ''}Rimaniamo in attesa di un vostro riscontro.\n\nCordiali saluti,\nACG Clima Service S.r.l.`;
+            let corpoEmail = `Gentile Fornitore,\n\nVi inviamo la richiesta di offerta.\n\n${messaggio.trim() ? messaggio + '\n\n' : ''}`;
+            
+            // Aggiungi link per download allegati se presenti e richiesti
+            if (includiAllegati) {
+                {% if offerta.allegati %}
+                    {% set allegati_lista = offerta.allegati|from_json if offerta.allegati else [] %}
+                    {% if allegati_lista %}
+                        corpoEmail += `\n📎 ALLEGATI DISPONIBILI PER DOWNLOAD:\n`;
+                        {% for allegato in allegati_lista %}
+                            corpoEmail += `${{{ loop.index }}} {{ allegato.nome_originale }}: ${window.location.origin}/offerte/{{ offerta.id }}/allegato/{{ loop.index0 }}?download=1\n`;
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+            }
+            
+            corpoEmail += `\nRimaniamo in attesa di un vostro riscontro.\n\nCordiali saluti,\nACG Clima Service S.r.l.`;
             
             // Crea link mailto per aprire Outlook
             const mailtoLink = `mailto:${encodeURIComponent(emailFornitore)}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpoEmail)}`;
@@ -604,9 +619,24 @@
             // Apri Outlook con email precompilata
             window.location.href = mailtoLink;
             
-            // Mostra messaggio di conferma
+            // Mostra messaggio di conferma con dettagli allegati
             setTimeout(() => {
-                alert(`📧 Email preparata per Outlook!\n\n- Destinatario: ${emailFornitore}\n- Oggetto: ${oggetto}\n\n${includiAllegati ? '⚠️ Ricorda di allegare manualmente i file dell\'offerta' : ''}`);
+                let messaggioConferma = `📧 Email preparata per Outlook!\n\n- Destinatario: ${emailFornitore}\n- Oggetto: ${oggetto}`;
+                
+                {% if offerta.allegati %}
+                    {% set allegati_lista = offerta.allegati|from_json if offerta.allegati else [] %}
+                    {% if allegati_lista %}
+                        if (includiAllegati) {
+                            messaggioConferma += `\n\n📎 Allegati inclusi nel corpo email:\n`;
+                            {% for allegato in allegati_lista %}
+                                messaggioConferma += `• {{ allegato.nome_originale }}\n`;
+                            {% endfor %}
+                            messaggioConferma += `\nI link di download sono già inclusi nel corpo dell'email.`;
+                        }
+                    {% endif %}
+                {% endif %}
+                
+                alert(messaggioConferma);
                 chiudiModalEmail();
             }, 500);
         }
