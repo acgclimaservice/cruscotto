@@ -101,7 +101,7 @@
             text-transform: uppercase;
         }
         
-        .status-ricevuta { background: #dbeafe; color: #1e40af; }
+        .status-creata { background: #dbeafe; color: #1e40af; }
         .status-valutata { background: #fef3c7; color: #92400e; }
         .status-accettata { background: #dcfce7; color: #166534; }
         .status-rifiutata { background: #fee2e2; color: #dc2626; }
@@ -235,7 +235,7 @@
         <div class="info-section">
             <h3>📋 Informazioni Offerta</h3>
             <div class="info-row">
-                <span class="label">Data Ricevuta:</span>
+                <span class="label">Data Creazione:</span>
                 <span class="value">{{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta else '-' }}</span>
             </div>
             <div class="info-row">
@@ -246,7 +246,7 @@
                 <span class="label">Stato:</span>
                 <span class="value">
                     <span class="status-badge status-{{ offerta.stato }}">
-                        {% if offerta.stato == 'ricevuta' %}RICEVUTA
+                        {% if offerta.stato == 'creata' %}CREATA
                         {% elif offerta.stato == 'valutata' %}VALUTATA
                         {% elif offerta.stato == 'accettata' %}ACCETTATA
                         {% elif offerta.stato == 'rifiutata' %}RIFIUTATA
@@ -380,12 +380,12 @@
     </div>
     {% endif %}
     
-    {% if offerta.stato != 'ricevuta' %}
+    {% if offerta.stato != 'creata' %}
     <div class="info-section" style="margin-top: 30px;">
         <h3>📅 Cronologia</h3>
         <div style="font-size: 11px;">
             <div class="info-row">
-                <span class="label">Ricevuta il:</span>
+                <span class="label">Creata il:</span>
                 <span class="value">{{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta else '-' }}</span>
             </div>
             {% if offerta.data_valutazione %}
@@ -406,7 +406,7 @@
     
     <div class="footer">
         <div>Documento generato automaticamente il {{ moment().format('DD/MM/YYYY [alle] HH:mm') if moment else '' }}</div>
-        <div style="margin-top: 5px;">ACG CLIMA SERVICE S.R.L. - Sistema Gestione Offerte v2.7</div>
+        <div style="margin-top: 5px;">ACG CLIMA SERVICE S.R.L. - Sistema Gestione Richieste Offerte v2.7</div>
     </div>
 </body>
 </html>

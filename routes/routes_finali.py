@@ -468,7 +468,7 @@ def nuova_offerta():
             validita_giorni=int(data.get('validita_giorni', 30)),
             condizioni_pagamento=data.get('condizioni_pagamento'),
             note=data.get('note'),
-            stato='ricevuta'
+            stato='creata'
         )
         
         db.session.add(offerta)

@@ -316,7 +316,7 @@ class OffertaFornitore(db.Model):
     fornitore_nome = db.Column(db.String(200))
     fornitore_id = db.Column(db.Integer, db.ForeignKey('fornitore.id'))
     oggetto = db.Column(db.String(500))
-    stato = db.Column(db.String(20), default='ricevuta')  # ricevuta, valutata, accettata, rifiutata
+    stato = db.Column(db.String(20), default='creata')  # creata, valutata, accettata, rifiutata
     priorita = db.Column(db.String(20), default='media')  # alta, media, bassa
     totale_netto = db.Column(db.Float, default=0)
     totale_lordo = db.Column(db.Float, default=0)
@@ -326,6 +326,7 @@ class OffertaFornitore(db.Model):
     data_accettazione = db.Column(db.Date)
     note = db.Column(db.Text)
     commessa = db.Column(db.String(50))
+    allegati = db.Column(db.Text)  # JSON array dei nomi file allegati
     
     # Relazioni
     fornitore = db.relationship('Fornitore', backref='offerte')

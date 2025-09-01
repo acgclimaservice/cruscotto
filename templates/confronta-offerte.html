@@ -35,7 +35,7 @@
                             <th>Numero</th>
                             <th>Fornitore</th>
                             <th>Oggetto</th>
-                            <th>Data Ricevuta</th>
+                            <th>Data Creazione</th>
                             <th>Stato</th>
                             <th>Totale</th>
                             <th>Priorità</th>
@@ -51,7 +51,7 @@
                             <td>{{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta }}</td>
                             <td>
                                 <span class="status-badge status-{{ offerta.stato }}">
-                                    {% if offerta.stato == 'ricevuta' %}📨 Ricevuta
+                                    {% if offerta.stato == 'creata' %}📝 Creata
                                     {% elif offerta.stato == 'valutata' %}🔍 Valutata
                                     {% elif offerta.stato == 'accettata' %}✅ Accettata
                                     {% else %}{{ offerta.stato }}
@@ -71,7 +71,7 @@
                             <td>
                                 <div class="button-group">
                                     <button class="btn-icon" onclick="window.location.href='/offerte/{{ offerta.id }}'" title="Visualizza">👁️</button>
-                                    {% if offerta.stato == 'ricevuta' %}
+                                    {% if offerta.stato == 'creata' %}
                                         <button class="btn-icon btn-success" onclick="accettaOfferta({{ offerta.id }})" title="Accetta">✅</button>
                                     {% endif %}
                                 </div>

@@ -23,7 +23,7 @@
         <div class="ddt-header">
             <h1>💰 Offerta {{ offerta.numero_offerta }}</h1>
             <p style="color: #8492a6; margin-top: 8px;">
-                Dettaglio offerta ricevuta il {{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta }}
+                Dettaglio offerta creata il {{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta }}
             </p>
         </div>
 
@@ -40,7 +40,7 @@
                         {% endif %}
                     </span>
                     <span class="status-badge status-{{ offerta.stato }}">
-                        {% if offerta.stato == 'ricevuta' %}📨 Ricevuta
+                        {% if offerta.stato == 'creata' %}📝 Creata
                         {% elif offerta.stato == 'valutata' %}🔍 Valutata
                         {% elif offerta.stato == 'accettata' %}✅ Accettata
                         {% elif offerta.stato == 'rifiutata' %}❌ Rifiutata
@@ -57,7 +57,7 @@
                     <span><strong>{{ offerta.numero_offerta }}</strong></span>
                 </div>
                 <div class="info-item">
-                    <label>Data Ricevuta</label>
+                    <label>Data Creazione</label>
                     <span>{{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta }}</span>
                 </div>
                 <div class="info-item">
@@ -176,6 +176,31 @@
             {% endif %}
         </div>
 
+        <!-- Allegati -->
+        {% if offerta.allegati %}
+        {% set allegati_list = offerta.allegati | from_json %}
+        {% if allegati_list %}
+        <div class="card">
+            <h3>📎 Allegati ({{ allegati_list|length }})</h3>
+            <div class="allegati-section">
+                {% for allegato in allegati_list %}
+                <div class="allegato-item">
+                    <span class="allegato-icon">📄</span>
+                    <div class="allegato-info">
+                        <div class="allegato-nome">{{ allegato.nome_originale }}</div>
+                        <div class="allegato-size">{{ "%.1f"|format(allegato.dimensione / 1024) }} KB</div>
+                    </div>
+                    <div class="allegato-actions">
+                        <a href="/offerte/{{ offerta.id }}/allegato/{{ loop.index0 }}" class="btn btn-sm btn-primary" target="_blank">👁️ Visualizza</a>
+                        <a href="/offerte/{{ offerta.id }}/allegato/{{ loop.index0 }}?download=1" class="btn btn-sm btn-secondary">💾 Scarica</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
         <!-- Riepilogo totali -->
         <div class="card">
             <h3>💰 Riepilogo Totali</h3>
@@ -199,7 +224,7 @@
         <div class="form-actions">
             <a href="/offerte" class="btn btn-secondary">⬅️ Torna alle Offerte</a>
             
-            {% if offerta.stato == 'ricevuta' %}
+            {% if offerta.stato == 'creata' %}
                 <button class="btn btn-warning" onclick="mostraModalValutazione({{ offerta.id }})">🔍 Valuta Offerta</button>
                 <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
                     <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
@@ -342,5 +367,51 @@
         }
     }
     </script>
+    
+    <style>
+        .allegati-section {
+            margin-top: 15px;
+        }
+        
+        .allegato-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 3px solid #007bff;
+        }
+        
+        .allegato-icon {
+            font-size: 1.2rem;
+            margin-right: 12px;
+        }
+        
+        .allegato-info {
+            flex-grow: 1;
+        }
+        
+        .allegato-nome {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .allegato-size {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .allegato-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .allegato-actions .btn {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+    </style>
 </body>
 </html>

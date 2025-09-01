@@ -26,7 +26,7 @@
             <p style="color: #8492a6; margin-top: 8px;">Registra una nuova richiesta di offerta da inviare a un fornitore</p>
         </div>
 
-        <form method="POST" class="form-container">
+        <form method="POST" enctype="multipart/form-data" class="form-container">
             <!-- Dati testata offerta -->
             <div class="card">
                 <h3>📨 Informazioni Generali</h3>
@@ -71,6 +71,15 @@
                 <div class="form-group">
                     <label for="note">Note</label>
                     <textarea id="note" name="note" rows="3" placeholder="Note sull'offerta..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="allegati">📎 Allegati</label>
+                    <input type="file" id="allegati" name="allegati" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+                    <small style="color: #666; font-size: 0.85rem;">
+                        Formati supportati: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG. Max 5MB per file.
+                    </small>
+                    <div id="allegati-list" class="allegati-preview"></div>
                 </div>
             </div>
 
@@ -166,7 +175,7 @@
             <!-- Pulsanti azione -->
             <div class="form-actions">
                 <a href="/offerte" class="btn btn-secondary">⬅️ Annulla</a>
-                <button type="submit" class="btn btn-success">💾 Salva Offerta</button>
+                <button type="submit" class="btn btn-success">💾 Salva Richiesta</button>
             </div>
         </form>
     </div>
@@ -199,6 +208,42 @@
         
         .autocomplete-item:hover {
             background-color: #f0f0f0;
+        }
+        
+        .allegati-preview {
+            margin-top: 10px;
+        }
+        
+        .allegato-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+        
+        .allegato-nome {
+            flex-grow: 1;
+            margin-left: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .allegato-size {
+            color: #666;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+        
+        .remove-allegato {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 2px 6px;
+            cursor: pointer;
+            margin-left: 8px;
         }
     </style>
 
@@ -419,6 +464,42 @@
         document.getElementById('fornitore_nome').value = nome;
     }
     
+    // Gestione allegati
+    document.getElementById('allegati').addEventListener('change', function(e) {
+        const files = e.target.files;
+        const preview = document.getElementById('allegati-list');
+        preview.innerHTML = '';
+        
+        Array.from(files).forEach((file, index) => {
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                alert(`Il file "${file.name}" supera i 5MB consentiti.`);
+                return;
+            }
+            
+            const item = document.createElement('div');
+            item.className = 'allegato-item';
+            item.innerHTML = `
+                <span>📎</span>
+                <span class="allegato-nome">${file.name}</span>
+                <span class="allegato-size">${(file.size / 1024).toFixed(1)} KB</span>
+                <button type="button" class="remove-allegato" onclick="rimuoviAllegato(${index}, this)">×</button>
+            `;
+            preview.appendChild(item);
+        });
+    });
+    
+    function rimuoviAllegato(index, button) {
+        const fileInput = document.getElementById('allegati');
+        const dt = new DataTransfer();
+        
+        Array.from(fileInput.files).forEach((file, i) => {
+            if (i !== index) dt.items.add(file);
+        });
+        
+        fileInput.files = dt.files;
+        button.parentElement.remove();
+    }
+
     // Inizializza autocompletamento al caricamento
     document.addEventListener('DOMContentLoaded', function() {
         const fornitoreInput = document.getElementById('fornitore_nome');

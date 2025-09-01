@@ -85,7 +85,7 @@ def dashboard():
         ).count()
         
         # Offerte da valutare
-        offerte_da_valutare = OffertaFornitore.query.filter_by(stato='ricevuta').count()
+        offerte_da_valutare = OffertaFornitore.query.filter_by(stato='creata').count()
         
         statistiche = {
             'ddt_in_count': ddt_in_count,

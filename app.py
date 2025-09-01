@@ -35,6 +35,14 @@ def get_app_version():
 
 APP_VERSION = get_app_version()
 RELEASE_NOTES = {
+    "4.21": [
+        "✅ OFFERTE: Cambiato stato 'ricevuta' in 'creata' per maggiore chiarezza",
+        "📎 ALLEGATI: Aggiunta possibilità di allegare file alle offerte con gestione completa",
+        "🏷️ TESTI: Aggiornati tutti i testi da 'Gestione Offerte' a 'Gestione Richieste offerte al fornitore'", 
+        "💾 UI: Cambiato pulsante 'Salva Offerta' in 'Salva Richiesta' per coerenza",
+        "🔍 VISUALIZZA: Nuova sezione allegati nel dettaglio offerte con download e anteprima",
+        "🎨 DESIGN: Migliorato stile e usabilità sezione offerte"
+    ],
     "4.20": [
         "✅ MASTRINI: Risolto calcolo totali nella sezione collegamenti mastrini",
         "🔒 DDT: Prevenuta modifica involontaria codice fornitore durante conferma",
@@ -301,6 +309,18 @@ from models import (DDTIn, ArticoloIn, DDTOut, ArticoloOut,
                     Magazzino, Mastrino, MovimentoInterno, ArticoloMovimentoInterno,
                     Commessa, Preventivo, OrdineFornitore, DettaglioPreventivo, DettaglioOrdine,
                     OffertaFornitore, DettaglioOfferta, ConfigurazioneSistema, CollegamentoMastrini)
+
+# Filtri Jinja2 personalizzati
+@app.template_filter('from_json')
+def from_json_filter(json_string):
+    """Decodifica una stringa JSON"""
+    import json
+    if json_string:
+        try:
+            return json.loads(json_string)
+        except:
+            return []
+    return []
 
 # Import sistema parsing AI (opzionale)
 try:
@@ -5842,14 +5862,14 @@ def lista_offerte():
         
         # Statistiche
         totale_offerte = len(offerte)
-        offerte_ricevute = len([o for o in offerte if o.stato == 'ricevuta'])
+        offerte_create = len([o for o in offerte if o.stato == 'creata'])
         offerte_valutate = len([o for o in offerte if o.stato == 'valutata'])
         offerte_accettate = len([o for o in offerte if o.stato == 'accettata'])
         offerte_rifiutate = len([o for o in offerte if o.stato == 'rifiutata'])
         
         stats = {
             'totale': totale_offerte,
-            'ricevute': offerte_ricevute,
+            'create': offerte_create,
             'valutate': offerte_valutate,
             'accettate': offerte_accettate,
             'rifiutate': offerte_rifiutate
@@ -5889,6 +5909,35 @@ def nuova_offerta():
             else:
                 data = request.form.to_dict()
             
+            # Gestione allegati
+            import os
+            import json
+            allegati_salvati = []
+            
+            if 'allegati' in request.files:
+                files = request.files.getlist('allegati')
+                upload_folder = os.path.join('uploads', 'offerte')
+                os.makedirs(upload_folder, exist_ok=True)
+                
+                for file in files:
+                    if file.filename != '':
+                        # Genera nome file sicuro
+                        from werkzeug.utils import secure_filename
+                        filename = secure_filename(file.filename)
+                        timestamp = int(datetime.now().timestamp())
+                        safe_filename = f"{timestamp}_{filename}"
+                        filepath = os.path.join(upload_folder, safe_filename)
+                        
+                        try:
+                            file.save(filepath)
+                            allegati_salvati.append({
+                                'nome_originale': filename,
+                                'nome_file': safe_filename,
+                                'dimensione': os.path.getsize(filepath)
+                            })
+                        except Exception as e:
+                            print(f"Errore salvataggio allegato {filename}: {e}")
+            
             # Genera numero offerta automatico
             ultimo_numero = db.session.query(db.func.max(OffertaFornitore.id)).scalar() or 0
             numero_offerta = f"OFF-{datetime.now().year}-{str(ultimo_numero + 1).zfill(4)}"
@@ -5899,10 +5948,11 @@ def nuova_offerta():
                 fornitore_nome=data.get('fornitore', ''),
                 oggetto=data.get('oggetto', ''),
                 note=data.get('note', ''),
-                stato='ricevuta',
+                stato='creata',
                 totale_netto=float(data.get('totale_netto', 0)),
                 iva=float(data.get('iva', 22)),
-                totale_lordo=float(data.get('totale_lordo', 0))
+                totale_lordo=float(data.get('totale_lordo', 0)),
+                allegati=json.dumps(allegati_salvati) if allegati_salvati else None
             )
             
             db.session.add(offerta)
@@ -6083,7 +6133,7 @@ def offerte_pdf(id):
              '<b>Fornitore:</b>', offerta.fornitore_nome or '-'],
             ['<b>Oggetto:</b>', offerta.oggetto or '-', 
              '<b>P.IVA:</b>', offerta.fornitore.partita_iva if offerta.fornitore else '-'],
-            ['<b>Stato:</b>', offerta.stato.upper() if offerta.stato else 'RICEVUTA', 
+            ['<b>Stato:</b>', offerta.stato.upper() if offerta.stato else 'CREATA', 
              '<b>Email:</b>', offerta.fornitore.email if offerta.fornitore else '-'],
             ['<b>Priorità:</b>', offerta.priorita.upper() if offerta.priorita else 'MEDIA',
              '<b>Telefono:</b>', offerta.fornitore.telefono if offerta.fornitore else '-']
@@ -6185,13 +6235,13 @@ def offerte_pdf(id):
             content.append(Paragraph("<b>Valutazione:</b>", ParagraphStyle('EvalHeader', parent=styles['Heading4'], textColor=colors.HexColor('#28a745'))))
             content.append(Paragraph(offerta.valutazione, normal_style))
         
-        # Cronologia se non è solo ricevuta
-        if offerta.stato and offerta.stato != 'ricevuta':
+        # Cronologia se non è solo creata
+        if offerta.stato and offerta.stato != 'creata':
             content.append(Spacer(1, 0.5*cm))
             content.append(Paragraph("<b>Cronologia:</b>", styles['Heading4']))
             
             cronologia_data = [
-                ['Ricevuta il:', offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta else '-']
+                ['Creata il:', offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta else '-']
             ]
             
             if hasattr(offerta, 'data_valutazione') and offerta.data_valutazione:
@@ -6236,7 +6286,7 @@ def confronta_offerte():
     try:
         # Raggruppa offerte per oggetto simile
         offerte = OffertaFornitore.query.filter(
-            OffertaFornitore.stato.in_(['ricevuta', 'valutata'])
+            OffertaFornitore.stato.in_(['creata', 'valutata'])
         ).order_by(OffertaFornitore.data_ricevuta.desc()).all()
         
         return render_template('confronta-offerte.html', offerte=offerte)
@@ -6244,6 +6294,42 @@ def confronta_offerte():
     except Exception as e:
         print(f"Errore confronto offerte: {e}")
         return f"Errore confronto: {e}", 500
+
+@app.route('/offerte/<int:offerta_id>/allegato/<int:allegato_index>')
+def scarica_allegato_offerta(offerta_id, allegato_index):
+    """Scarica allegato di un'offerta"""
+    try:
+        import json
+        import os
+        from flask import send_file
+        
+        offerta = OffertaFornitore.query.get_or_404(offerta_id)
+        
+        if not offerta.allegati:
+            return "Nessun allegato trovato", 404
+            
+        allegati_list = json.loads(offerta.allegati)
+        
+        if allegato_index >= len(allegati_list):
+            return "Allegato non trovato", 404
+            
+        allegato = allegati_list[allegato_index]
+        filepath = os.path.join('uploads', 'offerte', allegato['nome_file'])
+        
+        if not os.path.exists(filepath):
+            return "File non trovato", 404
+            
+        download = request.args.get('download') == '1'
+        
+        return send_file(
+            filepath,
+            as_attachment=download,
+            download_name=allegato['nome_originale']
+        )
+        
+    except Exception as e:
+        print(f"Errore scarico allegato: {e}")
+        return str(e), 500
 
 @app.route('/offerte/<int:id>/crea-ddt', methods=['POST'])
 def crea_ddt_da_offerta(id):

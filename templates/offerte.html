@@ -21,8 +21,8 @@
         </nav>
 
         <div class="ddt-header">
-            <h1>💰 Gestione Offerte</h1>
-            <p style="color: #8492a6; margin-top: 8px;">Gestione delle offerte ricevute dai fornitori</p>
+            <h1>💰 Gestione Richieste offerte al fornitore</h1>
+            <p style="color: #8492a6; margin-top: 8px;">Gestione delle richieste offerte inviate ai fornitori</p>
         </div>
 
         <div class="dashboard" style="grid-template-columns: 1fr 1fr 1fr;">
@@ -61,7 +61,7 @@
                     <thead>
                         <tr>
                             <th>Numero</th>
-                            <th>Data Ricevuta</th>
+                            <th>Data Creazione</th>
                             <th>Fornitore</th>
                             <th>Oggetto</th>
                             <th>Stato</th>
@@ -80,7 +80,7 @@
                             <td>{{ offerta.oggetto }}</td>
                             <td>
                                 <span class="status-badge status-{{ offerta.stato }}">
-                                    {% if offerta.stato == 'ricevuta' %}📨 Ricevuta
+                                    {% if offerta.stato == 'creata' %}📝 Creata
                                     {% elif offerta.stato == 'valutata' %}🔍 Valutata
                                     {% elif offerta.stato == 'accettata' %}✅ Accettata
                                     {% elif offerta.stato == 'rifiutata' %}❌ Rifiutata
@@ -109,7 +109,7 @@
                             <td>
                                 <div class="action-buttons">
                                     <a href="/offerte/{{ offerta.id }}" class="btn btn-sm">👁️ Visualizza</a>
-                                    {% if offerta.stato == 'ricevuta' %}
+                                    {% if offerta.stato == 'creata' %}
                                         <button class="btn btn-sm btn-warning" onclick="mostraModalValutazione({{ offerta.id }})">🔍 Valuta</button>
                                         <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
                                             <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Accettare questa offerta?')">✅ Accetta</button>
