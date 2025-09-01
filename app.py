@@ -2546,7 +2546,41 @@ def process_batch_files(job_id):
 def ddt_out_list():
     """Lista DDT OUT"""
     try:
-        ddts = DDTOut.query.order_by(
+        # Prepara query base
+        query = DDTOut.query
+        
+        # Applica filtri se presenti
+        data_da = request.args.get('data_da')
+        data_a = request.args.get('data_a')
+        cliente = request.args.get('cliente')
+        numero_ddt = request.args.get('numero_ddt')
+        stato = request.args.get('stato')
+        
+        if data_da:
+            try:
+                data_da_obj = datetime.strptime(data_da, '%Y-%m-%d').date()
+                query = query.filter(DDTOut.data_ddt >= data_da_obj)
+            except:
+                pass
+                
+        if data_a:
+            try:
+                data_a_obj = datetime.strptime(data_a, '%Y-%m-%d').date()
+                query = query.filter(DDTOut.data_ddt <= data_a_obj)
+            except:
+                pass
+                
+        if cliente:
+            query = query.filter(DDTOut.destinazione.ilike(f'%{cliente}%'))
+            
+        if numero_ddt:
+            query = query.filter(DDTOut.numero_ddt.ilike(f'%{numero_ddt}%'))
+            
+        if stato and stato != 'tutti':
+            query = query.filter(DDTOut.stato == stato)
+        
+        # Applica ordinamento
+        ddts = query.order_by(
             DDTOut.stato.asc(),  # bozza prima di confermato
             DDTOut.numero_ddt.desc().nulls_last(),  # numero documento decrescente, NULL alla fine
             DDTOut.id.desc()  # per DDT senza numero, ordina per ID decrescente
