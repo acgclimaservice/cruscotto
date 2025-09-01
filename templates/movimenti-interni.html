@@ -62,8 +62,8 @@
                     <tr>
                         <td>{{ movimento.numero_documento or 'BOZZA' }}</td>
                         <td>{{ movimento.data_movimento.strftime('%d/%m/%Y') if movimento.data_movimento else '-' }}</td>
-                        <td>{{ movimento.magazzino_partenza or '-' }}</td>
-                        <td>{{ movimento.magazzino_destinazione or '-' }}</td>
+                        <td>{{ movimento.nome_magazzino_partenza or '-' }}</td>
+                        <td>{{ movimento.nome_magazzino_destinazione or '-' }}</td>
                         <td>{{ movimento.causale or '-' }}</td>
                         <td>
                             <span class="status {{ 'confirmed' if movimento.stato == 'confermato' else 'draft' }}">

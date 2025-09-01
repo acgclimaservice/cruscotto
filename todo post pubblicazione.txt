@@ -35,4 +35,5 @@ Errore di connessione: SyntaxError: Unexpected token '<', "
 33 in questo file segna come FATTO i punti che pensi di aver sistemato, anche tra i punti precedenti e per i punti futuri
 34 rifai il punto 16 perché non è andato a buon fine
 35 nei movimenti interni, per il campo magazzino di destinazione devi indicare la descrizione del magazzino e non i codice del magazzino, esattamente come succede per il campo magazzino di partenza
-36
+36 quando confermo un ddt in che si trova nello stato di bozza viene erroneamente modificato il campo codice articolo fornitore,  al posto del campo codice articolo fornitore e viene erronemante messo il codice articolo interno, per precisione il codice articolo fornitore deve rimanere quello importato dal ddt fornitore (in caso di parsing) oppure quello inserito manualmente. come ulteriore precisazione il campo codice articolo fornitore nel ddt confermato deve restare quello del ddt bozza
+37

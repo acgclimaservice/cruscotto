@@ -7199,6 +7199,20 @@ def movimenti_interni_list():
             MovimentoInterno.data_movimento.desc()
         ).all()
         
+        # Enrichisci movimenti con nomi magazzini
+        for movimento in movimenti:
+            if movimento.magazzino_partenza:
+                mag_partenza = Magazzino.query.filter_by(codice=movimento.magazzino_partenza).first()
+                movimento.nome_magazzino_partenza = mag_partenza.descrizione if mag_partenza else movimento.magazzino_partenza
+            else:
+                movimento.nome_magazzino_partenza = '-'
+                
+            if movimento.magazzino_destinazione:
+                mag_destinazione = Magazzino.query.filter_by(codice=movimento.magazzino_destinazione).first()
+                movimento.nome_magazzino_destinazione = mag_destinazione.descrizione if mag_destinazione else movimento.magazzino_destinazione
+            else:
+                movimento.nome_magazzino_destinazione = '-'
+        
         return render_template('movimenti-interni.html', movimenti=movimenti)
     except Exception as e:
         print(f"Errore lista movimenti interni: {e}")
@@ -7276,6 +7290,19 @@ def visualizza_movimento_interno(id):
     try:
         movimento = MovimentoInterno.query.get_or_404(id)
         articoli = ArticoloMovimentoInterno.query.filter_by(movimento_id=id).all()
+        
+        # Enrichisci movimento con nomi magazzini
+        if movimento.magazzino_partenza:
+            mag_partenza = Magazzino.query.filter_by(codice=movimento.magazzino_partenza).first()
+            movimento.nome_magazzino_partenza = mag_partenza.descrizione if mag_partenza else movimento.magazzino_partenza
+        else:
+            movimento.nome_magazzino_partenza = '-'
+            
+        if movimento.magazzino_destinazione:
+            mag_destinazione = Magazzino.query.filter_by(codice=movimento.magazzino_destinazione).first()
+            movimento.nome_magazzino_destinazione = mag_destinazione.descrizione if mag_destinazione else movimento.magazzino_destinazione
+        else:
+            movimento.nome_magazzino_destinazione = '-'
         
         return render_template('movimento-interno-detail.html',
                              movimento=movimento,
