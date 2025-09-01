@@ -328,6 +328,112 @@ def nuovo_preventivo():
         db.session.commit()
         return jsonify({'success': True, 'id': preventivo.id})
 
+@preventivi_bp.route('/<int:id>/modifica', methods=['GET', 'POST'])
+def modifica_preventivo(id):
+    """Modifica preventivo esistente"""
+    from models import Preventivo, DettaglioPreventivo, Cliente
+    from flask import redirect
+    from datetime import datetime
+    
+    preventivo = Preventivo.query.get_or_404(id)
+    
+    if request.method == 'GET':
+        clienti = Cliente.query.filter_by(attivo=True).all()
+        return render_template('modifica-preventivo.html', preventivo=preventivo, clienti=clienti)
+    
+    try:
+        # Aggiorna dati preventivo con validazione
+        cliente_id_value = request.form.get('cliente_id', '').strip()
+        # Valida cliente_id: solo numeri validi, ignora "Nessuno", "None" o valori non numerici
+        if (cliente_id_value and 
+            cliente_id_value.lower() not in ['nessuno', 'none'] and 
+            cliente_id_value.isdigit()):
+            preventivo.cliente_id = int(cliente_id_value)
+        else:
+            preventivo.cliente_id = None
+        preventivo.cliente_nome = request.form.get('cliente_nome')
+        preventivo.oggetto = request.form.get('oggetto', '')
+        
+        # Validazione sicura per IVA
+        try:
+            iva_value = request.form.get('iva', '22').strip()
+            preventivo.iva = float(iva_value) if iva_value else 22.0
+        except (ValueError, TypeError):
+            preventivo.iva = 22.0
+            
+        preventivo.note = request.form.get('note', '')
+        preventivo.commessa = request.form.get('commessa', '')
+        
+        if request.form.get('data_scadenza'):
+            preventivo.data_scadenza = datetime.strptime(
+                request.form['data_scadenza'], '%Y-%m-%d'
+            ).date()
+        
+        # Elimina dettagli esistenti e li ricrea
+        DettaglioPreventivo.query.filter_by(preventivo_id=preventivo.id).delete()
+        
+        # Aggiungi dettagli aggiornati con validazione
+        totale = 0
+        i = 0
+        while f'dettagli[{i}][descrizione]' in request.form:
+            if request.form.get(f'dettagli[{i}][descrizione]'):
+                # Validazione sicura per quantita
+                try:
+                    quantita_value = request.form.get(f'dettagli[{i}][quantita]', '1').strip()
+                    quantita = float(quantita_value) if quantita_value else 1.0
+                except (ValueError, TypeError):
+                    quantita = 1.0
+                
+                # Validazione sicura per prezzo_unitario
+                try:
+                    prezzo_value = request.form.get(f'dettagli[{i}][prezzo_unitario]', '0').strip()
+                    prezzo_unitario = float(prezzo_value) if prezzo_value else 0.0
+                except (ValueError, TypeError):
+                    prezzo_unitario = 0.0
+                
+                # Validazione sicura per sconto
+                try:
+                    sconto_value = request.form.get(f'dettagli[{i}][sconto]', '0').strip()
+                    sconto = float(sconto_value) if sconto_value else 0.0
+                except (ValueError, TypeError):
+                    sconto = 0.0
+                
+                # Validazione sicura per costo
+                try:
+                    costo_value = request.form.get(f'dettagli[{i}][costo]', '0').strip()
+                    costo_unitario = float(costo_value) if costo_value else 0.0
+                except (ValueError, TypeError):
+                    costo_unitario = 0.0
+                
+                totale_riga = round(quantita * prezzo_unitario * (1 - sconto/100), 2)
+                
+                dettaglio = DettaglioPreventivo(
+                    preventivo_id=preventivo.id,
+                    codice_articolo=request.form.get(f'dettagli[{i}][codice]', ''),
+                    descrizione=request.form.get(f'dettagli[{i}][descrizione]'),
+                    quantita=quantita,
+                    unita_misura=request.form.get(f'dettagli[{i}][unita]', 'PZ'),
+                    prezzo_unitario=round(prezzo_unitario, 2),
+                    costo_unitario=round(costo_unitario, 2),
+                    sconto_percentuale=sconto,
+                    totale_riga=totale_riga
+                )
+                db.session.add(dettaglio)
+                totale += totale_riga
+            i += 1
+        
+        # Aggiorna totali con arrotondamento
+        preventivo.totale_netto = round(totale, 2)
+        preventivo.totale_lordo = round(totale * (1 + preventivo.iva/100), 2)
+        
+        db.session.commit()
+        return redirect(f'/preventivi/{preventivo.id}')
+        
+    except Exception as e:
+        print(f"Errore modifica preventivo: {e}")
+        db.session.rollback()
+        return jsonify({'errore': str(e)}), 500
+
 # routes_offerte.py
 from flask import Blueprint, render_template, request, jsonify
 from models import db, OffertaFornitore, ArticoloOfferta, Fornitore
