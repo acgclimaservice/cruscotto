@@ -200,7 +200,6 @@
     <script>
     let rigaCount = 1;
     let datiPDFEstratti = null;
-    let loadingInterval = null;
     
     // Funzioni navigazione sezioni
     function mostraCreazioneManovale() {
@@ -235,26 +234,13 @@
         info.style.display = 'block';
         
         const loadingHTML = `
-            <div class="parsing-loader">
-                <div class="loader-animation">
-                    <div class="spinner"></div>
-                    <div class="loader-steps">
-                        <div class="step active" id="step1">📄 Lettura PDF...</div>
-                        <div class="step" id="step2">🤖 Analisi contenuto...</div>
-                        <div class="step" id="step3">📊 Estrazione dati...</div>
-                        <div class="step" id="step4">✅ Finalizzazione...</div>
-                    </div>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressBar"></div>
-                </div>
+            <div class="parsing-simple">
+                <div class="simple-spinner"></div>
+                <div class="parsing-text">Analisi PDF in corso...</div>
             </div>
         `;
         
         document.getElementById('dati-estratti').innerHTML = loadingHTML;
-        
-        // Avvia animazione loading
-        startLoadingAnimation();
         
         // Parsing con AI selezionata
         const formData = new FormData();
@@ -274,7 +260,6 @@
         })
         .then(response => response.json())
         .then(data => {
-            stopLoadingAnimation();
             if (data.success) {
                 datiPDFEstratti = data.data;
                 datiPDFEstratti.session_id = data.session_id;
@@ -300,7 +285,6 @@
             }
         })
         .catch(error => {
-            stopLoadingAnimation();
             console.error('Errore:', error);
             alert('Errore di rete. Usando modalità demo...');
             // Fallback a simulazione
@@ -624,57 +608,7 @@
         }
     }
     
-    // Funzioni animazione loading
-    function startLoadingAnimation() {
-        let progress = 0;
-        let currentStep = 1;
-        
-        loadingInterval = setInterval(() => {
-            progress += 2;
-            
-            // Aggiorna barra progresso
-            const progressBar = document.getElementById('progressBar');
-            if (progressBar) {
-                progressBar.style.width = progress + '%';
-            }
-            
-            // Aggiorna step
-            if (progress > 25 && currentStep === 1) {
-                updateStep(2);
-                currentStep = 2;
-            } else if (progress > 50 && currentStep === 2) {
-                updateStep(3);
-                currentStep = 3;
-            } else if (progress > 75 && currentStep === 3) {
-                updateStep(4);
-                currentStep = 4;
-            }
-            
-            if (progress >= 100) {
-                clearInterval(loadingInterval);
-            }
-        }, 50);
-    }
-    
-    function updateStep(stepNumber) {
-        // Rimuovi active da tutti
-        document.querySelectorAll('.step').forEach(step => {
-            step.classList.remove('active');
-        });
-        
-        // Aggiungi active al current step
-        const currentStepEl = document.getElementById('step' + stepNumber);
-        if (currentStepEl) {
-            currentStepEl.classList.add('active');
-        }
-    }
-    
-    function stopLoadingAnimation() {
-        if (loadingInterval) {
-            clearInterval(loadingInterval);
-            loadingInterval = null;
-        }
-    }
+    // Animazione CSS semplice gestita automaticamente
     
     function verificaStatusAI() {
         fetch('/api/parsing/ai-status')
@@ -850,59 +784,30 @@
     </script>
     
     <style>
-    .parsing-loader {
+    .parsing-simple {
         text-align: center;
-        padding: 30px;
+        padding: 40px 20px;
     }
     
-    .loader-animation {
-        margin-bottom: 20px;
-    }
-    
-    .spinner {
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #3498db;
+    .simple-spinner {
+        width: 24px;
+        height: 24px;
+        border: 2px solid #e3e3e3;
+        border-top: 2px solid #007bff;
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 20px;
+        animation: simple-spin 1s linear infinite;
+        margin: 0 auto 16px;
     }
     
-    @keyframes spin {
+    .parsing-text {
+        color: #666;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    @keyframes simple-spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
-    }
-    
-    .loader-steps {
-        margin: 20px 0;
-    }
-    
-    .step {
-        padding: 8px 0;
-        color: #999;
-        transition: color 0.3s ease;
-    }
-    
-    .step.active {
-        color: #3498db;
-        font-weight: bold;
-    }
-    
-    .progress-bar {
-        width: 100%;
-        height: 4px;
-        background: #eee;
-        border-radius: 2px;
-        overflow: hidden;
-        margin-top: 20px;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #3498db, #2ecc71);
-        width: 0%;
-        transition: width 0.3s ease;
     }
 
     /* Stili per visualizzatore PDF */
