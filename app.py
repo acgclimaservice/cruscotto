@@ -5672,6 +5672,78 @@ def dettaglio_offerta(id):
     offerta = OffertaFornitore.query.get_or_404(id)
     return render_template('dettaglio-offerta.html', offerta=offerta)
 
+@app.route('/offerte/nuova', methods=['GET', 'POST'])
+def nuova_offerta():
+    """Crea nuova offerta fornitore"""
+    if request.method == 'GET':
+        try:
+            fornitori = Fornitore.query.filter_by(attivo=True).all()
+            return render_template('nuova-offerta.html', fornitori=fornitori)
+        except Exception as e:
+            print(f"Errore GET nuova offerta: {e}")
+            return render_template('nuova-offerta.html', fornitori=[])
+    
+    if request.method == 'POST':
+        try:
+            # Gestisce sia form data che JSON
+            if request.is_json:
+                data = request.json
+            else:
+                data = request.form.to_dict()
+            
+            # Genera numero offerta automatico
+            ultimo_numero = db.session.query(db.func.max(OffertaFornitore.id)).scalar() or 0
+            numero_offerta = f"OFF-{datetime.now().year}-{str(ultimo_numero + 1).zfill(4)}"
+            
+            offerta = OffertaFornitore(
+                numero_offerta=numero_offerta,
+                data_offerta=datetime.strptime(data['data_offerta'], '%Y-%m-%d').date() if data.get('data_offerta') else datetime.now().date(),
+                fornitore_nome=data.get('fornitore', ''),
+                oggetto=data.get('oggetto', ''),
+                note=data.get('note', ''),
+                stato='ricevuta',
+                totale_netto=float(data.get('totale_netto', 0)),
+                iva=float(data.get('iva', 22)),
+                totale_lordo=float(data.get('totale_lordo', 0))
+            )
+            
+            db.session.add(offerta)
+            db.session.flush()
+            
+            # Aggiungi articoli se presenti
+            if 'articoli' in data and data['articoli']:
+                for art_data in data['articoli']:
+                    articolo = DettaglioOfferta(
+                        offerta_id=offerta.id,
+                        codice_articolo=art_data.get('codice_interno', ''),
+                        codice_fornitore=art_data.get('codice_fornitore', ''),
+                        descrizione=art_data.get('descrizione', ''),
+                        quantita=float(art_data.get('quantita', 0)),
+                        unita_misura=art_data.get('unita_misura', 'PZ'),
+                        prezzo_unitario=float(art_data.get('prezzo_unitario', 0)),
+                        sconto_percentuale=float(art_data.get('sconto_percentuale', 0)),
+                        totale_riga=float(art_data.get('totale_riga', 0)),
+                        note=art_data.get('note', '')
+                    )
+                    db.session.add(articolo)
+            
+            db.session.commit()
+            
+            if request.is_json:
+                return jsonify({'success': True, 'id': offerta.id})
+            else:
+                flash(f'Offerta {numero_offerta} creata con successo', 'success')
+                return redirect(f'/offerte/{offerta.id}')
+                
+        except Exception as e:
+            db.session.rollback()
+            print(f"Errore POST nuova offerta: {e}")
+            if request.is_json:
+                return jsonify({'error': str(e)}), 500
+            else:
+                flash(f'Errore nella creazione dell\'offerta: {str(e)}', 'error')
+                return redirect('/offerte')
+
 @app.route('/offerte/<int:id>/valuta', methods=['POST'])
 def valuta_offerta(id):
     """Valuta un'offerta"""
