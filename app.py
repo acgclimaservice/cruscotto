@@ -2220,8 +2220,8 @@ def crea_preventivo_da_ddt_in(id):
         totale_netto = 0
         for articolo in articoli_in:
             # Applica un markup del 20% sul costo per ottenere il prezzo di vendita
-            prezzo_unitario = (articolo.costo_unitario or 0) * 1.20
-            totale_riga = (articolo.quantita or 0) * prezzo_unitario
+            prezzo_unitario = round((articolo.costo_unitario or 0) * 1.20, 2)
+            totale_riga = round((articolo.quantita or 0) * prezzo_unitario, 2)
             totale_netto += totale_riga
             
             dettaglio = DettaglioPreventivo(
@@ -2236,11 +2236,11 @@ def crea_preventivo_da_ddt_in(id):
             db.session.add(dettaglio)
         
         # Aggiorna totali preventivo
-        nuovo_preventivo.totale_netto = totale_netto
-        nuovo_preventivo.totale_lordo = totale_netto * (1 + nuovo_preventivo.iva / 100)
+        nuovo_preventivo.totale_netto = round(totale_netto, 2)
+        nuovo_preventivo.totale_lordo = round(totale_netto * (1 + nuovo_preventivo.iva / 100), 2)
         margine = totale_netto - sum((d.costo_unitario or 0) * (d.quantita or 0) for d in nuovo_preventivo.dettagli)
-        nuovo_preventivo.margine_valore = margine
-        nuovo_preventivo.margine_percentuale = (margine / totale_netto * 100) if totale_netto > 0 else 0
+        nuovo_preventivo.margine_valore = round(margine, 2)
+        nuovo_preventivo.margine_percentuale = round((margine / totale_netto * 100), 2) if totale_netto > 0 else 0
         
         db.session.commit()
         
