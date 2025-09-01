@@ -5924,8 +5924,14 @@ def lista_offerte():
 @app.route('/offerte/<int:id>')
 def dettaglio_offerta(id):
     """Dettaglio offerta"""
-    offerta = OffertaFornitore.query.get_or_404(id)
-    return render_template('dettaglio-offerta.html', offerta=offerta)
+    try:
+        offerta = OffertaFornitore.query.get_or_404(id)
+        return render_template('dettaglio-offerta.html', offerta=offerta)
+    except Exception as e:
+        import traceback
+        print(f"Errore dettaglio offerta {id}: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return f"Errore nel caricamento dell'offerta: {str(e)}", 500
 
 @app.route('/offerte/nuova', methods=['GET', 'POST'])
 def nuova_offerta():
