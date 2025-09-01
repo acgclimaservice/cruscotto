@@ -7001,6 +7001,106 @@ def ripulisci_dati_test():
         traceback.print_exc()
         return jsonify({'success': False, 'error': error_msg}), 500
 
+# ========== ROUTES CONFIGURAZIONI EMAIL ==========
+
+@app.route('/impostazioni/configurazione/salva', methods=['POST'])
+def salva_configurazione_sistema():
+    """Salva configurazioni sistema nel database"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'Dati mancanti'}), 400
+        
+        aggiornate = 0
+        for chiave, valore in data.items():
+            # Cerca configurazione esistente
+            config = ConfigurazioneSistema.query.filter_by(chiave=chiave).first()
+            
+            if config:
+                # Aggiorna esistente
+                config.valore = str(valore)
+            else:
+                # Crea nuova
+                config = ConfigurazioneSistema(
+                    chiave=chiave,
+                    valore=str(valore),
+                    descrizione=f'Configurazione {chiave}'
+                )
+                db.session.add(config)
+            
+            aggiornate += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Configurazioni salvate con successo',
+            'aggiornate': aggiornate
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore salvataggio configurazione: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/impostazioni/smtp/test', methods=['POST'])
+def test_smtp_invio():
+    """Test configurazione SMTP per invio email"""
+    try:
+        # Usa EmailMonitor per ottenere configurazioni
+        email_monitor = EmailMonitor(app)
+        
+        # Ottieni configurazioni SMTP
+        smtp_server = email_monitor.get_config('email_smtp_server')
+        smtp_port = email_monitor.get_config('email_smtp_port', '587')
+        email_mittente = email_monitor.get_config('email_address')
+        email_password = email_monitor.get_config('email_password')
+        
+        # Valida configurazioni
+        if not all([smtp_server, email_mittente, email_password]):
+            return jsonify({
+                'success': False, 
+                'error': 'Configurazioni SMTP incomplete. Verifica server, email e password.'
+            }), 400
+        
+        # Test connessione SMTP
+        import smtplib
+        import ssl
+        from email.mime.text import MIMEText
+        
+        # Messaggio di test
+        msg = MIMEText("Test invio email dal Sistema Gestione DDT - Configurazione SMTP corretta!", 'plain', 'utf-8')
+        msg['From'] = email_mittente
+        msg['To'] = email_mittente  # Invia a se stesso per test
+        msg['Subject'] = "Test SMTP - Sistema Gestione DDT"
+        
+        # Connessione e invio
+        context = ssl.create_default_context()
+        
+        with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
+            server.starttls(context=context)
+            server.login(email_mittente, email_password)
+            server.send_message(msg)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Email di test inviata con successo a {email_mittente}',
+            'dettagli': {
+                'server': smtp_server,
+                'porta': smtp_port,
+                'mittente': email_mittente
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Errore test SMTP: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False, 
+            'error': f'Test SMTP fallito: {str(e)}'
+        }), 500
+
 # ========== API AUTOCOMPLETE ==========
 
 @app.route('/api/articoli/disponibili')
