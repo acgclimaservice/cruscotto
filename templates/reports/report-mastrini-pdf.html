@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Report Mastrini - ACG Clima Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            margin: 20px;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 15px;
+        }
+        
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 5px;
+        }
+        
+        .report-title {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        
+        .report-info {
+            font-size: 10px;
+            color: #6b7280;
+        }
+        
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-spese { color: #dc2626; }
+        .stat-ricavi { color: #16a34a; }
+        .stat-margine { color: #3b82f6; }
+        
+        .stat-label {
+            font-size: 10px;
+            color: #6b7280;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10px;
+        }
+        
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background: #f3f4f6;
+            font-weight: bold;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 25px 0 10px 0;
+            color: #1e40af;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+        }
+        
+        .totale-spese { color: #dc2626; font-weight: bold; }
+        .totale-ricavi { color: #16a34a; font-weight: bold; }
+        .totale-zero { color: #6b7280; font-style: italic; }
+        
+        @page {
+            margin: 2cm;
+            @bottom-right {
+                content: "Pagina " counter(page) " di " counter(pages);
+                font-size: 9px;
+                color: #6b7280;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">ACG Clima Service S.r.l.</div>
+        <div class="report-title">📊 Report Mastrini</div>
+        <div class="report-info">
+            {% if data_da or data_a %}
+                Periodo: 
+                {% if data_da %}dal {{ data_da }}{% endif %}
+                {% if data_a %}al {{ data_a }}{% endif %}
+            {% else %}
+                Tutti i periodi
+            {% endif %}
+            | Generato il {{ data_generazione }}
+        </div>
+    </div>
+
+    <!-- Riepilogo -->
+    <div class="summary-stats">
+        <div class="stat-item">
+            <div class="stat-number stat-spese">€ {{ "{:,.2f}".format(totale_spese) }}</div>
+            <div class="stat-label">Spese Totali</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number stat-ricavi">€ {{ "{:,.2f}".format(totale_ricavi) }}</div>
+            <div class="stat-label">Ricavi Totali</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number stat-margine">€ {{ "{:,.2f}".format(margine) }}</div>
+            <div class="stat-label">Margine Lordo</div>
+        </div>
+    </div>
+
+    <!-- Spese per Mastrino -->
+    <div class="section-title">📥 Spese per Mastrino</div>
+    <table>
+        <thead>
+            <tr>
+                <th width="15%">Codice</th>
+                <th width="45%">Descrizione</th>
+                <th width="15%">N. DDT</th>
+                <th width="25%">Totale</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for spesa in spese_mastrini %}
+            <tr>
+                <td>{{ spesa.mastrino }}</td>
+                <td>{{ spesa.descrizione or 'N/A' }}</td>
+                <td>{{ spesa.numero_ddt }}</td>
+                <td class="totale-spese">€ {{ "{:,.2f}".format(spesa.totale or 0) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align: center; color: #6b7280;">Nessuna spesa nel periodo</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Ricavi per Mastrino -->
+    <div class="section-title">📤 Ricavi per Mastrino</div>
+    <table>
+        <thead>
+            <tr>
+                <th width="15%">Codice</th>
+                <th width="45%">Descrizione</th>
+                <th width="15%">N. DDT</th>
+                <th width="25%">Totale</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ricavo in ricavi_mastrini %}
+            <tr>
+                <td>{{ ricavo.mastrino }}</td>
+                <td>{{ ricavo.descrizione or 'N/A' }}</td>
+                <td>{{ ricavo.numero_ddt }}</td>
+                <td class="totale-ricavi">€ {{ "{:,.2f}".format(ricavo.totale or 0) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align: center; color: #6b7280;">Nessun ricavo nel periodo</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Collegamenti Mastrini -->
+    {% if collegamenti_dettagli %}
+    <div class="section-title">🔗 Collegamenti Mastrini Configurati</div>
+    <table>
+        <thead>
+            <tr>
+                <th width="15%">Acquisto</th>
+                <th width="15%">Totale Spese</th>
+                <th width="15%">Ricavo</th>
+                <th width="15%">Totale Ricavi</th>
+                <th width="15%">Margine</th>
+                <th width="25%">Descrizione</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for collegamento in collegamenti_dettagli %}
+            <tr>
+                <td>{{ collegamento.codice_acquisto }}</td>
+                <td>
+                    {% if collegamento.totale_spese > 0 %}
+                        <span class="totale-spese">€ {{ "{:,.2f}".format(collegamento.totale_spese) }}</span>
+                    {% else %}
+                        <span class="totale-zero">€ 0,00</span>
+                    {% endif %}
+                </td>
+                <td>{{ collegamento.codice_ricavo }}</td>
+                <td>
+                    {% if collegamento.totale_ricavi > 0 %}
+                        <span class="totale-ricavi">€ {{ "{:,.2f}".format(collegamento.totale_ricavi) }}</span>
+                    {% else %}
+                        <span class="totale-zero">€ 0,00</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set margine_collegamento = collegamento.totale_ricavi - collegamento.totale_spese %}
+                    {% if margine_collegamento > 0 %}
+                        <span class="totale-ricavi">€ {{ "{:,.2f}".format(margine_collegamento) }}</span>
+                    {% elif margine_collegamento < 0 %}
+                        <span class="totale-spese">€ {{ "{:,.2f}".format(margine_collegamento) }}</span>
+                    {% else %}
+                        <span class="totale-zero">€ 0,00</span>
+                    {% endif %}
+                </td>
+                <td>{{ collegamento.descrizione_collegamento or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</body>
+</html>

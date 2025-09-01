@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordini Fornitori - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
+    <script src="{{ url_for('static', filename='autocompletamento.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Ordini Fornitori</h2>
+                <p>Gestione ordini da fornitori</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/ordini" class="active">🛒 Ordini</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>🛒 Gestione Ordini Fornitori</h1>
+            <p style="color: #8492a6; margin-top: 8px;">Gestione degli ordini inviati ai fornitori</p>
+        </div>
+
+        <div class="dashboard" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="card">
+                <h2><span class="icon">📝</span>Ordini Bozza</h2>
+                <div class="stat-value">{{ ordini_bozza|default(0) }}</div>
+                <div class="stat-label">In preparazione</div>
+                <a href="#" class="btn">Visualizza Tutte</a>
+            </div>
+            
+            <div class="card">
+                <h2><span class="icon">📤</span>Ordini Inviati</h2>
+                <div class="stat-value">{{ ordini_inviati|default(0) }}</div>
+                <div class="stat-label">Inviati ai fornitori</div>
+                <a href="#" class="btn">Storico</a>
+            </div>
+            
+            <div class="card">
+                <h2><span class="icon">💡</span>Azioni Rapide</h2>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                    <a href="/ordini/nuovo" class="btn btn-success">+ Nuovo Ordine</a>
+                    <a href="/ordini/import" class="btn btn-primary">📄 Importa da PDF</a>
+                    <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">📊 Report Ordini</button>
+                    <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">🔄 Riordini Automatici</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>🛒 Lista Ordini</h3>
+                <div>
+                    <a href="/ordini/import" class="btn btn-primary">📄 Importa da PDF</a>
+                    <a href="/ordini/nuovo" class="btn btn-success">+ Nuovo Ordine</a>
+                </div>
+            </div>
+            
+            {% if ordini %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Numero</th>
+                            <th>Data Ordine</th>
+                            <th>Fornitore</th>
+                            <th>Oggetto</th>
+                            <th>Stato</th>
+                            <th>Priorità</th>
+                            <th>Totale</th>
+                            <th>Scadenza</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ordine in ordini %}
+                        <tr>
+                            <td><strong>{{ ordine.numero_ordine or ('BOZZA-' + ordine.id|string) }}</strong></td>
+                            <td>{{ ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine }}</td>
+                            <td>{{ ordine.fornitore_nome }}</td>
+                            <td>{{ ordine.oggetto }}</td>
+                            <td>
+                                <span class="status-badge status-{{ ordine.stato }}">
+                                    {% if ordine.stato == 'bozza' %}📝 Bozza
+                                    {% elif ordine.stato == 'inviato' %}📤 Inviato
+                                    {% elif ordine.stato == 'confermato' %}✅ Confermato
+                                    {% elif ordine.stato == 'ricevuto' %}📦 Ricevuto
+                                    {% elif ordine.stato == 'completato' %}🏁 Completato
+                                    {% else %}{{ ordine.stato }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="priority-badge priority-{{ ordine.priorita }}">
+                                    {% if ordine.priorita == 'alta' %}🔴 Alta
+                                    {% elif ordine.priorita == 'media' %}🟡 Media
+                                    {% elif ordine.priorita == 'bassa' %}🟢 Bassa
+                                    {% else %}{{ ordine.priorita }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>€ {{ "%.2f"|format(ordine.totale_lordo or 0) }}</td>
+                            <td>
+                                {% if ordine.data_scadenza %}
+                                    {{ ordine.data_scadenza.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    <span style="color: #8492a6;">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/ordini/{{ ordine.id }}" class="btn btn-sm">👁️ Visualizza</a>
+                                    {% if ordine.stato == 'bozza' and ordine.pdf_allegato %}
+                                        <button class="btn btn-sm btn-info" onclick="confrontaOrdine({{ ordine.id }})">🔍 Confronta</button>
+                                    {% endif %}
+                                    {% if ordine.stato == 'bozza' %}
+                                        <button class="btn btn-sm btn-success" onclick="inviaOrdine({{ ordine.id }})">📤 Invia</button>
+                                    {% elif ordine.stato == 'inviato' %}
+                                        <button class="btn btn-sm btn-warning" onclick="confermaOrdine({{ ordine.id }})">✅ Conferma Ricevimento</button>
+                                    {% elif ordine.stato == 'confermato' %}
+                                        <button class="btn btn-sm btn-primary" onclick="convertiInDDTIn({{ ordine.id }}, '{{ ordine.numero_ordine }}')">📥 Converti in DDT IN</button>
+                                    {% endif %}
+                                    <button class="btn btn-sm btn-danger" onclick="eliminaOrdine({{ ordine.id }}, '{{ ordine.numero_ordine or ('BOZZA-' + ordine.id|string) }}')">🗑️ Elimina</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div style="text-align: center; padding: 60px 20px; color: #a0aec0;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🛒</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Nessun ordine presente</div>
+                    <div style="font-size: 14px; margin-bottom: 20px;">Inizia creando il tuo primo ordine fornitore</div>
+                    <a href="/ordini/nuovo" class="btn btn-success">+ Crea Primo Ordine</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+<script>
+function inviaOrdine(ordineId) {
+    if (confirm('Inviare questo ordine al fornitore?')) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Inviando...";
+        btn.disabled = true;
+        
+        fetch(`/ordini/${ordineId}/invia`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Ordine inviato con successo!`);
+                location.reload();
+            } else {
+                alert(`Errore durante l'invio: ${data.errore}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`Errore durante l'invio: ${error}`);
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+    }
+}
+
+function confermaOrdine(ordineId) {
+    if (confirm('Confermare la ricezione di questo ordine dal fornitore?')) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Confermando...";
+        btn.disabled = true;
+        
+        fetch(`/ordini/${ordineId}/conferma`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Ordine confermato!`);
+                location.reload();
+            } else {
+                alert(`Errore durante la conferma: ${data.errore}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`Errore durante la conferma: ${error}`);
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+    }
+}
+
+function convertiInDDTIn(ordineId, numeroOrdine) {
+    if (confirm(`Convertire l'ordine ${numeroOrdine} in DDT IN?\\n\\nQuesta operazione:\\n- Creerà un nuovo DDT IN con gli articoli dell'ordine\\n- Cambierà lo stato dell'ordine in \"completato\"\\n\\nContinuare?`)) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Convertendo...";
+        btn.disabled = true;
+        
+        fetch(`/ordini/${ordineId}/crea-ddt`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`DDT IN creato con successo!\\n\\nNumero DDT: ${data.numero_ddt}`);
+                window.location.href = data.redirect_url;
+            } else {
+                alert(`Errore durante la conversione: ${data.errore}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`Errore durante la conversione: ${error}`);
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+    }
+}
+
+function eliminaOrdine(ordineId, numeroOrdine) {
+    if (confirm(`Sei sicuro di voler eliminare l'ordine ${numeroOrdine}?\\n\\nQuesta operazione:\\n- Eliminerà l'ordine e tutti i suoi dettagli\\n- NON PUÒ essere annullata!\\n\\nContinuare?`)) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Eliminando...";
+        btn.disabled = true;
+        
+        fetch(`/ordini/${ordineId}/elimina`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Ordine eliminato con successo!\\n\\n${data.message}\\nDettagli rimossi: ${data.dettagli_rimossi}`);
+                location.reload();
+            } else {
+                alert(`Errore durante l'eliminazione: ${data.error}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`Errore durante l'eliminazione: ${error}`);
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+    }
+}
+
+function confrontaOrdine(ordineId) {
+    // Carica i dati dell'ordine per il confronto
+    fetch(`/ordini/${ordineId}/confronta-data`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostraModalConfrontoOrdine(ordineId, data);
+            } else {
+                alert('Errore nel caricamento dati: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Errore di connessione: ' + error);
+        });
+}
+
+function mostraModalConfrontoOrdine(ordineId, data) {
+    const modal = document.createElement('div');
+    modal.id = 'confrontoModalOrdine';
+    modal.className = 'modal-overlay';
+    
+    const ordineInfo = data.data;
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 95%; max-height: 95%; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3>🔍 Confronto Ordine ${ordineInfo.numero_ordine || 'BOZZA-' + ordineInfo.id}</h3>
+                <button class="close-btn" onclick="chiudiModalConfrontoOrdine()">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="display: flex; gap: 20px; flex: 1; overflow: hidden;">
+                <!-- PDF Originale -->
+                <div class="pdf-section" style="flex: 1; display: flex; flex-direction: column;">
+                    <h4>📄 PDF Offerta Originale</h4>
+                    <iframe id="pdfOriginaleOrdine" src="/ordini/${ordineId}/pdf-allegato?zoom=200" 
+                            style="flex: 1; border: 1px solid #ddd; cursor: zoom-in;"></iframe>
+                </div>
+                
+                <!-- Dati Ordine -->
+                <div class="ddt-section" style="flex: 1; overflow-y: auto; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <div class="confronto-section">
+                        <h4>📋 Dati Ordine Bozza</h4>
+                        <div class="ddt-details">
+                            <p><strong>Fornitore:</strong> ${ordineInfo.fornitore_nome || 'N/A'}</p>
+                            <p><strong>Data Ordine:</strong> ${ordineInfo.data_ordine || 'N/A'}</p>
+                            <p><strong>Oggetto:</strong> ${ordineInfo.oggetto || 'N/A'}</p>
+                            <p><strong>Priorità:</strong> ${ordineInfo.priorita || 'N/A'}</p>
+                            <p><strong>Totale:</strong> €${ordineInfo.totale_lordo || '0.00'}</p>
+                        </div>
+                        
+                        <h5>📦 Articoli (${ordineInfo.dettagli.length})</h5>
+                        <div class="articoli-list">
+                            ${ordineInfo.dettagli.map(det => `
+                                <div class="articolo-item" style="background: white; padding: 10px; margin: 5px 0; border-radius: 4px; border: 1px solid #e5e7eb;">
+                                    <strong>${det.descrizione}</strong><br>
+                                    <small>Codice: ${det.codice_fornitore || det.codice_articolo || 'N/A'} | Qtà: ${det.quantita} | €${det.prezzo_unitario || 0}</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: center; padding: 20px;">
+                <button class="btn btn-secondary" onclick="chiudiModalConfrontoOrdine()">❌ Chiudi</button>
+                <a href="/ordini/${ordineInfo.id}/modifica" class="btn btn-warning">✏️ Modifica</a>
+                <button class="btn btn-success" onclick="confermaOrdineConfronto(${ordineInfo.id})">✅ Conferma Ordine</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Aggiungi lente d'ingrandimento automatica al PDF
+    setTimeout(() => {
+        const pdfFrame = document.getElementById('pdfOriginaleOrdine');
+        if (pdfFrame) {
+            pdfFrame.style.cursor = 'zoom-in';
+        }
+    }, 500);
+}
+
+function chiudiModalConfrontoOrdine() {
+    const modal = document.getElementById('confrontoModalOrdine');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function confermaOrdineConfronto(ordineId) {
+    if (confirm('Confermare questo ordine e inviarlo al fornitore?')) {
+        inviaOrdine(ordineId);
+        chiudiModalConfrontoOrdine();
+    }
+}
+</script>
+
+<style>
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    color: #ef4444;
+}
+</style>
+</body>
+</html>

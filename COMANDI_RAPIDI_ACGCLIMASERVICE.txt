@@ -1,0 +1,42 @@
+=== COMANDI RAPIDI PER ACGCLIMASERVICE ===
+
+COPIA E INCOLLA QUESTI COMANDI UNO ALLA VOLTA NELLA BASH CONSOLE DI PYTHONANYWHERE:
+
+# 1. Vai nella directory del progetto (dopo aver caricato i file)
+cd ~/cruscotto
+
+# 2. Installa tutte le dipendenze
+pip3.10 install --user -r requirements.txt
+
+# 3. Crea file .env (poi editalo con nano .env per inserire le tue API keys)
+cp .env.example .env
+
+# 4. Inizializza database
+python3.10 -c "from app import app, db; app.app_context().push(); db.create_all(); print('✅ Database creato!')"
+
+# 5. Test che l'app funzioni
+python3.10 -c "from app import app; print('✅ App importata correttamente!')"
+
+# 6. (OPZIONALE) Import dati se hai i file Excel
+python3.10 import_clienti_excel.py
+python3.10 import_fornitori_excel.py  
+python3.10 import_mastrini_excel.py
+
+=== DOPO I COMANDI ===
+
+1. Vai su WEB tab
+2. Configura WSGI file con il codice nel file DEPLOY_ACGCLIMASERVICE.md
+3. Configura Static Files: URL=/static/ Directory=/home/acgclimaservice/cruscotto/static/
+4. Reload web app
+5. Apri: https://acgclimaservice.pythonanywhere.com
+
+=== IN CASO DI ERRORI ===
+
+# Verifica log errori:
+tail -f /var/www/acgclimaservice_pythonanywhere_com_error.log
+
+# Reinstalla librerie AI:
+pip3.10 install --user --upgrade anthropic google-generativeai PyMuPDF
+
+# Riavvia webapp:
+touch /var/www/acgclimaservice_pythonanywhere_com_wsgi.py

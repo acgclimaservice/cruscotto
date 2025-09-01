@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Sistema ACG</h2>
+                <p>Dashboard operativa</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/" class="active">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/ordini">🛒 Ordini</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/movimenti-interni">🔄 Movimenti Interni</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/reports">📈 Report</a></li>
+                <li><a href="/commesse">🏗️ Commesse</a></li>
+                <li><a href="/clienti">👥 Clienti</a></li>
+                <li><a href="/fornitori">🏭 Fornitori</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <!-- Finestra di notifica miglioramenti -->
+        {% if release_notes %}
+        <div id="releaseNotesModal" class="release-modal" style="display: block;">
+            <div class="release-modal-content">
+                <div class="release-header">
+                    <h3>🔧 Miglioramenti Versione {{ app_version }}</h3>
+                    <span class="close-modal" onclick="closeReleaseNotes()">&times;</span>
+                </div>
+                <div class="release-body">
+                    <p><strong>I seguenti problemi sono stati risolti:</strong></p>
+                    <ul>
+                        {% for note in release_notes %}
+                        <li>{{ note }}</li>
+                        {% endfor %}
+                    </ul>
+                    <p style="margin-top: 15px; color: #666;">
+                        <strong>Testa ora i miglioramenti!</strong> Prova la funzione di import PDF da DDT IN.
+                    </p>
+                </div>
+                <div class="release-footer">
+                    <button class="btn" onclick="closeReleaseNotes()">Ho capito, chiudi</button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="dashboard">
+            <div class="card">
+                <h2><span class="icon">📥</span>DDT in Entrata</h2>
+                <div class="stat-value">{{ ddt_in_count|default(0) }}</div>
+                <div class="stat-label">Documenti confermati</div>
+                <a href="/ddt-in" class="btn">Vai all'archivio</a>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">📤</span>DDT in Uscita</h2>
+                <div class="stat-value">{{ ddt_out_count|default(0) }}</div>
+                <div class="stat-label">Documenti confermati</div>
+                <a href="/ddt-out" class="btn">Vai all'archivio</a>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">📊</span>Riepilogo</h2>
+                <div class="summary-item">
+                    <span>Totale movimenti</span>
+                    <strong>{{ (ddt_in_count|default(0)) + (ddt_out_count|default(0)) }}</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Bozze in lavorazione</span>
+                    <strong style="color: #f59e0b;">{{ bozze_count|default(0) }}</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Documenti completati</span>
+                    <strong style="color: #10b981;">{{ (ddt_in_count|default(0)) + (ddt_out_count|default(0)) }}</strong>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">⚠️</span>Avvisi</h2>
+                <div class="alert-item alert-warning">
+                    <strong>{{ alerts_count|default(0) }}</strong> documenti in attesa da oltre 7 giorni
+                </div>
+                <div class="alert-item alert-danger">
+                    <strong>{{ discrepanze_count|default(0) }}</strong> documenti con discrepanze
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">🚀</span>Azioni Rapide</h2>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <a href="/ddt-in/nuovo" class="btn">➕ Nuovo DDT IN</a>
+                    <a href="/ddt-import" class="btn btn-secondary">📄 Import da PDF</a>
+                    <a href="/inventario" class="btn btn-secondary">📦 Verifica Inventario</a>
+                    <a href="/reports" class="btn btn-success">📊 Report e Analisi</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">📈</span>Sistema</h2>
+                <div class="summary-item">
+                    <span>Versione</span>
+                    <strong>{{ app_version|default('2.7') }}</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Database</span>
+                    <strong style="color: #10b981;">Operativo</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Ultimo backup</span>
+                    <strong>{{ datetime.now().strftime('%d/%m/%Y') if datetime else 'N/D' }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stili CSS per modal di release notes -->
+    <style>
+    .release-modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        backdrop-filter: blur(3px);
+    }
+    
+    .release-modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        padding: 0;
+        border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        width: 90%;
+        max-width: 500px;
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from { opacity: 0; transform: translate(-50%, -60%); }
+        to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+    
+    .release-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px 12px 0 0;
+        position: relative;
+    }
+    
+    .release-header h3 {
+        margin: 0;
+        font-size: 1.2em;
+    }
+    
+    .close-modal {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 24px;
+        cursor: pointer;
+        color: rgba(255,255,255,0.8);
+        transition: color 0.2s;
+    }
+    
+    .close-modal:hover {
+        color: white;
+    }
+    
+    .release-body {
+        padding: 20px;
+    }
+    
+    .release-body ul {
+        margin: 10px 0;
+        padding-left: 20px;
+    }
+    
+    .release-body li {
+        margin: 8px 0;
+        line-height: 1.4;
+    }
+    
+    .release-footer {
+        padding: 15px 20px;
+        border-top: 1px solid #eee;
+        text-align: right;
+        border-radius: 0 0 12px 12px;
+    }
+    
+    .release-footer .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: transform 0.2s;
+    }
+    
+    .release-footer .btn:hover {
+        transform: translateY(-1px);
+    }
+    </style>
+
+    <!-- JavaScript per modal -->
+    <script>
+    function closeReleaseNotes() {
+        const modal = document.getElementById('releaseNotesModal');
+        if (modal) {
+            modal.style.display = 'none';
+            // Salva che l'utente ha visto le note per questa versione
+            localStorage.setItem('lastSeenVersion', '{{ app_version }}');
+        }
+    }
+    
+    // Mostra il modal solo se non è già stato visto per questa versione
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentVersion = '{{ app_version }}';
+        const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+        const modal = document.getElementById('releaseNotesModal');
+        
+        if (modal && lastSeenVersion === currentVersion) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    // Chiudi modal cliccando fuori
+    window.onclick = function(event) {
+        const modal = document.getElementById('releaseNotesModal');
+        if (event.target == modal) {
+            closeReleaseNotes();
+        }
+    }
+    </script>
+</body>
+</html>

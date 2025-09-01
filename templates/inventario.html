@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventario - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Inventario Magazzino</h2>
+                <p>Gestione giacenze e scorte</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/inventario" class="active">📦 Inventario</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📦 Inventario Magazzino</h1>
+            
+            <!-- Filtri inventario -->
+            <form method="GET" class="filters" style="margin: 20px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="date" name="data_da" value="{{ request.args.get('data_da', '') }}" placeholder="Data da" title="Filtra per data movimento dal">
+                <input type="date" name="data_a" value="{{ request.args.get('data_a', '') }}" placeholder="Data a" title="Filtra per data movimento al">
+                <select name="magazzino" title="Filtra per magazzino">
+                    <option value="">Tutti i magazzini</option>
+                    {% for magazzino in magazzini %}
+                    <option value="{{ magazzino.descrizione }}" {{ 'selected' if request.args.get('magazzino') == magazzino.descrizione else '' }}>
+                        {{ magazzino.descrizione }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <input type="text" name="articolo" value="{{ request.args.get('articolo', '') }}" placeholder="Cerca articolo..." title="Cerca per codice o descrizione">
+                <select name="stato_scorta" title="Filtra per stato scorta">
+                    <option value="">Tutti gli stati</option>
+                    <option value="sotto_scorta" {{ 'selected' if request.args.get('stato_scorta') == 'sotto_scorta' else '' }}>Sotto scorta minima</option>
+                    <option value="scorta_ok" {{ 'selected' if request.args.get('stato_scorta') == 'scorta_ok' else '' }}>Scorta sufficiente</option>
+                    <option value="esaurito" {{ 'selected' if request.args.get('stato_scorta') == 'esaurito' else '' }}>Esaurito</option>
+                </select>
+                <button type="submit" class="btn">🔍 Filtra</button>
+                <button type="button" class="btn btn-secondary" onclick="location.href='/inventario'">🔄 Reset</button>
+            </form>
+            
+            <div class="info-grid" style="margin-top: 20px;">
+                <div class="info-item">
+                    <span class="info-label">Valore Totale</span>
+                    <span class="info-value">€ {{ "{:,.2f}".format(statistiche.get('valore_totale', 0)) }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Articoli</span>
+                    <span class="info-value">{{ statistiche.get('numero_articoli', 0) }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Pezzi Totali</span>
+                    <span class="info-value">{{ "{:,.0f}".format(statistiche.get('pezzi_totali', 0)) }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Sotto Scorta</span>
+                    <span class="info-value" style="color: #f87171;">{{ sotto_scorta|default(0) }}</span>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn" onclick="window.location.href='/inventario/report-storico'">📊 Report Storico</button>
+                <button class="btn btn-secondary" onclick="esportaExcel()">📥 Esporta Excel</button>
+                <button class="btn btn-secondary" onclick="window.print()">🖨️ Stampa</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Fornitore</th>
+                        <th>Ubicazione</th>
+                        <th>U.M.</th>
+                        <th>Giacenza</th>
+                        <th>Scorta Min.</th>
+                        <th>Costo Unitario</th>
+                        <th>Valore</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if articoli %}
+                        {% for articolo in articoli %}
+                        <tr class="{{ 'warning' if (articolo.giacenza_attuale|default(0)) < (articolo.scorta_minima|default(0)) else '' }}">
+                            <td><strong>{{ articolo.codice_interno }}</strong></td>
+                            <td>{{ articolo.descrizione }}</td>
+                            <td>{{ articolo.fornitore_principale|default('-') }}</td>
+                            <td>{{ 'Magazzino principale' if articolo.ubicazione == 'None' or not articolo.ubicazione else articolo.ubicazione }}</td>
+                            <td>{{ articolo.unita_misura|default('PZ') }}</td>
+                            <td>{{ "{:.2f}".format(articolo.giacenza_attuale|default(0)) }}</td>
+                            <td>{{ "{:.2f}".format(articolo.scorta_minima|default(0)) }}</td>
+                            <td>€ {{ "{:.2f}".format(articolo.costo_medio or 0) }}</td>
+                            <td>€ {{ "{:.2f}".format((articolo.giacenza_attuale or 0) * (articolo.costo_medio or 0)) }}</td>
+                            <td>
+                                {% if (articolo.giacenza_attuale|default(0)) < (articolo.scorta_minima|default(0)) %}
+                                    <span class="status draft">RIORDINARE</span>
+                                {% elif (articolo.giacenza_attuale|default(0)) == 0 %}
+                                    <span class="status">ESAURITO</span>
+                                {% else %}
+                                    <span class="status confirmed">OK</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if (articolo.giacenza_attuale|default(0)) < (articolo.scorta_minima|default(0)) %}
+                                    <button class="btn btn-sm btn-warning" onclick="creaOrdineRiordino('{{ articolo.codice_interno }}', '{{ articolo.descrizione }}', '{{ articolo.fornitore_principale or "" }}', {{ articolo.scorta_minima or 10 }}, {{ articolo.costo_medio or 0 }})">
+                                        🛒 Crea Ordine
+                                    </button>
+                                {% else %}
+                                    <span style="color: #999;">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="11" style="text-align: center; padding: 40px;">
+                                Nessun articolo in inventario
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function esportaExcel() {
+        window.location.href = '/inventario/export-excel';
+    }
+    
+    function creaOrdineRiordino(codiceArticolo, descrizione, fornitore, quantitaMinima, costoUnitario) {
+        if (!fornitore) {
+            alert('Impossibile creare ordine: articolo senza fornitore principale configurato.\n\nPer procedere:\n1. Vai nel catalogo articoli\n2. Modifica l\'articolo ' + codiceArticolo + '\n3. Imposta un fornitore principale');
+            return;
+        }
+        
+        const quantitaOrdinare = prompt(
+            `Creazione ordine automatico per:\n\n` +
+            `Articolo: ${codiceArticolo} - ${descrizione}\n` +
+            `Fornitore: ${fornitore}\n` +
+            `Scorta minima: ${quantitaMinima}\n\n` +
+            `Inserisci la quantità da ordinare:`, 
+            Math.max(quantitaMinima * 2, 10) // Suggerisci il doppio della scorta minima o almeno 10
+        );
+        
+        if (quantitaOrdinare && !isNaN(quantitaOrdinare) && parseFloat(quantitaOrdinare) > 0) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = "Creando...";
+            btn.disabled = true;
+            
+            // Crea dati per nuovo ordine (commessa da aggiungere in modifica)
+            const ordineData = {
+                fornitore_nome: fornitore,
+                oggetto: `Riordino automatico - ${codiceArticolo}`,
+                priorita: 'alta',
+                note: `Riordino automatico generato dall'inventario per articolo ${codiceArticolo} sotto scorta minima`,
+                dettagli: [{
+                    codice_articolo: codiceArticolo,
+                    descrizione: descrizione,
+                    quantita: parseFloat(quantitaOrdinare),
+                    prezzo_unitario: costoUnitario
+                }]
+            };
+            
+            fetch('/ordini/crea-riordino', {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(ordineData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Ordine di riordino creato con successo!\n\nNumero ordine: ${data.numero_ordine}\nStato: Bozza\n\nL'ordine è stato salvato come bozza e puoi modificarlo prima dell'invio al fornitore.`);
+                    // Offri di andare all'ordine o rimanere nell'inventario
+                    if (confirm('Vuoi visualizzare l\'ordine appena creato?')) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        location.reload(); // Ricarica inventario per aggiornare eventuali stati
+                    }
+                } else {
+                    alert(`Errore durante la creazione dell'ordine: ${data.errore}`);
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert(`Errore durante la creazione dell'ordine: ${error}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            });
+        }
+    }
+    </script>
+
+    <style media="print">
+        .ddt-header button { display: none; }
+        nav { display: none; }
+    </style>
+</body>
+</html>

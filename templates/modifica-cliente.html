@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifica Cliente - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/clienti" class="active">👥 Clienti</a></li>
+                <li><a href="/fornitori">🏭 Fornitori</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>✏️ Modifica Cliente</h1>
+        </div>
+
+        <form method="POST">
+            <div class="info-section">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Ragione Sociale *</span>
+                        <input type="text" name="ragione_sociale" value="{{ cliente.ragione_sociale }}" required class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Partita IVA</span>
+                        <input type="text" name="partita_iva" value="{{ cliente.partita_iva or '' }}" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Codice Fiscale</span>
+                        <input type="text" name="codice_fiscale" value="{{ cliente.codice_fiscale or '' }}" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Indirizzo</span>
+                        <input type="text" name="indirizzo" value="{{ cliente.indirizzo or '' }}" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Città</span>
+                        <input type="text" name="citta" value="{{ cliente.citta or '' }}" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Provincia</span>
+                        <input type="text" name="provincia" value="{{ cliente.provincia or '' }}" maxlength="2" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">CAP</span>
+                        <input type="text" name="cap" value="{{ cliente.cap or '' }}" maxlength="5" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Telefono</span>
+                        <input type="text" name="telefono" value="{{ cliente.telefono or '' }}" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email</span>
+                        <input type="email" name="email" value="{{ cliente.email or '' }}" class="info-value">
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px; text-align: center;">
+                    <button type="submit" class="btn">Salva Modifiche</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/clienti'">Annulla</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

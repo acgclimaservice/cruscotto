@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifica Ordine {{ ordine.numero_ordine }} - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+    <script src="{{ url_for('static', filename='autocompletamento.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/ordini" class="active">🛒 Ordini</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>✏️ Modifica Ordine {{ ordine.numero_ordine or 'BOZZA' }}</h1>
+                    <p style="color: #8492a6; margin-top: 8px;">Modifica i dettagli dell'ordine</p>
+                </div>
+                <div>
+                    <a href="/ordini/{{ ordine.id }}" class="btn btn-secondary">← Torna al Dettaglio</a>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" class="form-container">
+            <!-- Dati testata ordine -->
+            <div class="card">
+                <h3>📝 Informazioni Generali</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fornitore_nome">Fornitore *</label>
+                        <input type="text" id="fornitore_nome" name="fornitore_nome" 
+                               value="{{ ordine.fornitore_nome }}" 
+                               placeholder="Digita per cercare fornitore..." required>
+                        <input type="hidden" id="fornitore_id" name="fornitore_id" 
+                               value="{{ ordine.fornitore_id or '' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="oggetto">Oggetto *</label>
+                        <input type="text" id="oggetto" name="oggetto" 
+                               value="{{ ordine.oggetto }}" required
+                               placeholder="Descrizione ordine">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="data_scadenza">Data Scadenza</label>
+                        <input type="date" id="data_scadenza" name="data_scadenza" 
+                               value="{{ ordine.data_scadenza.strftime('%Y-%m-%d') if ordine.data_scadenza }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="priorita">Priorità</label>
+                        <select id="priorita" name="priorita">
+                            <option value="bassa" {{ 'selected' if ordine.priorita == 'bassa' }}>🟢 Bassa</option>
+                            <option value="media" {{ 'selected' if ordine.priorita == 'media' }}>🟡 Media</option>
+                            <option value="alta" {{ 'selected' if ordine.priorita == 'alta' }}>🔴 Alta</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="iva">IVA (%)</label>
+                        <input type="number" id="iva" name="iva" step="0.01" min="0" 
+                               value="{{ ordine.iva or 22 }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="commessa">Commessa</label>
+                        <input type="text" id="commessa" name="commessa" 
+                               value="{{ ordine.commessa or '' }}"
+                               placeholder="Digita per cercare commessa..." autocomplete="off">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="note">Note</label>
+                    <textarea id="note" name="note" rows="3" 
+                              placeholder="Note aggiuntive per l'ordine">{{ ordine.note or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Dettagli articoli -->
+            <div class="card">
+                <h3>📦 Dettagli Articoli</h3>
+                <div id="dettagli-container">
+                    {% if dettagli %}
+                        {% for dettaglio in dettagli %}
+                        <div class="dettaglio-riga" data-index="{{ loop.index0 }}">
+                            <div class="form-grid dettaglio-grid">
+                                <div class="form-group">
+                                    <label>Codice Articolo</label>
+                                    <input type="text" name="dettagli[{{ loop.index0 }}][codice_articolo]" 
+                                           value="{{ dettaglio.codice_articolo or '' }}"
+                                           placeholder="Codice interno">
+                                </div>
+                                <div class="form-group">
+                                    <label>Codice Fornitore</label>
+                                    <input type="text" name="dettagli[{{ loop.index0 }}][codice_fornitore]" 
+                                           value="{{ dettaglio.codice_fornitore or '' }}"
+                                           placeholder="Codice fornitore">
+                                </div>
+                                <div class="form-group">
+                                    <label>Descrizione *</label>
+                                    <input type="text" name="dettagli[{{ loop.index0 }}][descrizione]" 
+                                           value="{{ dettaglio.descrizione }}"
+                                           placeholder="Digita per cercare articolo..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantità *</label>
+                                    <input type="number" name="dettagli[{{ loop.index0 }}][quantita]" 
+                                           value="{{ dettaglio.quantita }}" 
+                                           step="0.01" min="0" placeholder="Quantità" required
+                                           oninput="calcolaRiga({{ loop.index0 }})">
+                                </div>
+                                <div class="form-group">
+                                    <label>Unità Misura</label>
+                                    <select name="dettagli[{{ loop.index0 }}][unita_misura]">
+                                        <option value="PZ" {{ 'selected' if dettaglio.unita_misura == 'PZ' }}>PZ</option>
+                                        <option value="KG" {{ 'selected' if dettaglio.unita_misura == 'KG' }}>KG</option>
+                                        <option value="MT" {{ 'selected' if dettaglio.unita_misura == 'MT' }}>MT</option>
+                                        <option value="MQ" {{ 'selected' if dettaglio.unita_misura == 'MQ' }}>MQ</option>
+                                        <option value="LT" {{ 'selected' if dettaglio.unita_misura == 'LT' }}>LT</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Prezzo Unitario *</label>
+                                    <input type="number" name="dettagli[{{ loop.index0 }}][prezzo_unitario]" 
+                                           value="{{ dettaglio.prezzo_unitario or 0 }}"
+                                           step="0.01" min="0" placeholder="0.00" required
+                                           oninput="calcolaRiga({{ loop.index0 }})">
+                                </div>
+                                <div class="form-group">
+                                    <label>Sconto %</label>
+                                    <input type="number" name="dettagli[{{ loop.index0 }}][sconto_percentuale]" 
+                                           value="{{ dettaglio.sconto_percentuale or 0 }}"
+                                           step="0.01" min="0" max="100" placeholder="0"
+                                           oninput="calcolaRiga({{ loop.index0 }})">
+                                </div>
+                                <div class="form-group">
+                                    <label>Totale Riga</label>
+                                    <input type="text" name="dettagli[{{ loop.index0 }}][totale_riga_display]" 
+                                           value="€ {{ '{:.2f}'.format(dettaglio.totale_riga or 0) }}" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label>Note</label>
+                                    <input type="text" name="dettagli[{{ loop.index0 }}][note]" 
+                                           value="{{ dettaglio.note or '' }}"
+                                           placeholder="Note per l'articolo">
+                                </div>
+                                <div class="form-group">
+                                    <button type="button" class="btn btn-danger btn-sm" 
+                                            onclick="rimuoviRiga(this)">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="dettaglio-riga" data-index="0">
+                            <div class="form-grid dettaglio-grid">
+                                <div class="form-group">
+                                    <label>Codice Articolo</label>
+                                    <input type="text" name="dettagli[0][codice_articolo]" placeholder="Codice interno">
+                                </div>
+                                <div class="form-group">
+                                    <label>Codice Fornitore</label>
+                                    <input type="text" name="dettagli[0][codice_fornitore]" placeholder="Codice fornitore">
+                                </div>
+                                <div class="form-group">
+                                    <label>Descrizione *</label>
+                                    <input type="text" name="dettagli[0][descrizione]" placeholder="Digita per cercare articolo..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantità *</label>
+                                    <input type="number" name="dettagli[0][quantita]" step="0.01" min="0" 
+                                           placeholder="Quantità" required oninput="calcolaRiga(0)">
+                                </div>
+                                <div class="form-group">
+                                    <label>Unità Misura</label>
+                                    <select name="dettagli[0][unita_misura]">
+                                        <option value="PZ" selected>PZ</option>
+                                        <option value="KG">KG</option>
+                                        <option value="MT">MT</option>
+                                        <option value="MQ">MQ</option>
+                                        <option value="LT">LT</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Prezzo Unitario *</label>
+                                    <input type="number" name="dettagli[0][prezzo_unitario]" step="0.01" min="0" 
+                                           placeholder="0.00" required oninput="calcolaRiga(0)">
+                                </div>
+                                <div class="form-group">
+                                    <label>Sconto %</label>
+                                    <input type="number" name="dettagli[0][sconto_percentuale]" step="0.01" min="0" max="100" 
+                                           placeholder="0" oninput="calcolaRiga(0)">
+                                </div>
+                                <div class="form-group">
+                                    <label>Totale Riga</label>
+                                    <input type="text" name="dettagli[0][totale_riga_display]" value="€ 0.00" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label>Note</label>
+                                    <input type="text" name="dettagli[0][note]" placeholder="Note per l'articolo">
+                                </div>
+                                <div class="form-group">
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviRiga(this)">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="aggiungiRiga()">➕ Aggiungi Articolo</button>
+                </div>
+            </div>
+
+            <!-- Riepilogo totali -->
+            <div class="totals-section">
+                <div class="totals-card">
+                    <div class="total-row">
+                        <span>Totale Netto:</span>
+                        <strong id="totale-netto">€ {{ "{:.2f}".format(ordine.totale_netto or 0) }}</strong>
+                    </div>
+                    <div class="total-row">
+                        <span>IVA (<span id="iva-percentuale">{{ ordine.iva or 22 }}</span>%):</span>
+                        <strong id="totale-iva">€ {{ "{:.2f}".format((ordine.totale_lordo or 0) - (ordine.totale_netto or 0)) }}</strong>
+                    </div>
+                    <div class="total-row total-final">
+                        <span>Totale Lordo:</span>
+                        <strong id="totale-lordo">€ {{ "{:.2f}".format(ordine.totale_lordo or 0) }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pulsanti di azione -->
+            <div class="form-actions">
+                <a href="/ordini/{{ ordine.id }}" class="btn btn-secondary">Annulla</a>
+                <button type="submit" class="btn btn-success">💾 Salva Modifiche</button>
+            </div>
+        </form>
+    </div>
+
+<script>
+let indiceDettaglio = {{ dettagli|length if dettagli else 1 }};
+
+// Configurazione autocompletamento
+document.addEventListener('DOMContentLoaded', function() {
+    // Setup autocompletamento fornitori
+    const fornitoreInput = document.getElementById('fornitore_nome');
+    if (fornitoreInput && window.AutocompleteHelpers) {
+        window.AutocompleteHelpers.setupFornitoriAutocomplete(fornitoreInput);
+    }
+    
+    // Setup autocompletamento commesse
+    const commessaInput = document.getElementById('commessa');
+    if (commessaInput && window.AutocompleteHelpers) {
+        window.AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
+    }
+    
+    // Setup autocompletamento per articoli esistenti
+    document.querySelectorAll('input[name*="[descrizione]"]').forEach(input => {
+        if (window.AutocompleteHelpers) {
+            window.AutocompleteHelpers.setupArticoliAutocomplete(input);
+        }
+    });
+    
+    // Setup autocompletamento per codici interni
+    document.querySelectorAll('input[name*="[codice_articolo]"]').forEach(input => {
+        if (window.AutocompleteHelpers) {
+            window.AutocompleteHelpers.setupCodiciInterniAutocomplete(input);
+        }
+    });
+    
+    calcolaTotaleGenerale();
+});
+
+function aggiungiRiga() {
+    const container = document.getElementById('dettagli-container');
+    const nuovaRiga = document.createElement('div');
+    nuovaRiga.className = 'dettaglio-riga';
+    nuovaRiga.setAttribute('data-index', indiceDettaglio);
+    
+    nuovaRiga.innerHTML = `
+        <div class="form-grid dettaglio-grid">
+            <div class="form-group">
+                <label>Codice Articolo</label>
+                <input type="text" name="dettagli[${indiceDettaglio}][codice_articolo]" placeholder="Codice interno">
+            </div>
+            <div class="form-group">
+                <label>Codice Fornitore</label>
+                <input type="text" name="dettagli[${indiceDettaglio}][codice_fornitore]" placeholder="Codice fornitore">
+            </div>
+            <div class="form-group">
+                <label>Descrizione *</label>
+                <input type="text" name="dettagli[${indiceDettaglio}][descrizione]" placeholder="Digita per cercare articolo..." required>
+            </div>
+            <div class="form-group">
+                <label>Quantità *</label>
+                <input type="number" name="dettagli[${indiceDettaglio}][quantita]" step="0.01" min="0" 
+                       placeholder="Quantità" required oninput="calcolaRiga(${indiceDettaglio})">
+            </div>
+            <div class="form-group">
+                <label>Unità Misura</label>
+                <select name="dettagli[${indiceDettaglio}][unita_misura]">
+                    <option value="PZ" selected>PZ</option>
+                    <option value="KG">KG</option>
+                    <option value="MT">MT</option>
+                    <option value="MQ">MQ</option>
+                    <option value="LT">LT</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Prezzo Unitario *</label>
+                <input type="number" name="dettagli[${indiceDettaglio}][prezzo_unitario]" step="0.01" min="0" 
+                       placeholder="0.00" required oninput="calcolaRiga(${indiceDettaglio})">
+            </div>
+            <div class="form-group">
+                <label>Sconto %</label>
+                <input type="number" name="dettagli[${indiceDettaglio}][sconto_percentuale]" step="0.01" min="0" max="100" 
+                       placeholder="0" oninput="calcolaRiga(${indiceDettaglio})">
+            </div>
+            <div class="form-group">
+                <label>Totale Riga</label>
+                <input type="text" name="dettagli[${indiceDettaglio}][totale_riga_display]" value="€ 0.00" readonly>
+            </div>
+            <div class="form-group">
+                <label>Note</label>
+                <input type="text" name="dettagli[${indiceDettaglio}][note]" placeholder="Note per l'articolo">
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviRiga(this)">🗑️</button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(nuovaRiga);
+    
+    // Setup autocompletamento per la nuova riga
+    const descrizioneInput = nuovaRiga.querySelector('input[name*="[descrizione]"]');
+    if (descrizioneInput && window.AutocompleteHelpers) {
+        window.AutocompleteHelpers.setupArticoliAutocomplete(descrizioneInput);
+    }
+    
+    // Setup autocompletamento per codice interno nella nuova riga
+    const codiceInput = nuovaRiga.querySelector('input[name*="[codice_articolo]"]');
+    if (codiceInput && window.AutocompleteHelpers) {
+        window.AutocompleteHelpers.setupCodiciInterniAutocomplete(codiceInput);
+    }
+    
+    indiceDettaglio++;
+}
+
+function rimuoviRiga(button) {
+    const riga = button.closest('.dettaglio-riga');
+    riga.remove();
+    calcolaTotaleGenerale();
+}
+
+function calcolaRiga(index) {
+    const quantita = parseFloat(document.querySelector(`input[name="dettagli[${index}][quantita]"]`).value) || 0;
+    const prezzo = parseFloat(document.querySelector(`input[name="dettagli[${index}][prezzo_unitario]"]`).value) || 0;
+    const sconto = parseFloat(document.querySelector(`input[name="dettagli[${index}][sconto_percentuale]"]`).value) || 0;
+    
+    const subtotale = quantita * prezzo;
+    const totaleRiga = subtotale * (1 - sconto/100);
+    
+    document.querySelector(`input[name="dettagli[${index}][totale_riga_display]"]`).value = `€ ${totaleRiga.toFixed(2)}`;
+    
+    calcolaTotaleGenerale();
+}
+
+function calcolaTotaleGenerale() {
+    let totaleNetto = 0;
+    
+    // Somma tutti i totali riga
+    document.querySelectorAll('input[name$="[totale_riga_display]"]').forEach(input => {
+        const valore = parseFloat(input.value.replace('€ ', '').replace(',', '')) || 0;
+        totaleNetto += valore;
+    });
+    
+    const iva = parseFloat(document.getElementById('iva').value) || 22;
+    const totaleIva = totaleNetto * (iva / 100);
+    const totaleLordo = totaleNetto + totaleIva;
+    
+    // Aggiorna i display
+    document.getElementById('totale-netto').textContent = `€ ${totaleNetto.toFixed(2)}`;
+    document.getElementById('iva-percentuale').textContent = iva.toFixed(1);
+    document.getElementById('totale-iva').textContent = `€ ${totaleIva.toFixed(2)}`;
+    document.getElementById('totale-lordo').textContent = `€ ${totaleLordo.toFixed(2)}`;
+}
+
+// Ricalcola quando cambia l'IVA
+document.getElementById('iva').addEventListener('input', calcolaTotaleGenerale);
+</script>
+
+<style>
+.dettaglio-grid {
+    grid-template-columns: 1fr 1fr 2fr 1fr 1fr 1fr 1fr 1fr 1.5fr 60px;
+    gap: 15px;
+    align-items: end;
+}
+
+.dettaglio-riga {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+}
+
+.dettaglio-riga:hover {
+    background: #f3f4f6;
+}
+</style>
+</body>
+</html>

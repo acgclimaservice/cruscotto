@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifica DDT IN - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+    <style>
+        /* Miglioramenti per autocomplete mastrini */
+        .table-container {
+            position: relative;
+        }
+        
+        .table-container table {
+            margin-bottom: 60px;
+        }
+        
+        /* Migliorato autocomplete per mastrini */
+        .mastrino-input + .autocomplete-suggestions {
+            z-index: 10000 !important;
+            max-height: 200px !important;
+            overflow-y: auto !important;
+        }
+        
+        .autocomplete-wrapper {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-in/{{ ddt.id }}">👁️ Dettaglio DDT</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>✏️ Modifica DDT IN {{ ddt.numero_ddt or 'BOZZA-' + ddt.id|string }}</h1>
+            <div class="filters">
+                <button type="submit" form="form-modifica" class="btn btn-success">💾 Salva Modifiche</button>
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/ddt-in/{{ ddt.id }}'">Annulla</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <form method="POST" action="/ddt-in/{{ ddt.id }}/modifica" id="form-modifica">
+                <h3>Informazioni DDT</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div>
+                        <label>Data DDT Origine *</label>
+                        <input type="date" name="data_ddt_origine" required style="width: 100%; margin-top: 5px;"
+                               value="{{ ddt.data_ddt_origine.strftime('%Y-%m-%d') if ddt.data_ddt_origine else '' }}"
+                               max="{{ today }}">
+                    </div>
+                    <div>
+                        <label>Fornitore *</label>
+                        <input type="text" name="fornitore" placeholder="Nome fornitore" required style="width: 100%; margin-top: 5px;"
+                               value="{{ ddt.fornitore }}" data-source="fornitori" id="fornitore">
+                        <div id="fornitore-suggestions" class="autocomplete-suggestions"></div>
+                    </div>
+                    <div>
+                        <label>Riferimento</label>
+                        <input type="text" name="riferimento" placeholder="N° ordine, bolla, ecc." style="width: 100%; margin-top: 5px;"
+                               value="{{ ddt.riferimento }}">
+                    </div>
+                    <div>
+                        <label>Destinazione *</label>
+                        <select name="destinazione" required style="width: 100%; margin-top: 5px;">
+                            {% for magazzino in magazzini %}
+                            <option value="{{ magazzino.descrizione }}" 
+                                    {% if magazzino.descrizione == ddt.destinazione %}selected{% endif %}>
+                                {{ magazzino.descrizione }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label>Commessa</label>
+                        <div class="autocomplete-container">
+                            <input type="text" name="commessa" id="commessa-input" placeholder="Digita numero o descrizione commessa..." style="width: 100%; margin-top: 5px;"
+                                   value="{{ ddt.commessa }}">
+                        </div>
+                    </div>
+                    <!-- Campo mastrino rimosso: ora gestito per ogni articolo -->
+                </div>
+
+                <h3>Articoli</h3>
+                <div style="margin-bottom: 15px;">
+                    <button type="button" class="btn btn-secondary" onclick="aggiungiRiga()">+ Aggiungi Articolo</button>
+                    <button type="button" class="btn btn-info" onclick="copiaMastrino()">📋 Copia Mastrino su Tutte le Righe</button>
+                </div>
+
+                <div class="table-container" style="max-height: 500px; overflow-y: auto; padding-bottom: 100px; position: relative;">
+                    <table id="articoli-table">
+                        <thead>
+                            <tr>
+                                <th>Codice Interno <small>(auto)</small></th>
+                                <th>Codice Fornitore *</th>
+                                <th>Descrizione *</th>
+                                <th>Quantità *</th>
+                                <th>Costo Unitario *</th>
+                                <th>Mastrino *</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="articoli-tbody">
+                            {% for articolo in articoli %}
+                            <tr>
+                                <td><input type="text" name="articoli[{{ loop.index0 }}][codice]" 
+                                          value="{{ articolo.codice_interno }}" readonly style="width: 100%; background: #f5f5f5;"></td>
+                                <td><input type="text" name="articoli[{{ loop.index0 }}][codice_fornitore]" 
+                                          value="{{ articolo.codice_fornitore }}" required style="width: 100%;"></td>
+                                <td><input type="text" name="articoli[{{ loop.index0 }}][descrizione]" 
+                                          value="{{ articolo.descrizione }}" required style="width: 100%;"></td>
+                                <td><input type="number" name="articoli[{{ loop.index0 }}][quantita]" 
+                                          value="{{ articolo.quantita }}" step="0.01" required style="width: 100%;"></td>
+                                <td><input type="number" name="articoli[{{ loop.index0 }}][costo]" 
+                                          value="{{ articolo.costo_unitario }}" step="0.01" required style="width: 100%;"></td>
+                                <td>
+                                    <input type="text" name="articoli[{{ loop.index0 }}][mastrino]" 
+                                           value="{{ articolo.mastrino_riga }}" required style="width: 100%;"
+                                           class="mastrino-input" data-index="{{ loop.index0 }}">
+                                </td>
+                                <td><button type="button" onclick="rimuoviRiga(this)" class="btn btn-danger btn-small">🗑️</button></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <p><strong>Note:</strong></p>
+                    <ul>
+                        <li>I campi contrassegnati con * sono obbligatori</li>
+                        <li>Le modifiche verranno salvate solo dopo aver cliccato "Salva Modifiche"</li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let rigaCounter = {{ articoli|length }};
+
+        function aggiungiRiga() {
+            const tbody = document.getElementById('articoli-tbody');
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td><input type="text" name="articoli[${rigaCounter}][codice]" readonly style="width: 100%; background: #f5f5f5;" placeholder="Auto: 4 lett. + cod. forn."></td>
+                <td><input type="text" name="articoli[${rigaCounter}][codice_fornitore]" required style="width: 100%;"></td>
+                <td><input type="text" name="articoli[${rigaCounter}][descrizione]" required style="width: 100%;"></td>
+                <td><input type="number" name="articoli[${rigaCounter}][quantita]" step="0.01" required style="width: 100%;"></td>
+                <td><input type="number" name="articoli[${rigaCounter}][costo]" step="0.01" required style="width: 100%;"></td>
+                <td><input type="text" name="articoli[${rigaCounter}][mastrino]" required style="width: 100%;" class="mastrino-input" data-index="${rigaCounter}"></td>
+                <td><button type="button" onclick="rimuoviRiga(this)" class="btn btn-danger btn-small">🗑️</button></td>
+            `;
+            
+            // Configura event listener per il nuovo codice fornitore
+            const codiceFornitoreInput = row.querySelector('input[name*="[codice_fornitore]"]');
+            if (codiceFornitoreInput) {
+                codiceFornitoreInput.addEventListener('input', function() {
+                    aggiornaCodiceInterno(row);
+                });
+            }
+            
+            rigaCounter++;
+        }
+
+        function rimuoviRiga(btn) {
+            btn.closest('tr').remove();
+        }
+
+        // Inizializza autocomplete
+        function initAutocomplete(inputId, endpoint) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                if (inputId === 'fornitore') {
+                    AutocompleteHelpers.setupFornitoriAutocomplete(input);
+                }
+            }
+        }
+        
+        function setupMastriniAutocomplete() {
+            const mastriniInputs = document.querySelectorAll('.mastrino-input');
+            console.log('Inizializzando autocomplete per', mastriniInputs.length, 'input mastrini');
+            
+            mastriniInputs.forEach((input) => {
+                const index = input.getAttribute('data-index');
+                console.log('Setup autocomplete per input index:', index);
+                AutocompleteHelpers.setupMastriniAutocomplete(input, 'ACQUISTO');
+                
+                // Test di verifica autocomplete
+                input.addEventListener('focus', function() {
+                    console.log('Focus su input mastrino:', input.name);
+                    setTimeout(() => {
+                        const suggestions = input.parentElement.querySelector('.autocomplete-suggestions');
+                        if (suggestions) {
+                            console.log('Elemento autocomplete trovato:', suggestions);
+                        } else {
+                            console.log('PROBLEMA: Elemento autocomplete NON trovato per:', input.name);
+                        }
+                    }, 100);
+                });
+            });
+        }
+        
+        // Funzione per aggiornare il codice interno automaticamente
+        function aggiornaCodiceInterno(row) {
+            const fornitoreNome = document.getElementById('fornitore').value || '';
+            const codiceFornitoreInput = row.querySelector('input[name*="[codice_fornitore]"]');
+            const codiceInternoInput = row.querySelector('input[name*="[codice]"]');
+            
+            if (!codiceFornitoreInput || !codiceInternoInput) return;
+            
+            const codiceFornitore = codiceFornitoreInput.value.trim();
+            
+            if (codiceFornitore && fornitoreNome) {
+                // Estrae prime 4 lettere del fornitore (solo caratteri alfabetici)
+                const prefissoFornitore = fornitoreNome.match(/[A-Za-z]/g)?.slice(0, 4).join('').toUpperCase() || '';
+                const codiceInterno = prefissoFornitore + codiceFornitore;
+                codiceInternoInput.value = codiceInterno;
+            } else {
+                codiceInternoInput.value = codiceFornitore;
+            }
+        }
+        
+        // Funzione per configurare gli event listeners sui codici fornitore
+        function setupCodiceAutoupdate() {
+            const codiciFornitore = document.querySelectorAll('input[name*="[codice_fornitore]"]');
+            
+            codiciFornitore.forEach(input => {
+                input.addEventListener('input', function() {
+                    const row = this.closest('tr');
+                    aggiornaCodiceInterno(row);
+                });
+            });
+            
+            // Listener per fornitore principale
+            const fornitoreInput = document.getElementById('fornitore');
+            if (fornitoreInput) {
+                fornitoreInput.addEventListener('input', function() {
+                    const rows = document.querySelectorAll('#articoli-tbody tr');
+                    rows.forEach(row => aggiornaCodiceInterno(row));
+                });
+            }
+        }
+
+        // Funzione per copiare il mastrino su tutte le righe
+        function copiaMastrino() {
+            const firstMastrino = document.querySelector('input[name*="[mastrino]"]');
+            if (!firstMastrino || !firstMastrino.value) {
+                alert('Inserisci prima un mastrino nella prima riga');
+                return;
+            }
+            
+            const masterinoValue = firstMastrino.value;
+            const allMastrini = document.querySelectorAll('input[name*="[mastrino]"]');
+            
+            allMastrini.forEach(input => {
+                input.value = masterinoValue;
+            });
+            
+            alert(`Mastrino "${masterinoValue}" copiato su tutte le righe`);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initAutocomplete('fornitore', '/api/fornitori/search');
+            setupMastriniAutocomplete();
+            setupCodiceAutoupdate();
+            
+            // Inizializza autocomplete commessa
+            const commessaInput = document.getElementById('commessa-input');
+            if (commessaInput) {
+                AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
+            }
+        });
+    </script>
+</body>
+</html>

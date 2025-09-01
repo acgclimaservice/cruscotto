@@ -1,0 +1,7 @@
+Tipo,Codice,Descrizione
+acquisto,ACQ001,Acquisto Materiali
+acquisto,ACQ002,Acquisto Servizi
+ricavo,VEN001,Vendita Prodotti
+ricavo,VEN002,Vendita Servizi
+acquisto,ACQ003,Materie Prime
+ricavo,VEN003,Ricavi Diversi

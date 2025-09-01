@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Movimenti Interni</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Movimenti Interni</h2>
+                <p>Spostamento articoli tra magazzini</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/movimenti-interni" class="active">🔄 Movimenti Interni</a></li>
+            </ul>
+        </nav>
+
+        <div class="page-header">
+            <h1>🔄 Movimenti Interni</h1>
+            <button class="btn btn-primary" onclick="window.location.href='/movimenti-interni/nuovo'">
+                ➕ Nuovo Movimento
+            </button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Numero</th>
+                        <th>Data</th>
+                        <th>Da Magazzino</th>
+                        <th>A Magazzino</th>
+                        <th>Causale</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimento in movimenti %}
+                    <tr>
+                        <td>{{ movimento.numero_documento or 'BOZZA' }}</td>
+                        <td>{{ movimento.data_movimento.strftime('%d/%m/%Y') if movimento.data_movimento else '-' }}</td>
+                        <td>{{ movimento.magazzino_partenza or '-' }}</td>
+                        <td>{{ movimento.magazzino_destinazione or '-' }}</td>
+                        <td>{{ movimento.causale or '-' }}</td>
+                        <td>
+                            <span class="status {{ 'confirmed' if movimento.stato == 'confermato' else 'draft' }}">
+                                {{ movimento.stato|upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm" onclick="window.location.href='/movimenti-interni/{{ movimento.id }}'">
+                                👁️ Visualizza
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="no-data">Nessun movimento interno trovato</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

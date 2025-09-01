@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Impostazioni - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=2.7">
+    <style>
+        .edit-mode { background: #fef3c7; }
+        .selected { background: #dbeafe !important; }
+        input[type="checkbox"] { margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Impostazioni</h2>
+                <p>Configurazione sistema</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/impostazioni" class="active">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>⚙️ Impostazioni Sistema</h1>
+        </div>
+
+        <!-- Mastrini -->
+        <div class="info-section">
+            <h2>📊 Mastrini Contabili</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="file" id="importMastrini" style="display:none" accept=".csv,.xlsx,.xls" onchange="importaMastrini(this)">
+                <button class="btn btn-secondary" onclick="document.getElementById('importMastrini').click()">
+                    📤 Importa Excel/CSV
+                </button>
+                <button class="btn btn-danger" id="btnEliminaSelezionati" onclick="eliminaMastriniSelezionati()" style="display:none;">
+                    Elimina Selezionati
+                </button>
+                <button class="btn btn-success" onclick="mostraFormNuovoMastrino()">
+                    ➕ Nuovo Mastrino
+                </button>
+                <button class="btn btn-primary" onclick="window.location.href='/impostazioni/collegamento-mastrini'">
+                    🔗 Collegamento Mastrini
+                </button>
+                <button class="btn btn-warning" onclick="aggiornaCodiciMastrini()">
+                    🔢 Aggiungi Zero Iniziale (4→04, 5→05)
+                </button>
+            </div>
+
+            <!-- Form per nuovo mastrino -->
+            <div id="formNuovoMastrino" style="display:none; background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h4>➕ Aggiungi Nuovo Mastrino</h4>
+                <div style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 10px; align-items: center;">
+                    <select id="nuovoMastrinoTipo" style="padding: 8px;">
+                        <option value="ACQUISTI">Acquisti</option>
+                        <option value="RICAVI">Ricavi</option>
+                    </select>
+                    <input type="text" id="nuovoMastrinoCodice" placeholder="Codice (es. 510001000)" style="padding: 8px;">
+                    <input type="text" id="nuovoMastrinoDescrizione" placeholder="Descrizione" style="padding: 8px;">
+                    <div>
+                        <button class="btn btn-success" onclick="salvaNuovoMastrino()">💾 Salva</button>
+                        <button class="btn btn-secondary" onclick="nascondiFormNuovoMastrino()">✖️ Annulla</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Acquisti -->
+                <div>
+                    <h3>Acquisti</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="30">
+                                    <input type="checkbox" onchange="selezionaTutti('acquisto', this.checked)">
+                                </th>
+                                <th>Codice</th>
+                                <th>Descrizione</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mastrino in mastrini if mastrino.tipo.lower() == 'acquisti' %}
+                            <tr id="mastrino-row-{{ mastrino.id }}">
+                                <td>
+                                    <input type="checkbox" class="chk-acquisto" value="{{ mastrino.id }}" onchange="aggiornaBottoni()">
+                                </td>
+                                <td><strong>{{ mastrino.codice }}</strong></td>
+                                <td>
+                                    <span id="desc-{{ mastrino.id }}">{{ mastrino.descrizione }}</span>
+                                    <input type="text" id="edit-{{ mastrino.id }}" value="{{ mastrino.descrizione }}" style="display:none; width:100%;">
+                                </td>
+                                <td>
+                                    <button class="btn btn-small btn-secondary" id="btn-edit-{{ mastrino.id }}" onclick="modificaMastrino({{ mastrino.id }})">✏️</button>
+                                    <button class="btn btn-small btn-success" id="btn-save-{{ mastrino.id }}" onclick="salvaMastrino({{ mastrino.id }})" style="display:none;">💾</button>
+                                    <button class="btn btn-small btn-danger" onclick="eliminaMastrino({{ mastrino.id }})">🗑️</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Ricavi -->
+                <div>
+                    <h3>Ricavi</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="30">
+                                    <input type="checkbox" onchange="selezionaTutti('ricavo', this.checked)">
+                                </th>
+                                <th>Codice</th>
+                                <th>Descrizione</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mastrino in mastrini if mastrino.tipo.lower() == 'ricavi' %}
+                            <tr id="mastrino-row-{{ mastrino.id }}">
+                                <td>
+                                    <input type="checkbox" class="chk-ricavo" value="{{ mastrino.id }}" onchange="aggiornaBottoni()">
+                                </td>
+                                <td><strong>{{ mastrino.codice }}</strong></td>
+                                <td>
+                                    <span id="desc-{{ mastrino.id }}">{{ mastrino.descrizione }}</span>
+                                    <input type="text" id="edit-{{ mastrino.id }}" value="{{ mastrino.descrizione }}" style="display:none; width:100%;">
+                                </td>
+                                <td>
+                                    <button class="btn btn-small btn-secondary" id="btn-edit-{{ mastrino.id }}" onclick="modificaMastrino({{ mastrino.id }})">✏️</button>
+                                    <button class="btn btn-small btn-success" id="btn-save-{{ mastrino.id }}" onclick="salvaMastrino({{ mastrino.id }})" style="display:none;">💾</button>
+                                    <button class="btn btn-small btn-danger" onclick="eliminaMastrino({{ mastrino.id }})">🗑️</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configurazione Sistema -->
+        <div class="info-section" style="margin-top: 20px;">
+            <h2>⚙️ Configurazioni Sistema</h2>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>📦 Magazzino Predefinito</h3>
+                <p style="color: #6c757d; margin-bottom: 15px;">Seleziona il magazzino da utilizzare come predefinito per DDT IN, DDT OUT e movimenti interni</p>
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="magazzino-predefinito" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-width: 200px;">
+                        <option value="">-- Nessuno --</option>
+                        {% for magazzino in magazzini %}
+                        <option value="{{ magazzino.id }}" 
+                                {% if configurazioni.magazzino_predefinito_id and configurazioni.magazzino_predefinito_id|string == magazzino.id|string %}selected{% endif %}>
+                            {{ magazzino.descrizione }} ({{ magazzino.codice }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" onclick="salvaMagazzinoPredefinito()" 
+                            style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        Salva
+                    </button>
+                </div>
+                
+                <div id="config-message" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Configurazione Email Import -->
+        <div class="info-section" style="margin-top: 20px;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>📧 Importazione Automatica DDT via Email</h3>
+                <p style="color: #6c757d; margin-bottom: 15px;">Configura una casella email per importare automaticamente i DDT PDF inviati dai fornitori</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+                    <div>
+                        <label><strong>Server IMAP:</strong></label>
+                        <input type="text" id="email-imap-server" placeholder="imap.gmail.com" 
+                               value="{{ configurazioni.email_imap_server or 'imap.gmail.com' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label><strong>Porta:</strong></label>
+                        <input type="number" id="email-imap-port" placeholder="993" 
+                               value="{{ configurazioni.email_imap_port or '993' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+                    <div>
+                        <label><strong>Email:</strong></label>
+                        <input type="email" id="email-address" placeholder="ddt-import@acgclima.it" 
+                               value="{{ configurazioni.email_address or '' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label><strong>Password:</strong></label>
+                        <input type="password" id="email-password" placeholder="Password email" 
+                               value="{{ configurazioni.email_password or '' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+                    <div>
+                        <label><strong>Intervallo controllo (minuti):</strong></label>
+                        <input type="number" id="email-check-interval" placeholder="5" min="1" max="60"
+                               value="{{ configurazioni.email_check_interval or '5' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label><strong>Max allegati per email:</strong></label>
+                        <input type="number" id="email-max-attachments" placeholder="10" min="1" max="20"
+                               value="{{ configurazioni.email_max_attachments or '10' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="email-monitor-active" 
+                               {{ 'checked' if configurazioni.email_monitor_active == 'true' else '' }}>
+                        <strong>Attiva monitoraggio automatico</strong>
+                    </label>
+                </div>
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button type="button" onclick="salvaConfigurazioneEmail()" 
+                            style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        💾 Salva Configurazione
+                    </button>
+                    <button type="button" onclick="testConnessioneEmail()" 
+                            style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        🔧 Test Connessione
+                    </button>
+                    <button type="button" onclick="verificaImmediataEmail()" 
+                            style="background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        📧 Verifica Ora
+                    </button>
+                    <span id="email-status" style="margin-left: 10px; font-weight: bold;"></span>
+                </div>
+                
+                <div id="email-config-message" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Magazzini -->
+        <div class="info-section" style="margin-top: 20px;">
+            <h2>🏭 Magazzini</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="nuovo-mag-codice" placeholder="Codice" style="width: 100px;">
+                <input type="text" id="nuovo-mag-desc" placeholder="Descrizione" style="width: 200px;">
+                <input type="text" id="nuovo-mag-resp" placeholder="Responsabile" style="width: 150px;">
+                <button class="btn btn-success" onclick="aggiungiMagazzino()">+ Aggiungi</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Responsabile</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for magazzino in magazzini %}
+                    <tr id="mag-row-{{ magazzino.id }}">
+                        <td><strong>{{ magazzino.codice }}</strong></td>
+                        <td>
+                            <span id="mag-desc-{{ magazzino.id }}">{{ magazzino.descrizione }}</span>
+                            <input type="text" id="mag-edit-desc-{{ magazzino.id }}" value="{{ magazzino.descrizione }}" style="display:none;">
+                        </td>
+                        <td>
+                            <span id="mag-resp-{{ magazzino.id }}">{{ magazzino.responsabile or '-' }}</span>
+                            <input type="text" id="mag-edit-resp-{{ magazzino.id }}" value="{{ magazzino.responsabile or '' }}" style="display:none;">
+                        </td>
+                        <td>
+                            <button class="btn btn-small btn-secondary" id="mag-btn-edit-{{ magazzino.id }}" onclick="modificaMagazzino({{ magazzino.id }})">✏️</button>
+                            <button class="btn btn-small btn-success" id="mag-btn-save-{{ magazzino.id }}" onclick="salvaMagazzino({{ magazzino.id }})" style="display:none;">💾</button>
+                            <button class="btn btn-small btn-danger" onclick="eliminaMagazzino({{ magazzino.id }})">🗑️</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pulizia Dati di Test (Sezione Temporanea) -->
+        <div class="info-section" style="margin-top: 30px; border: 3px solid #ef4444; border-radius: 8px;">
+            <h2 style="color: #ef4444;">🧪 PULIZIA DATI TEST (TEMPORANEO)</h2>
+            <div style="background: #fef2f2; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                <p><strong>⚠️ ATTENZIONE:</strong> Questa funzione cancella MASSIVAMENTE tutti i dati di test.</p>
+                <p><strong>CANCELLA:</strong> DDT, Preventivi, Ordini, Commesse, Movimenti, Catalogo Articoli</p>
+                <p><strong>MANTIENE:</strong> Clienti, Fornitori, Mastrini, Magazzini</p>
+                <p style="color: #dc2626;"><strong>USARE SOLO IN FASE DI TEST!</strong></p>
+            </div>
+            
+            <div style="text-align: center; padding: 20px;">
+                <button class="btn" style="background: #ef4444; color: white; font-size: 16px; padding: 15px 30px;" 
+                        onclick="confermaRipulituraTest()">
+                    🧹 RIPULISCI TUTTI I DATI TEST
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function importaMastrini(input) {
+        if (input.files && input.files[0]) {
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            
+            fetch('/impostazioni/mastrini/importa-excel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Importati ' + data.importati + ' mastrini');
+                    location.reload();
+                } else {
+                    alert('Errore: ' + (data.error || 'Importazione fallita'));
+                }
+            });
+        }
+    }
+    
+    function selezionaTutti(tipo, checked) {
+        document.querySelectorAll('.chk-' + tipo).forEach(chk => {
+            chk.checked = checked;
+        });
+        aggiornaBottoni();
+    }
+    
+    function aggiornaBottoni() {
+        const checkedCount = document.querySelectorAll('input[type="checkbox"]:checked.chk-acquisto, input[type="checkbox"]:checked.chk-ricavo').length;
+        document.getElementById('btnEliminaSelezionati').style.display = checkedCount > 0 ? 'inline-block' : 'none';
+    }
+    
+    function eliminaMastriniSelezionati() {
+        const ids = [];
+        document.querySelectorAll('input[type="checkbox"]:checked.chk-acquisto, input[type="checkbox"]:checked.chk-ricavo').forEach(chk => {
+            ids.push(parseInt(chk.value));
+        });
+        
+        if (ids.length === 0) return;
+        
+        if (confirm(`Eliminare ${ids.length} mastrini selezionati?`)) {
+            fetch('/impostazioni/mastrini/elimina-multipli', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ids: ids})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Eliminati ${data.eliminati} mastrini`);
+                    if (data.errori && data.errori.length > 0) {
+                        alert('Non eliminati (in uso): ' + data.errori.join(', '));
+                    }
+                    location.reload();
+                }
+            });
+        }
+    }
+    
+    function modificaMastrino(id) {
+        document.getElementById('desc-' + id).style.display = 'none';
+        document.getElementById('edit-' + id).style.display = 'inline';
+        document.getElementById('btn-edit-' + id).style.display = 'none';
+        document.getElementById('btn-save-' + id).style.display = 'inline';
+        document.getElementById('mastrino-row-' + id).classList.add('edit-mode');
+    }
+    
+    function salvaMastrino(id) {
+        const descrizione = document.getElementById('edit-' + id).value;
+        
+        fetch(`/impostazioni/mastrino/${id}/modifica`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({descrizione: descrizione})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    function eliminaMastrino(id) {
+        if (confirm('Eliminare questo mastrino?')) {
+            fetch(`/impostazioni/mastrino/${id}/elimina`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Errore: ' + (data.error || 'Impossibile eliminare'));
+                }
+            });
+        }
+    }
+    
+    function aggiungiMagazzino() {
+        const codice = document.getElementById('nuovo-mag-codice').value;
+        const descrizione = document.getElementById('nuovo-mag-desc').value;
+        const responsabile = document.getElementById('nuovo-mag-resp').value;
+        
+        if (!codice || !descrizione) {
+            alert('Codice e descrizione obbligatori');
+            return;
+        }
+        
+        fetch('/impostazioni/magazzino/nuovo', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                codice: codice,
+                descrizione: descrizione,
+                responsabile: responsabile
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Errore: ' + (data.error || 'Creazione fallita'));
+            }
+        });
+    }
+    
+    function modificaMagazzino(id) {
+        document.getElementById('mag-desc-' + id).style.display = 'none';
+        document.getElementById('mag-resp-' + id).style.display = 'none';
+        document.getElementById('mag-edit-desc-' + id).style.display = 'inline';
+        document.getElementById('mag-edit-resp-' + id).style.display = 'inline';
+        document.getElementById('mag-btn-edit-' + id).style.display = 'none';
+        document.getElementById('mag-btn-save-' + id).style.display = 'inline';
+        document.getElementById('mag-row-' + id).classList.add('edit-mode');
+    }
+    
+    function salvaMagazzino(id) {
+        const descrizione = document.getElementById('mag-edit-desc-' + id).value;
+        const responsabile = document.getElementById('mag-edit-resp-' + id).value;
+        
+        fetch(`/impostazioni/magazzino/${id}/modifica`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                descrizione: descrizione,
+                responsabile: responsabile
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    function eliminaMagazzino(id) {
+        if (confirm('Eliminare questo magazzino?')) {
+            fetch(`/impostazioni/magazzino/${id}/elimina`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Errore: ' + (data.error || 'Impossibile eliminare'));
+                }
+            });
+        }
+    }
+    
+    function mostraFormNuovoMastrino() {
+        document.getElementById('formNuovoMastrino').style.display = 'block';
+        document.getElementById('nuovoMastrinoCodice').focus();
+    }
+    
+    function nascondiFormNuovoMastrino() {
+        document.getElementById('formNuovoMastrino').style.display = 'none';
+        // Pulisci i campi
+        document.getElementById('nuovoMastrinoTipo').value = 'ACQUISTI';
+        document.getElementById('nuovoMastrinoCodice').value = '';
+        document.getElementById('nuovoMastrinoDescrizione').value = '';
+    }
+    
+    function salvaNuovoMastrino() {
+        const tipo = document.getElementById('nuovoMastrinoTipo').value;
+        const codice = document.getElementById('nuovoMastrinoCodice').value.trim();
+        const descrizione = document.getElementById('nuovoMastrinoDescrizione').value.trim();
+        
+        if (!codice || !descrizione) {
+            alert('Codice e descrizione sono obbligatori');
+            return;
+        }
+        
+        fetch('/impostazioni/mastrino/nuovo', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                tipo: tipo,
+                codice: codice,
+                descrizione: descrizione
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Mastrino creato con successo');
+                location.reload();
+            } else {
+                alert('Errore: ' + (data.error || 'Creazione fallita'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Errore durante la creazione del mastrino');
+        });
+    }
+    
+    function confermaRipulituraTest() {
+        const conferma1 = confirm('⚠️ ATTENZIONE!\n\nStai per CANCELLARE TUTTI i dati di test:\n- DDT IN e OUT\n- Preventivi e Ordini\n- Commesse\n- Movimenti e Inventario\n- Catalogo Articoli\n\nI dati di Clienti, Fornitori, Mastrini e Magazzini saranno MANTENUTI.\n\nSei sicuro di voler procedere?');
+        
+        if (!conferma1) return;
+        
+        const conferma2 = confirm('🚨 ULTIMA CONFERMA!\n\nQuesta azione è IRREVERSIBILE!\n\nDigita OK per confermare la pulizia massiva dei dati test.');
+        
+        if (!conferma2) return;
+        
+        // Mostra loader
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '🔄 Pulizia in corso...';
+        button.disabled = true;
+        
+        fetch('/impostazioni/ripulisci-dati-test', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ PULIZIA COMPLETATA!\n\n' + data.message + '\n\nRecord cancellati: ' + data.records_deleted);
+                location.reload();
+            } else {
+                alert('❌ ERRORE durante la pulizia: ' + (data.error || 'Errore sconosciuto'));
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ ERRORE di connessione durante la pulizia');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+
+    // Funzione per aggiornare codici mastrini con zero iniziale
+    function aggiornaCodiciMastrini() {
+        if (confirm('Aggiungere zero iniziale ai codici mastrini che iniziano con 4 o 5?\n\nQuesta operazione modificherà permanentemente i codici esistenti.')) {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '🔄 Aggiornamento...';
+            button.disabled = true;
+            
+            fetch('/impostazioni/mastrini/aggiorna-codici', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Errore di connessione');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+    }
+
+    // Funzione per salvare magazzino predefinito
+    function salvaMagazzinoPredefinito() {
+        const select = document.getElementById('magazzino-predefinito');
+        const messageDiv = document.getElementById('config-message');
+        const valoreMagazzino = select.value;
+        
+        fetch('/impostazioni/configurazione/salva', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                magazzino_predefinito_id: valoreMagazzino || null
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = '#d4edda';
+                messageDiv.style.color = '#155724';
+                messageDiv.style.border = '1px solid #c3e6cb';
+                messageDiv.textContent = '✅ ' + data.message;
+                
+                // Nascondi messaggio dopo 3 secondi
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 3000);
+            } else {
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.style.border = '1px solid #f5c6cb';
+                messageDiv.textContent = '❌ ' + (data.error || 'Errore durante il salvataggio');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = '#f8d7da';
+            messageDiv.style.color = '#721c24';
+            messageDiv.style.border = '1px solid #f5c6cb';
+            messageDiv.textContent = '❌ Errore di connessione';
+        });
+    }
+
+    // Funzioni per configurazione email
+    function salvaConfigurazioneEmail() {
+        const messageDiv = document.getElementById('email-config-message');
+        const statusSpan = document.getElementById('email-status');
+        
+        const configurazione = {
+            email_imap_server: document.getElementById('email-imap-server').value,
+            email_imap_port: document.getElementById('email-imap-port').value,
+            email_address: document.getElementById('email-address').value,
+            email_password: document.getElementById('email-password').value,
+            email_check_interval: document.getElementById('email-check-interval').value,
+            email_max_attachments: document.getElementById('email-max-attachments').value,
+            email_monitor_active: document.getElementById('email-monitor-active').checked ? 'true' : 'false'
+        };
+        
+        fetch('/impostazioni/configurazione/salva', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(configurazione)
+        })
+        .then(response => response.json())
+        .then(data => {
+            messageDiv.style.display = 'block';
+            if (data.success) {
+                messageDiv.style.background = '#d4edda';
+                messageDiv.style.color = '#155724';
+                messageDiv.style.border = '1px solid #c3e6cb';
+                messageDiv.textContent = `✅ Configurazione email salvata! (${data.aggiornate} impostazioni)`;
+                statusSpan.style.color = '#28a745';
+                statusSpan.textContent = 'Configurato';
+            } else {
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.style.border = '1px solid #f5c6cb';
+                messageDiv.textContent = '❌ ' + (data.error || 'Errore durante il salvataggio');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = '#f8d7da';
+            messageDiv.style.color = '#721c24';
+            messageDiv.style.border = '1px solid #f5c6cb';
+            messageDiv.textContent = '❌ Errore di connessione';
+        });
+    }
+    
+    function testConnessioneEmail() {
+        const statusSpan = document.getElementById('email-status');
+        const messageDiv = document.getElementById('email-config-message');
+        
+        statusSpan.style.color = '#ffc107';
+        statusSpan.textContent = 'Testing...';
+        
+        const testData = {
+            email_imap_server: document.getElementById('email-imap-server').value,
+            email_imap_port: document.getElementById('email-imap-port').value,
+            email_address: document.getElementById('email-address').value,
+            email_password: document.getElementById('email-password').value
+        };
+        
+        fetch('/impostazioni/email/test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(testData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            messageDiv.style.display = 'block';
+            if (data.success) {
+                statusSpan.style.color = '#28a745';
+                statusSpan.textContent = '✅ Connesso';
+                messageDiv.style.background = '#d4edda';
+                messageDiv.style.color = '#155724';
+                messageDiv.style.border = '1px solid #c3e6cb';
+                messageDiv.textContent = `✅ Connessione riuscita! Trovate ${data.message_count || 0} email`;
+            } else {
+                statusSpan.style.color = '#dc3545';
+                statusSpan.textContent = '❌ Errore';
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.style.border = '1px solid #f5c6cb';
+                messageDiv.textContent = '❌ ' + (data.error || 'Test connessione fallito');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusSpan.style.color = '#dc3545';
+            statusSpan.textContent = '❌ Errore';
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = '#f8d7da';
+            messageDiv.style.color = '#721c24';
+            messageDiv.style.border = '1px solid #f5c6cb';
+            messageDiv.textContent = '❌ Errore di connessione al server';
+        });
+    }
+    
+    function verificaImmediataEmail() {
+        const statusSpan = document.getElementById('email-status');
+        const messageDiv = document.getElementById('email-config-message');
+        
+        statusSpan.style.color = '#ffc107';
+        statusSpan.textContent = '🔍 Controllando...';
+        
+        fetch('/impostazioni/email/verifica-immediata', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            messageDiv.style.display = 'block';
+            if (data.success) {
+                statusSpan.style.color = '#28a745';
+                statusSpan.textContent = '✅ Verificato';
+                messageDiv.style.background = '#d4edda';
+                messageDiv.style.color = '#155724';
+                messageDiv.style.border = '1px solid #c3e6cb';
+                messageDiv.textContent = `📧 ${data.message}`;
+                
+                if (data.details && data.details.processed > 0) {
+                    messageDiv.textContent += ` Creati ${data.details.created || 0} nuovi DDT in bozza.`;
+                }
+            } else {
+                statusSpan.style.color = '#dc3545';
+                statusSpan.textContent = '❌ Errore';
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.style.border = '1px solid #f5c6cb';
+                messageDiv.textContent = '❌ ' + (data.error || 'Errore durante la verifica');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusSpan.style.color = '#dc3545';
+            statusSpan.textContent = '❌ Errore';
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = '#f8d7da';
+            messageDiv.style.color = '#721c24';
+            messageDiv.style.border = '1px solid #f5c6cb';
+            messageDiv.textContent = '❌ Errore di connessione durante la verifica';
+        });
+    }
+
+    </script>
+</body>
+</html>

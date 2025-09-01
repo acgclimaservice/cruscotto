@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Report Inventario Storico</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/inventario" class="active">📦 Inventario</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📊 Report Inventario al {{ data_riferimento }}</h1>
+            <div class="filters">
+                <input type="date" id="dataRiferimento" value="{{ data_riferimento }}">
+                <button class="btn" onclick="aggiornaReport()">Aggiorna</button>
+                <button class="btn btn-secondary" onclick="esportaExcel()">📥 Excel</button>
+                <button class="btn btn-secondary" onclick="window.print()">🖨️ PDF</button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2>Valore Totale Magazzino: € {{ "{:,.2f}".format(valore_totale) }}</h2>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Ubicazione</th>
+                        <th>Giacenza</th>
+                        <th>Costo Medio</th>
+                        <th>Valore</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for articolo in articoli %}
+                    <tr>
+                        <td>{{ articolo.codice }}</td>
+                        <td>{{ articolo.descrizione }}</td>
+                        <td>{{ articolo.ubicazione }}</td>
+                        <td>{{ "{:.2f}".format(articolo.giacenza) }}</td>
+                        <td>€ {{ "{:.2f}".format(articolo.costo) }}</td>
+                        <td>€ {{ "{:.2f}".format(articolo.valore) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function aggiornaReport() {
+        const data = document.getElementById('dataRiferimento').value;
+        window.location.href = '/inventario/report-storico?data=' + data;
+    }
+    
+    function esportaExcel() {
+        const data = document.getElementById('dataRiferimento').value;
+        window.location.href = '/inventario/export-excel-storico?data=' + data;
+    }
+    </script>
+
+    <style media="print">
+        .filters { display: none; }
+        nav { display: none; }
+    </style>
+</body>
+</html>

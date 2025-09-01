@@ -1,0 +1,53 @@
+1 se annullo un ddt in dall'inventario e dai movimenti mi si devono eliminare anche gli articoli del ddt. FATTO
+2 quando confermo un preventivo mi restituisce questo errore: {
+  "errore": "impossibile convertire la stringa in float: ''"
+} FATTO
+3 sul ddt out generato manualmente se faccio copia mastrino su tutte le righe non mi riporta il mastrino. inoltre sulle righe successive alla prima il campo mastrino è a menu a tendina e non mi riporta tutti i mastrini ricavi presenti nella sezione impostazione. FATTO
+4 quando confermo un ddt out mi da questo errore: nuovo:1  POST http://127.0.0.1:5000/ddt-out/nuovo 500 (INTERNAL SERVER ERROR) FATTO
+5 nella stampa in pdf degli ordini mi riporta ancora la mail sbagliata. quella corretta è info@acgclimaservice.com FATTO
+6 nei ddt in quando scarico il pdf unificato mi riporta ancora la mail sbagliata. quella corretta è info@acgclimaservice.com ok
+7 quando confermo un ddt in creato manualmente mi esce l'errore validazione fallita: il mastrino è obbligatorio anche se io in fase di inserimento lo avevo selezionato per tutte le righe. questo succede solo se ci sono più articoli. FATTO
+8 la stampa del ddt in creato manualmente non riporta l'intestazione e il logo dell'azienda. FATTO OK
+9 se provo a creare un preventivo dal ddt in mi da questo errore: crea-preventivo:1  Failed to load resource: the server responded with a status of 404 (NOT FOUND) FATTO
+10 quando genero un ddt out dal ddt in e lo confermo mi esce questo errore: {
+  "errore": "'costo_unitario' è un argomento di parola chiave non valido per ArticoloOut",
+  "successo": falso 
+} e nella console esce questo: genera-ddt-out:1  POST http://127.0.0.1:5000/ddt-in/14/genera-ddt-out 500 (INTERNAL SERVER ERROR) FATTO OK
+11 quando genero un ddt out dal ddt in non vedo valorizzata la giacenza FATTO OK
+12 quando modifico un ddt in importato non mi da l'autocompletamento sulla commessa. FATTO OK
+13 non funziona il parsing negli ordini. FATTO OK
+14 nell'inventario non mi viene compilata la colonna ubicazione. (se l'articolo nell'inventario ha  ubicazioni diverse crea una riga per ogni magazzino) FATTO ok
+15. nei movimenti interni devo avere la possibilità di selezionare più articoli. inoltre inseriscimi di default come magazzino di partenza il magazzino principale impostato nella sezione impostazioni. OK
+16 nella stampa in pdf dei ddt out mi riporta ancora la mail sbagliata. quella corretta è info@acgclimaservice.com OK
+17 se provo a modificare un ddt out in bozza mi da questo errore:   GET http://127.0.0.1:5000/ddt-out/1/modifica 404 (NOT FOUND) FATTO ok
+onclick @ :5000/ddt-out/1:37
+18 se provo a confermare un ddt out mi da questo errore: Errore: 'ArticoloOut' object has no attribute 'costo_unitario' e nella console esce questo: 1:36 [Violation] 'click' handler took 1380ms
+19. Quando importo un ddt in se l'articolo è già presente nell'inventario non mi devi creare un nuovo codice interno, ma devi utilizzare lo stesso e sommare le giacenze. FATTO OK
+20. una domanda: posso utilizzare contemporaneamente il parsing sia per l'importazione dei ddt in sia per l'importazione degli ordini? perché ogni volta che ti faccio fare una modifica su uno smette di funzionare l'altro. se la risposta è affermativa implementa il parsing in entrami le sezioni, altrimenti lascialo solo sui ddt in. che al momento non sta funzionando e restituisce questo errore:il parsing non sta funzionando: ddt-import:574 Trying to display PDF: blob:http://127.0.0.1:5000/0f908faf-e475-4729-9248-17536f97c217
+ddt-import:313 Uploading PDF for parsing with: CLAUDE AI
+ddt-import:327 Response status: 200
+ddt-import:331 Claude AI Result: Object
+ddt-import:336 Real data from Claude AI
+ddt-import:353 Showing real extracted data: Object
+ddt-import:362 Updating PDF with server URL: /ddt-import/serve-pdf/4eeb5335c7344c80b5b6193345c517dc_Consegna - 250804919.pdf
+ddt-import:574 Trying to display PDF: blob:http://127.0.0.1:5000/6e422b2a-8076-429c-a09b-3b7766d1b52d
+ddt-import:313 Uploading PDF for parsing with: GEMINI AI
+ddt-import:327 Response status: 200
+ddt-import:331 Claude AI Result: {data: {…}, success: true}
+ddt-import:336 Real data from Claude AI
+ddt-import:353 Showing real extracted data: {ai_reason: 'Parser basico usato: entrambe le AI (Claude e Gemini) non sono riuscite ad elaborare il documento', ai_used: 'fallback', articoli: Array(1), data_ddt: '2025-08-31', fornitore: {…}, …} 
+ddt-import:362 Updating PDF with server URL: /ddt-import/serve-pdf/f5336cdba91a4392a3439d4d992aec85_Consegna - 250804919.pdf FATTO OK
+21 per tutti i nuovi articoli impostare come scorta minima di default 0 FATTO OK
+22 quando provo a modificare un ddt out nelle Informazioni DDT mi esce ancora il mastrino che ormai non serve più siccome i mastrini sono nelle righe degli articoli. FATTO OK
+23 quando modifico una commessa non mi fa impostare la data di scadenza. FATTO OK
+24 nell'inventario l'ubicazione mi da sempre none. FATTO OK
+25 nell'inventario e nei movimenti la data deve corrispondere alla data ddt origine e non alla data assegnata al ddt in fase di conferma. FATTO OK
+26. quando importo un ordine da pdf non mi fa selezionare la commessa. deve essere un campo ad autocompletamento con le commesse esistenti. FATTO OK
+27. nei movimenti interni devo vedere la giacenza disponibile per l'articolo selezionato. inserisci un controllo che non posso confermare un movimento interno se l'articolo non è disponibile o la giacenza è inferiore a quella selezionata. 
+28. il report mastrini mi da questo errore: Errore report: (sqlite3.OperationalError) no such columns: a.prezzo_unitario [SQL: SELECT d.mastrino_ddt as mastrino, m.descrizione as descrizione, 'ACQUISTO' as tipo, COUNT(d.id) as numero_ddt, SUM(CASE WHEN a.quantita > 0 THEN a.quantita * a.prezzo_unitario ELSE 0 END) as totale FROM ddt_in d LEFT JOIN articolo_in a ON d.id = a.ddt_id LEFT JOIN mastrino m ON d.mastrino_ddt = m.codice WHERE d.stato = 'confermato' AND d.mastrino_ddt NON È NULL AND d.mastrino_ddt != '' GRUPPO PER d.mastrino_ddt, m.descrizione ORDER BY totale DESC ] (Sfondo di questo errore in: (https://sqlalche.me/e/20/e3q8) e nella console esce questo: mastrini:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) FATTO OK
+
+29. nel report commesse se provo ad estrapolare l'excel mi da questo errore:Tipo di report 'commesse' non supportato e nella console esce questo:   GET http://127.0.0.1:8080/reports/export/commesse 400 (BAD REQUEST)
+exportCommesseExcel @ :8080/reports/commesse:378
+onclick @ :8080/reports/commesse:360
+
+30. aggiungimi la barra dei filtri anche nel report fornitori, report articoli, report clienti e report commesse e verifica che funzioni,. inoltre verifica che se seleziono una certa data i dati si aggiornano a quella data. 

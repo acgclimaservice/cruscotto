@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css") }}?v=3">
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav>
+            <ul>
+                <li><a href="/" class="active">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-in">📤 DDT OUT</a></li>
+            </ul>
+        </nav>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard">
+            <!-- DDT IN Card -->
+            <div class="card ddt-in">
+                <h2>
+                    <span class="icon">📥</span>
+                    DDT in Entrata
+                </h2>
+                <div class="stat-value">{{ ddt_in_count }}</div>
+                <div class="stat-label">Documenti questo mese</div>
+                <div class="quick-links">
+                    <a href="/ddt-in" class="btn">Vai all'archivio</a>
+                </div>
+            </div>
+
+            <!-- DDT OUT Card -->
+            <div class="card ddt-out">
+                <h2>
+                    <span class="icon">📤</span>
+                    DDT in Uscita
+                </h2>
+                <div class="stat-value">{{ ddt_out_count }}</div>
+                <div class="stat-label">Documenti questo mese</div>
+                <div class="quick-links">
+                    <a href="/ddt-in" class="btn">Vai all'archivio</a>
+                </div>
+            </div>
+
+            <!-- Summary Card -->
+            <div class="card summary">
+                <h2>
+                    <span class="icon">📊</span>
+                    Riepilogo Mensile
+                </h2>
+                <div style="margin: 20px 0;">
+                    <div class="summary-item">
+                        <span>Totale movimenti:</span>
+                        <strong>{{ ddt_in_count + ddt_out_count }}</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>In attesa:</span>
+                        <strong style="color: #f59e0b;">{{ bozze_count|default(0) }}</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Completati:</span>
+                        <strong style="color: #10b981;">{{ ddt_in_count + ddt_out_count }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts Card -->
+            <div class="card alerts">
+                <h2>
+                    <span class="icon">⚠️</span>
+                    Avvisi Importanti
+                </h2>
+                <div style="margin: 20px 0;">
+                    <div class="alert-item alert-warning">
+                        <strong>{{ alerts_count|default(0) }} DDT</strong> in attesa da oltre 7 giorni
+                    </div>
+                    <div class="alert-item alert-danger">
+                        <strong>{{ discrepanze_count|default(0) }} DDT</strong> con discrepanze da verificare
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

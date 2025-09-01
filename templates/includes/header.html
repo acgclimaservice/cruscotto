@@ -1,0 +1,19 @@
+<!-- Header aziendale con logo -->
+<div class="company-header">
+    <div class="company-logo">
+        <img src="{{ url_for('static', filename='logo acg.png') }}" alt="ACG Clima Service" class="logo-img">
+    </div>
+    <div class="company-info">
+        <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+        <div class="company-details">
+            <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+            <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+            <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+            <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+        </div>
+    </div>
+    <div class="system-info">
+        <h2>{% block page_title %}Sistema Gestione DDT{% endblock %}</h2>
+        <p>{% block page_subtitle %}Dashboard operativa{% endblock %}</p>
+    </div>
+</div>

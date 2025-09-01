@@ -1,0 +1,142 @@
+1 la data di scadenza di un preventivo deve essere automaticamente impostata 30 giorni dopo la data del preventivo, deve essere comunque modificabile FATTO
+2 nel preventivo non indichiamo mai la nota "preventivo generato automaticamente dal ddt in…." FATTO
+devo avere la possibilità di impostare un magazzino predefinito FATTO
+3 nel ddt in sia manuale che generato importando un ddt pdf, il magazzino di destinazione deve essere un dato obbligatorio FATTO 
+4 nel ddt in sia manuale che generato importando un ddt pdf, il magazzino di destinazione suggerito deve essere quello predefinito FATTO
+5 nel ddt in sia manuale che generato importando un ddt pdf, il mastrino deve essere un dato obbligatorio FATTO
+6 nel ddt out generato manualmente il magazzino di partenza suggerito deve essere quello predefinito FATTO
+7 nel ddt out sia manuale che generato da un ddt in, il magazzino di partenza  deve essere un dato obbligatorio FATTO 
+8 nel movimento interno il magazzino di partenza suggerito deve essere quello predefinito FATTO
+9 nel movimento interno il magazzino di partenza deve essere un dato obbligatorio FATTO
+10 nel movimento interno il magazzino di destinazione deve essere un dato obbligatorio FATTO 
+11 nel catalogo, per ogni articolo deve essere generato un qr code che contiene il codice interno, servirà per fare i movimenti interni con il telefono FATTO
+12 il codice del campo mastrini deve contenere anche uno zero iniziale prima del 4 o prima del 5, modifica il codice nelle impostazioni FATTO
+13 quando creo un ddt in manuale e non metto la quantità mi esce una schermata con questo errore Errore: impossibile convertire la stringa in float: '' invece dovrebbe dirmi dato obbligatorio FATTO
+14 quando in un ddt in viene aggiunto un articolo, il codice fornitore è obbligatorio FATTO
+15 nella generazione dei qr code mo da questo errore QR Code per Articolo
+Errore: Errore generazione QR: name 'BytesIO' is not defined FATTO
+16 nella sezione catalogo, per poter eliminare un articolo, la giacenza totale nei vari magazzini deve essere a 0 FATTO
+17 nella sezione inventario per ogni singolo magazzino, non può esserci una giacenza negativa, in quel caso devi dare errore e bloccare l'evento che sta creando una giacenza negativa FATTO
+18 adesso puoi nascondere il tasto "aggiungi zero iniziale a codice mastrini" FATTO
+19 per non fare buchi di numerazione, tutti i documenti che non sono nello stato bozza, non possono essere eliminati ma possono essere annullati, ovvero hanno tutte le conseguenze dell'eliminazione ma risultano ancora nelle liste di riepilogo e possono essere visualizzati ma deve risultare evidente che sono annullati FATTO
+20 quando inserisco il ddt in voglio vedere viaulizzato di default il magazzino predefinito del campo destinazione FATTO
+21 quando creo un ddt in da import pdf, deve chiedermi il mastrino obbligatorio FATTO
+22 dopo che ho modificato un ddt in e cliccato su modifica dovrebbe tornare sulla schermata di visualizzazione del ddt ad es http://127.0.0.1:5000/ddt-in/1 FATTO
+23 il report mastrini non trova nessun movimento, forse dopo l'aggiunta dello 0 all'inizio del codice FATTO
+24 nell'autocompletamento del campo mastrini, oltre alla descrizione dovrebbe trovarmi il mastrino anche mettendo il numero del campo codice FATTO
+25 l'elenco ddt dovrebbe essere secondo il numero in ordine inverso ovvero con il ddt più recente in alto. ovviamente però in alto ci devono essere le bozze per prima FATTO
+26 nella lista ddt in dovresti aggiungere il tasto "confronta" che apre una finestra popup in cui sono visualizzati il ddt fornitore e il pdf del ddt in in bozza in modo da confrontarli e confermarli (tasto conferma integrato nella finestra popup insieme al tasto modifica) FATTO
+27 possiamo inserire una funzione di acquisizione pdf massiva, ovvero carichiamo più pdf contemporaemente con un massimo di 10 e il sistema in backgroud importa tutti i pdf e genera altrettante bozze da confermare. cosa ne pensi? ragioniamo prima di modificare il codice FATTO
+28 nei campi data deve essere considerato errore inserire una data nel futuro FATTO
+29 in questa schermata http://127.0.0.1:5000/ddt-in/nuovo sotto l'ultima riga di inserimento articolo dovrebbe esserci qualche spazio vuoto per rendere più leggibile il tutto FATTO
+30 il tasto confronta è quasi perfetto. dovresti solamente aggiungere nella sezione di confronto, precisamente nel riepilogo del ddt in creato, anche il codice del mastrino dell'articolo e poi dovresti mettere automaticamente la lente d'ingrandimento al posto del puntatore del mouse quando sono nel pdf fornitore FATTO
+31 quando annullo un ddt in confermato, il ddt sparisce e invece le istruzioni erano diverse (vedi punto 19) FATTO
+32 se clicco su modifica ddt in mi da questo   GET http://127.0.0.1:5000/ddt-in/1/modifica 404 (NOT FOUND) FATTO
+onclick @ :5000/ddt-in/1:37
+33 se clicco su confronta mi da questo errore Errore di connessione: SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON FATTO
+34 ddt-import:322  POST http://127.0.0.1:5000/ddt-import/parse-pdf-claude net::ERR_CONNECTION_RESET
+uploadPDF @ ddt-import:322
+(anonymous) @ ddt-import:298
+ddt-import:345 💥 Error: TypeError: Failed to fetch
+    at uploadPDF (ddt-import:322:9)
+    at HTMLInputElement.<anonymous> (ddt-import:298:13)
+(anonymous) @ ddt-import:345
+Promise.catch
+uploadPDF @ ddt-import:344
+(anonymous) @ ddt-import:298
+ddt-import:322  POST http://127.0.0.1:5000/ddt-import/parse-pdf-claude net::ERR_CONNECTION_RESET
+uploadPDF @ ddt-import:322
+(anonymous) @ ddt-import:298
+ddt-import:345 💥 Error: TypeError: Failed to fetch
+    at uploadPDF (ddt-import:322:9)
+    at HTMLInputElement.<anonymous> (ddt-import:298:13)
+(anonymous) @ ddt-import:345
+Promise.catch
+uploadPDF @ ddt-import:344
+(anonymous) @ ddt-import:298
+35 rifai i punti 3 e 4 che non sono andati a buon fine FATTO
+36 prima si confermare un ddt in ci devono essere i campi obbligatori che ti ho scritto prima qui FATTO
+37 aggiungiamo un segnale sonoro alla fine del parsing multiplo FATTO
+38il tasto confronta da questo ddt-in:369  GET http://127.0.0.1:5000/ddt-in/2/pdf?zoom=200 404 (NOT FOUND) FATTO
+mostraModalConfronto @ ddt-in:369
+(anonymous) @ ddt-in:354
+Promise.then
+confrontaDDT @ ddt-in:352
+onclick @ ddt-in:124
+39 il tasto confronta va messo anche ai ddt che arrivano dal parsing multiplo FATTO
+40 quando importo pdf da parsing multiplo, sembra che mi trovi la data ma non me la inserisce nel campo data e devo inserirla a mano FATTO
+41 impostazioni:956  POST http://127.0.0.1:5000/impostazioni/configurazione/salva 404 (NOT FOUND) FATTO
+salvaMagazzinoPredefinito @ impostazioni:956
+onclick @ impostazioni:570
+impostazioni:987 Error: SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+(anonymous) @ impostazioni:987
+Promise.catch
+salvaMagazzinoPredefinito @ impostazioni:986
+onclick @ impostazioni:570
+42 dobbiamo inserire una animazione quando vengono inseriti i pdf multipli per far vedere che non si sia bloccato FATTO
+43 la pagina frontend dei caricamenti multipli va trattata come una nuova finestra in modo da poter fare altro intanto che lui carica FATTO
+44 cambi il suono di fine caricamento pdf e metti apertura windows FATTO
+45 nella finestra di confronto puoi mettere i tasto con cui si seleziona le lente d'ingrandimento? FATTO
+46 modifica:146 Uncaught ReferenceError: initAutocomplete is not defined
+    at HTMLDocument.<anonymous> (modifica:146:13)
+(anonymous) @ modifica:146 FATTO
+
+47 nella sezione modifica ddt in il campo mastrino è gestito ancora come campo unico del ddt e non come campo per ogni articolo FATTO
+48 se scelgo un magazzino predefinito esce questo undefined e non me lo salva FATTO
+49 non posso eliminare un magazzino impostazioni:613 [Violation] 'click' handler took 1096ms
+impostazioni:819  POST http://127.0.0.1:5000/impostazioni/magazzino/1/elimina 404 (NOT FOUND)
+eliminaMagazzino @ impostazioni:819
+onclick @ impostazioni:613
+VM1361:1 Uncaught (in promise) SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+
+50 l'animazione durante il caricamento multiplo è orribile FATTO
+51 nel frontend vedo ancora versione 2.5 FATTO
+52 ddt-import:569 Trying to display PDF: blob:http://127.0.0.1:5000/e890fb1b-1528-4494-aeea-0363f74d2bd7
+ddt-import:313 Uploading PDF for parsing with: CLAUDE AI
+ddt-import:486 Creating DDT with real data: null
+ddt-import:496 Uncaught TypeError: Cannot read properties of null (reading 'pdf_base64')
+    at creaDDTDaImport (ddt-import:496:41)
+    at HTMLButtonElement.onclick (ddt-import:247:77)
+creaDDTDaImport @ ddt-import:496
+onclick @ ddt-import:247 FATTO
+53 autocomplete.js:43 Uncaught SyntaxError: Failed to execute 'closest' on 'Element': '.autocomplete-container-articoli[0][mastrino]' is not a valid selector.
+    at HTMLDocument.<anonymous> (autocomplete.js:43:27)
+(anonymous) @ autocomplete.js:43
+autocomplete.js:43 Uncaught SyntaxError: Failed to execute 'closest' on 'Element': '.autocomplete-container-articoli[0][mastrino]' is not a valid selector.
+    at HTMLDocument.<anonymous> (autocomplete.js:43:27)
+(anonymous) @ autocomplete.js:43 FATTO
+
+54 il testo incriminato è questo: 📈Sistema
+Versione
+2.5
+Database
+Operativo
+Ultimo backup
+N/D
+55 non riesco a creare un magazzino impostazioni:1 [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) <input type=​"password" id=​"email-password" placeholder=​"Password email" value style=​"width:​ 100%;​ padding:​ 8px;​ margin-top:​ 5px;​ border:​ 1px solid #ddd;​ border-radius:​ 4px;​">​
+impostazioni:799  POST http://127.0.0.1:5000/impostazioni/magazzino/nuovo 500 (INTERNAL SERVER ERROR)
+aggiungiMagazzino @ impostazioni:799
+onclick @ impostazioni:651 FATTO
+56 mi da sempre versione 2.5 FATTO
+57 ci sono alcuni errori nella modifica del ddt in, non mi fa selezionare il magazzino nel campo destinazione (menu a tendina) FATTO 
+58 LA FINESTRA DI AUTOCOMPLETMENT DEL MASTRINO DOVREBBE ESSERE SOPRA IL FOOTER PERCHE' ALTRIMENTI NON E' SELEZIONABILE (SEMPRE IN MODIFICA DDT IN) FATTO (RIFATTO CON POSIZIONAMENTO SMART) FATTO
+59 possiamo utilizzare lo stesso parsing del ddt in anche per importare un'offerta fornitore per fare un ordine fornitore?
+60 quando modifico un ddt in non c'è il tasto copia mastrino su tutte le righe. inoltre adesso quando confermo un ddt importato mi da il seguente errore:il mastrino ddt è obbligatorio e il codice fornitore è obbligatorio ( questo perché adesso quando mi importa il ddt il codice fornitore lo assegna come codice interno) FATTO
+61 quando provo a modificare un magazzino mi esce questo errore:impostazioni:1 [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq)
+impostazioni/magazzino/3/modifica:1  Failed to load resource: the server responded with a status of 404 (NOT FOUND) 
+impostazioni:1 Uncaught (in promise) SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+impostazioni/magazzino/3/modifica:1  Failed to load resource: the server responded with a status of 404 (NOT FOUND) 
+impostazioni:1 Uncaught (in promise) SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+impostazioni:878  POST http://127.0.0.1:5000/impostazioni/magazzino/3/modifica 404 (NOT FOUND)
+salvaMagazzino @ impostazioni:878
+onclick @ impostazioni:706
+VM1182:1 Uncaught (in promise) SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON FATTO
+62 quando confermo un ddt in mi da autenticazione fallita: il mastrino ddt è obbligatorio. ormai il ddt non ha più un suo mastrino e i mastrini sugli articolo sono tutti compilati FATTO
+   135→63 sistemare codice fornitore e codice interno: il codice fornitore è quello che viene letto nel ddt, mentre il codice interno deve essere generato automaticamente e composto da prime 4 lettere del fornitore + il codice fornitore FATTO
+   137→64 correggere mapping codici nel parsing automatico e batch processing: ora il codice dal PDF va nel codice_fornitore e si genera automaticamente il codice_interno FATTO
+   138→65 riparare salvataggio dati import DDT manuale: il template inviava codice nel campo sbagliato e non salvava i mastrini FATTO
+   139→66 migliorare visualizzazione autocomplete mastrino per DDT con singolo articolo: rimossi conflitti div, migliorato CSS e posizionamento intelligente FATTO
+   140→67 riparare autocomplete mastrini in modifica DDT: corretto CSS troppo aggressivo e aggiunto debug per verificare funzionamento FATTO
+   141→68 implementare sezione ordini con parsing PDF per offerte fornitori: creato template ordini-import.html, route /ordini/import, /ordini/parse-pdf, /ordini/crea-da-import, esteso MultiAIPDFParser con parsing offerte FATTO
+
+

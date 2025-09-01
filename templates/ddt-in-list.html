@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>DDT IN - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in" class="active">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📥 DDT in Entrata</h1>
+            <div class="filters">
+                <button class="btn btn-success" onclick="window.location.href='/ddt-in/nuovo'">+ Nuovo DDT IN</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° DDT</th>
+                        <th>Data</th>
+                        <th>Fornitore</th>
+                        <th>Destinazione</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ddt in ddts %}
+                    <tr class="{{ 'draft' if ddt.stato == 'bozza' else '' }}">
+                        <td><strong>{{ ddt.numero_ddt or 'BOZZA' }}</strong></td>
+                        <td>{{ ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '-' }}</td>
+                        <td>{{ ddt.fornitore }}</td>
+                        <td>{{ ddt.destinazione }}</td>
+                        <td>
+                            <span class="status {{ 'confirmed' if ddt.stato == 'confermato' else 'draft' }}">
+                                {{ ddt.stato|upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-small" onclick="window.location.href='/ddt-in/{{ ddt.id }}'">
+                                Visualizza
+                            </button>
+                            {% if ddt.stato == 'confermato' %}
+                            <button class="btn btn-small btn-secondary" onclick="window.location.href='/ddt-in/{{ ddt.id }}/genera-ddt-out'">
+                                📤 DDT OUT
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

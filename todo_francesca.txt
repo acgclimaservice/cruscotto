@@ -1,0 +1,100 @@
+1. quando creo un ddt out (https://acgclimaservice.pythonanywhere.com/ddt-out/nuovo) e seleziono un articolo impostare l'arrotondamento in automatico. 
+OK 
+
+2. la stmpa del ddt out e' diversa se schiaccio il tasto stampa da questa pagina https://acgclimaservice.pythonanywhere.com/ddt-out/2 e se schiaccio stampa da questa pagina: https://acgclimaservice.pythonanywhere.com/ddt-out. usare solo il formato di questa pagina: https://acgclimaservice.pythonanywhere.com/ddt-out
+OK
+
+
+3. quando provo ad eliminare un fornitore da questo errore: fornitori:5820  POST https://acgclimaservice.pythonanywhere.com/fornitori/1/elimina 404 (NOT FOUND)
+eliminaFornitore @ fornitori:5820
+onclick @ fornitori:72
+VM1512:1 Uncaught (in promise) SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+OK
+
+4. quando provo ad eliminare un cliente da questo errore: clienti:8304  POST https://acgclimaservice.pythonanywhere.com/clienti/1/elimina 404 (NOT FOUND)
+eliminaCliente @ clienti:8304
+onclick @ clienti:72
+VM1524:1 Uncaught (in promise) SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+OK
+
+5. implementare l'estrapolazione in excel dei report commesse (https://acgclimaservice.pythonanywhere.com/reports/commesse) 
+NON FUNZIONA
+
+
+6. nel report mastrini https://acgclimaservice.pythonanywhere.com/reports/mastrini se esporto in excel mi estrai solo il report acquisti per mastrino 
+7. nelle impostazioni non funziona piu' il collegamento mastrini:   GET https://acgclimaservice.pythonanywhere.com/impostazioni/collegamento-mastrini 500 (INTERNAL SERVER ERROR)
+onclick @ /impostazioni:60  
+ok
+
+8. se provo a modificare un magazzino mi da questo errore: impostazioni:763  POST https://acgclimaservice.pythonanywhere.com/impostazioni/magazzino/2/modifica 404 (NOT FOUND)
+salvaMagazzino @ impostazioni:763
+onclick @ impostazioni:591
+VM1763:1 Uncaught (in promise) SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON  
+ok
+
+
+9. se provo ad eliminare un magazzino mi da questo errore: impostazioni:798  POST https://acgclimaservice.pythonanywhere.com/impostazioni/magazzino/2/elimina 404 (NOT FOUND)
+eliminaMagazzino @ impostazioni:798
+onclick @ impostazioni:592
+VM1787:1 Uncaught (in promise) SyntaxError: Unexpected token '<', "<!doctype "... is not valid JSON
+ok 
+
+10. impostare la possibilita' di filtrare i dati nella sezione inventario per data o anche per magazzino. 
+ok
+
+11.SE PROVO A CARICARE UN cliente manualmente mi esce questo errore: nuovo:1  POST http://127.0.0.1:5000/clienti/nuovo 415 (UNSUPPORTED MEDIA TYPE)
+verifica anche i fornitori
+OK
+
+12. Nella sezione preventivi inserire la possibilità di creare i  preventivi da ddt in.
+OK
+
+13. per gli articoli nuovi impostare scorta minima a 0 
+ok
+
+14. aggiungere la possibilità di modificare un DDT IN e un DDT OUT in stato bozza
+ok
+
+15. nei DDT IN e OUT aggiungere per ogni riga articolo il mastrino e l'opzione di copiare lo stesso mastrino per tutti
+OK
+
+16. il catalogo deve essere movimentato dal DDT IN e non devono essere modificati gli articoli quando genero il DDT OUT
+OK 
+17. generando DDT OUT dal DDT IN il magazzino di partenza del DDT OUT deve essere uguale al magazzino di destinazione del DDT IN
+ok
+
+18. se elimino un articolo dal DDT OUT generato automaticamente dal DDT IN una volta che confermo il DDT OUT non mi riporta tutti gli altri articoli
+OK
+
+19. nell'inventario la giacenza non viene calcolata come differenza tra DDT IN e DDT OUT ma una volta generato il DDT OUT non prende più in considerazione il DDT IN riportando così una giacenza negativa. 
+OK
+
+20. non funziona più il report storico nell'inventario. il report storico deve dare mostrare l'inventaro alla data selezionata. 
+ok
+
+21. gli ordini generati dall'inventario non vengono visualizzati nelle commesse anche se la imposto successivamente. 
+OK
+
+22. negli ordini inserire autocompletamento del codice interno negli articoli 
+OK
+
+23. controlla bene la logica del codice interno degli articoli. molte volte non viene assegnato correttamente. deve essere sempre le prime 4 lettere del fornitore + il codice articolo. inoltre devi verificare che se inserisco due volte lo stesso articolo e stesso fornitore non mi crei un nuovo aritcolo, ma mi alimenta quello già presente nel catalogo. questo vale sia per i ddt in importati sia per quelli manuali. 
+OK
+
+24. bisogna modificare in tutte le intestazioni e in tutte le stampe la mail: quella corretta è info@acgclimaservice.com 
+OK
+
+25. modifica:1  POST http://127.0.0.1:5000/preventivi/1/modifica 500 (INTERNAL SERVER ERROR)
+ok
+
+26. inseriscimi la possibilità di eliminare i ddt in bozza
+OK 
+
+27. quando provo a creare un preventivo dal ddt in mi da questo errore: crea-preventivo:1  POST http://127.0.0.1:5000/ddt-in/4/crea-preventivo 405 (METHOD NOT ALLOWED)
+ok
+
+	
+
+
+
+

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDT IN - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>DDT in Entrata</h2>
+                <p>Gestione documenti di trasporto in entrata</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in" class="active">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📥 DDT in Entrata</h1>
+            <div class="actions-bar">
+                <button class="btn" onclick="window.location.href='/ddt-in/nuovo'">
+                    ✏️ Inserimento Manuale
+                </button>
+                <button class="btn btn-secondary" onclick="window.location.href='/ddt-import'">
+                    📄 Import da PDF
+                </button>
+                <button class="btn btn-info" onclick="window.open('/ddt-in/import-batch', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes')">
+                    📁 Import Multiplo
+                </button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>Elenco DDT</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° DDT</th>
+                        <th>Data</th>
+                        <th>Fornitore</th>
+                        <th>Riferimento</th>
+                        <th>Destinazione</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if ddts %}
+                        {% for ddt in ddts %}
+                        <tr class="{{ 'draft' if ddt.stato == 'bozza' else ('cancelled' if ddt.stato == 'annullato' else '') }}">
+                            <td>
+                                <strong>{{ ddt.numero_ddt or 'BOZZA-' + ddt.id|string }}</strong>
+                                {% if ddt.stato == 'annullato' %}
+                                    <span class="cancelled-badge">ANNULLATO</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-' }}</td>
+                            <td>{{ ddt.fornitore or '-' }}</td>
+                            <td>{{ ddt.riferimento or '-' }}</td>
+                            <td>{{ ddt.destinazione or '-' }}</td>
+                            <td>
+                                <span class="status {{ 'confirmed' if ddt.stato == 'confermato' else ('cancelled' if ddt.stato == 'annullato' else 'draft') }}">
+                                    {{ ddt.stato|upper }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/ddt-in/{{ ddt.id }}" class="btn btn-small">
+                                        👁️ Visualizza
+                                    </a>
+                                    {% if ddt.stato == 'bozza' %}
+                                        {% if ddt.pdf_allegato %}
+                                            <button class="btn btn-small btn-primary" onclick="confrontaDDT({{ ddt.id }})">
+                                                🔍 Confronta
+                                            </button>
+                                        {% endif %}
+                                        <button class="btn btn-small btn-danger" onclick="eliminaDDTIn({{ ddt.id }}, '{{ ddt.numero_ddt or 'BOZZA' }}')">
+                                            🗑️ Elimina
+                                        </button>
+                                    {% elif ddt.stato == 'confermato' %}
+                                        <button class="btn btn-small btn-warning" onclick="annullaDDTIn({{ ddt.id }}, '{{ ddt.numero_ddt }}')">
+                                            ❌ Annulla
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #999;">
+                                <div style="font-size: 48px; margin-bottom: 10px;">📋</div>
+                                <div>Nessun DDT presente</div>
+                                <div style="margin-top: 20px;">
+                                    <button class="btn" onclick="window.location.href='/ddt-in/nuovo'">
+                                        Crea il primo DDT
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            
+            {% if buchi_numerazione %}
+            <div class="alert-item alert-warning" style="margin-top: 20px;">
+                <strong>⚠️ Attenzione:</strong> Rilevati buchi nella numerazione: {{ buchi_numerazione|join(', ') }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <style>
+    /* Stili per documenti annullati */
+    .cancelled {
+        background-color: #fee !important;
+        opacity: 0.7;
+        text-decoration: line-through;
+    }
+    
+    .cancelled-badge {
+        background: #dc3545;
+        color: white;
+        font-size: 0.7em;
+        padding: 2px 6px;
+        border-radius: 3px;
+        margin-left: 8px;
+        font-weight: bold;
+        animation: pulse 2s infinite;
+    }
+    
+    .status.cancelled {
+        background: #dc3545 !important;
+        color: white !important;
+    }
+    
+    .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
+        border: 1px solid #ffc107;
+    }
+    
+    .btn-warning:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    </style>
+    
+    <script>
+    function generaDDTOut(ddtId) {
+        if (confirm("Generare DDT OUT da questo DDT IN?")) {
+            // Mostra loading
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = "Generando...";
+            btn.disabled = true;
+            
+            fetch(`/ddt-in/${ddtId}/genera-ddt-out`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"}
+            })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    alert(`DDT OUT creato con ${data.articoli_copiati} articoli`);
+                    window.location.href = `/ddt-out/${data.ddt_out_id}`;
+                } else if (data && data.error) {
+                    alert("Errore: " + data.error);
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error("Errore:", err);
+                alert("Errore di rete");
+                btn.textContent = originalText;
+                btn.disabled = false;
+            });
+        }
+    }
+    
+    function eliminaDDTIn(ddtId, numeroDDT) {
+        if (confirm(`Sei sicuro di voler eliminare il DDT IN ${numeroDDT}?\n\nQuesta operazione:\n- Eliminerà il DDT e tutti i suoi articoli\n- Rimuoverà gli articoli dal catalogo\n- Aggiornerà le giacenze\n\nL'operazione NON PUÒ essere annullata!`)) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = "Eliminando...";
+            btn.disabled = true;
+            
+            fetch(`/ddt-in/${ddtId}/elimina`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`DDT IN eliminato con successo!\n\nArticoli rimossi: ${data.articoli_rimossi}\n\n${data.message}`);
+                    location.reload();
+                } else {
+                    alert(`Errore durante l'eliminazione: ${data.error}`);
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert(`Errore durante l'eliminazione: ${error}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            });
+        }
+    }
+    
+    function annullaDDTIn(id, numero) {
+        if (confirm(`Sei sicuro di voler ANNULLARE il DDT IN ${numero}?\n\nQuesta operazione:\n- Mantiene il documento visibile\n- Applica tutte le conseguenze dell'eliminazione\n- NON può essere annullata\n\nProcedere?`)) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Annullamento...';
+            btn.disabled = true;
+            
+            fetch(`/ddt-in/${id}/elimina`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`DDT IN annullato con successo!\n\nArticoli processati: ${data.articoli_processati}\n\n${data.message}`);
+                    location.reload();
+                } else {
+                    alert(`Errore durante l'annullamento: ${data.error}`);
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert(`Errore durante l'annullamento: ${error}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            });
+        }
+    }
+    
+    function confrontaDDT(ddtId) {
+        // Carica i dati del DDT per il confronto
+        fetch(`/ddt-in/${ddtId}/confronta-data`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostraModalConfronto(ddtId, data);
+                } else {
+                    alert('Errore nel caricamento dati: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Errore di connessione: ' + error);
+            });
+    }
+    
+    function mostraModalConfronto(ddtId, data) {
+        const modal = document.getElementById('confrontoModal');
+        
+        // Popola PDF originale con zoom 200%
+        const pdfFrame = document.getElementById('pdfOriginale');
+        pdfFrame.src = `/ddt-in/${ddtId}/pdf?zoom=200`;
+        
+        // Popola dati DDT bozza
+        const ddtData = document.getElementById('ddtBozzaData');
+        const ddtInfo = data.data; // Accede ai dati corretti
+        ddtData.innerHTML = `
+            <div class="confronto-section">
+                <h4>📋 Dati DDT IN Bozza</h4>
+                <div class="ddt-details">
+                    <p><strong>Fornitore:</strong> ${ddtInfo.fornitore || 'N/A'}</p>
+                    <p><strong>Data DDT Origine:</strong> ${ddtInfo.data_ddt_origine || 'N/A'}</p>
+                    <p><strong>Riferimento:</strong> ${ddtInfo.riferimento || 'N/A'}</p>
+                    <p><strong>Destinazione:</strong> ${ddtInfo.destinazione || 'N/A'}</p>
+                    <p><strong>Commessa:</strong> ${ddtInfo.commessa || 'N/A'}</p>
+                </div>
+                
+                <h5>📦 Articoli (${ddtInfo.articoli.length})</h5>
+                <div class="articoli-list">
+                    ${ddtInfo.articoli.map(art => `
+                        <div class="articolo-item">
+                            <strong>${art.descrizione}</strong><br>
+                            <small>Codice: ${art.codice_fornitore || art.codice_interno || 'N/A'} | Qtà: ${art.quantita} | €${art.costo_unitario || 0}</small><br>
+                            <small><strong>Mastrino:</strong> ${art.mastrino_riga || 'Non assegnato'}</small>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        
+        // Imposta azioni sui pulsanti
+        document.getElementById('btnConfermaConfronto').onclick = () => confermaDDTDaConfronto(ddtId);
+        document.getElementById('btnModificaConfronto').onclick = () => {
+            chiudiModalConfronto();
+            window.location.href = `/ddt-in/${ddtId}/modifica`;
+        };
+        
+        // Mostra modal
+        modal.style.display = 'block';
+    }
+    
+    function confermaDDTDaConfronto(ddtId) {
+        if (confirm('Confermare questo DDT IN? L\'operazione non può essere annullata.')) {
+            const btn = document.getElementById('btnConfermaConfronto');
+            const originalText = btn.textContent;
+            btn.textContent = 'Confermando...';
+            btn.disabled = true;
+            
+            fetch(`/ddt-in/${ddtId}/conferma`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('DDT IN confermato con successo!');
+                    chiudiModalConfronto();
+                    location.reload();
+                } else {
+                    alert('Errore conferma: ' + data.error);
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert('Errore di connessione: ' + error);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            });
+        }
+    }
+    
+    function chiudiModalConfronto() {
+        document.getElementById('confrontoModal').style.display = 'none';
+    }
+    
+    let zoomModeActive = false;
+    
+    function toggleZoomMode() {
+        const btn = document.getElementById('btnToggleZoom');
+        const pdfFrame = document.getElementById('pdfOriginale');
+        
+        zoomModeActive = !zoomModeActive;
+        
+        if (zoomModeActive) {
+            btn.textContent = '🔍 Disattiva';
+            btn.classList.add('zoom-active');
+            pdfFrame.classList.add('pdf-zoom-mode');
+            pdfFrame.style.cursor = 'zoom-in';
+        } else {
+            btn.textContent = '🔍 Lente';
+            btn.classList.remove('zoom-active');
+            pdfFrame.classList.remove('pdf-zoom-mode');
+            pdfFrame.style.cursor = 'default';
+        }
+    }
+    
+    // Chiudi modal cliccando fuori
+    window.onclick = function(event) {
+        const modal = document.getElementById('confrontoModal');
+        if (event.target == modal) {
+            chiudiModalConfronto();
+        }
+    }
+    </script>
+    
+    <!-- Modal Confronto -->
+    <div id="confrontoModal" class="modal" style="display: none;">
+        <div class="modal-content-large">
+            <div class="modal-header">
+                <h3>🔍 Confronto DDT - PDF vs Bozza</h3>
+                <div class="modal-controls">
+                    <button id="btnToggleZoom" class="btn btn-sm btn-info" onclick="toggleZoomMode()" title="Attiva/Disattiva Lente d'Ingrandimento">
+                        🔍 Lente
+                    </button>
+                    <span class="close" onclick="chiudiModalConfronto()">&times;</span>
+                </div>
+            </div>
+            
+            <div class="modal-body-confronto">
+                <div class="confronto-left">
+                    <h4>📄 PDF Originale Fornitore</h4>
+                    <div class="pdf-container" style="position: relative;">
+                        <iframe id="pdfOriginale" width="100%" height="600px" style="border: 1px solid #ddd; cursor: zoom-in;"></iframe>
+                    </div>
+                </div>
+                
+                <div class="confronto-right">
+                    <div id="ddtBozzaData"></div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="btnConfermaConfronto" class="btn btn-success">
+                    ✅ Conferma DDT
+                </button>
+                <button id="btnModificaConfronto" class="btn btn-secondary">
+                    ✏️ Modifica
+                </button>
+                <button onclick="chiudiModalConfronto()" class="btn btn-danger">
+                    ❌ Chiudi
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal-content-large {
+        background-color: #fefefe;
+        margin: 2% auto;
+        padding: 0;
+        border: 1px solid #888;
+        width: 95%;
+        height: 90%;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8f9fa;
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        color: #333;
+    }
+    
+    .close {
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #aaa;
+    }
+    
+    .close:hover {
+        color: #000;
+    }
+    
+    .modal-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 0.875em;
+    }
+    
+    .zoom-active {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+    
+    .pdf-zoom-mode {
+        cursor: zoom-in !important;
+    }
+    
+    .modal-body-confronto {
+        flex: 1;
+        display: flex;
+        padding: 20px;
+        gap: 20px;
+        overflow: hidden;
+    }
+    
+    .confronto-left {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .confronto-right {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .confronto-section h4 {
+        color: #333;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+    }
+    
+    .ddt-details p {
+        margin: 8px 0;
+        padding: 5px;
+        background: white;
+        border-left: 3px solid #007bff;
+        padding-left: 10px;
+    }
+    
+    .articoli-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .articolo-item {
+        background: white;
+        margin: 8px 0;
+        padding: 10px;
+        border-radius: 5px;
+        border-left: 3px solid #28a745;
+    }
+    
+    .modal-footer {
+        padding: 20px;
+        border-top: 1px solid #ddd;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        background: #f8f9fa;
+        border-radius: 0 0 10px 10px;
+    }
+    
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        border: 1px solid #007bff;
+    }
+    
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+    
+    </style>
+</body>
+</html>

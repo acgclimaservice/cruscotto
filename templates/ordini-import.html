@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importa Ordine da PDF - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3.4">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+    <style>
+        .upload-area {
+            border: 3px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 60px 20px;
+            text-align: center;
+            background: #f8fafc;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .upload-icon { font-size: 48px; margin-bottom: 16px; }
+        .pdf-preview { 
+            border: 2px solid #e5e7eb; 
+            border-radius: 8px; 
+            margin: 20px 0;
+            background: white;
+            overflow: hidden;
+        }
+        .pdf-header {
+            background: #f3f4f6;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .pdf-content { padding: 20px; }
+        .pdf-viewer {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+        .parsing-status {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .parsing-status.loading {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fbbf24;
+        }
+        .parsing-status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .parsing-status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .ordine-form {
+            display: none;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        .ordine-form.show { display: block; }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .articoli-section {
+            margin-top: 30px;
+        }
+        .articolo-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 100px;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+        .ai-service-selector {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .ai-options {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .ai-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .ai-option input[type="radio"] {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ordini">🛒 Ordini</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📄 Importa Ordine da PDF</h1>
+            <p>Carica un'offerta fornitore in formato PDF per creare automaticamente un ordine</p>
+        </div>
+
+        <!-- Selezione Servizio AI -->
+        <div class="ai-service-selector">
+            <h3>🤖 Servizio di Parsing AI</h3>
+            <div class="ai-options">
+                <label class="ai-option">
+                    <input type="radio" name="ai_service" value="claude" checked>
+                    <span>Claude AI (Raccomandato)</span>
+                </label>
+                <label class="ai-option">
+                    <input type="radio" name="ai_service" value="gemini">
+                    <span>Gemini AI (Backup)</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Area Upload -->
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📄</div>
+            <h3>Trascina qui il PDF dell'offerta fornitore</h3>
+            <p>oppure <strong>clicca per selezionare</strong> il file dal computer</p>
+            <p style="font-size: 12px; color: #6b7280; margin-top: 15px;">
+                Formati supportati: PDF • Dimensione massima: 10MB
+            </p>
+            <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
+        </div>
+
+        <!-- Preview PDF -->
+        <div class="pdf-preview" id="pdfPreview" style="display: none;">
+            <div class="pdf-header">
+                <span id="pdfFileName">📄 Documento caricato</span>
+                <button class="btn btn-sm btn-secondary" onclick="resetUpload()">🔄 Cambia File</button>
+            </div>
+            <div class="pdf-content">
+                <iframe id="pdfViewer" class="pdf-viewer"></iframe>
+            </div>
+        </div>
+
+        <!-- Status Parsing -->
+        <div class="parsing-status" id="parsingStatus" style="display: none;">
+            <div class="spinner" id="loadingSpinner"></div>
+            <div id="statusMessage">Analizzando il PDF con AI...</div>
+            <div id="statusDetail" style="font-size: 12px; margin-top: 10px;"></div>
+        </div>
+
+        <!-- Form Ordine -->
+        <div class="ordine-form" id="ordineForm">
+            <h3>📋 Dati Ordine Estratti</h3>
+            <p>Verifica e modifica i dati estratti dal PDF prima di creare l'ordine</p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Fornitore *</label>
+                    <input type="text" id="fornitore" placeholder="Nome fornitore" required>
+                    <div id="fornitore-suggestions" class="autocomplete-suggestions"></div>
+                </div>
+                <div class="form-group">
+                    <label>Data Offerta</label>
+                    <input type="date" id="dataOfferta" max="{{ today }}">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Numero Offerta</label>
+                    <input type="text" id="numeroOfferta" placeholder="Numero offerta fornitore">
+                </div>
+                <div class="form-group">
+                    <label>Validità Offerta</label>
+                    <input type="date" id="validitaOfferta">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Oggetto Ordine *</label>
+                    <input type="text" id="oggetto" placeholder="Oggetto dell'ordine" required>
+                </div>
+                <div class="form-group">
+                    <label>Priorità</label>
+                    <select id="priorita">
+                        <option value="media">Media</option>
+                        <option value="alta">Alta</option>
+                        <option value="bassa">Bassa</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Commessa</label>
+                <input type="text" id="commessa" placeholder="Digita per cercare commessa..." autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label>Note</label>
+                <textarea id="note" placeholder="Note aggiuntive sull'ordine" rows="3"></textarea>
+            </div>
+
+            <!-- Articoli -->
+            <div class="articoli-section">
+                <h4>📦 Articoli da Ordinare</h4>
+                <div id="articoliContainer">
+                    <!-- Gli articoli verranno aggiunti dinamicamente -->
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="aggiungiArticolo()">+ Aggiungi Articolo</button>
+            </div>
+
+            <!-- Bottoni -->
+            <div class="btn-group">
+                <button class="btn btn-danger" onclick="resetUpload()">❌ Annulla</button>
+                <button class="btn btn-success" onclick="creaOrdine()" id="btnCreaOrdine">✅ Crea Ordine</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPdfData = null;
+        let articoliCounter = 0;
+
+        // Setup eventi
+        document.addEventListener('DOMContentLoaded', function() {
+            setupUploadEvents();
+            setupAutocompletamento();
+        });
+
+        function setupUploadEvents() {
+            const uploadArea = document.getElementById('uploadArea');
+            const pdfInput = document.getElementById('pdfInput');
+
+            uploadArea.addEventListener('click', () => pdfInput.click());
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleDrop);
+            pdfInput.addEventListener('change', handleFileSelect);
+        }
+
+        function setupAutocompletamento() {
+            const fornitoreInput = document.getElementById('fornitore');
+            if (fornitoreInput) {
+                AutocompleteHelpers.setupFornitoriAutocomplete(fornitoreInput);
+            }
+            
+            const commessaInput = document.getElementById('commessa');
+            if (commessaInput) {
+                AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Il file è troppo grande. Dimensione massima: 10MB');
+                return;
+            }
+
+            // Mostra preview PDF
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                displayPDF(file.name, e.target.result);
+                // Avvia parsing automaticamente
+                setTimeout(() => uploadPDF(file), 1000);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function displayPDF(fileName, dataUrl) {
+            document.getElementById('uploadArea').style.display = 'none';
+            document.getElementById('pdfFileName').textContent = `📄 ${fileName}`;
+            document.getElementById('pdfViewer').src = dataUrl;
+            document.getElementById('pdfPreview').style.display = 'block';
+            
+            console.log('Trying to display PDF:', dataUrl);
+        }
+
+        function uploadPDF(file) {
+            const aiService = document.querySelector('input[name="ai_service"]:checked').value;
+            
+            // Mostra stato parsing
+            document.getElementById('parsingStatus').style.display = 'block';
+            document.getElementById('parsingStatus').className = 'parsing-status loading';
+            document.getElementById('statusMessage').textContent = 'Analizzando l\'offerta fornitore con AI...';
+            document.getElementById('statusDetail').textContent = `Utilizzando ${aiService.toUpperCase()} AI per estrarre dati`;
+
+            console.log('Uploading PDF for parsing with:', aiService.toUpperCase());
+
+            const formData = new FormData();
+            formData.append('pdf', file);
+            formData.append('ai_service', aiService);
+
+            fetch('/ordini/parse-pdf', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Parse result:', data);
+                if (data.success) {
+                    currentPdfData = data.data;
+                    if (data.warning) {
+                        showParsingWarning(data);
+                    } else {
+                        showParsingSuccess(data);
+                    }
+                    populateForm(data.data);
+                } else {
+                    showParsingError(data.error || 'Errore durante il parsing');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showParsingError('Errore di connessione durante il parsing');
+            });
+        }
+
+        function showParsingSuccess(data) {
+            const status = document.getElementById('parsingStatus');
+            status.className = 'parsing-status success';
+            status.innerHTML = `
+                <div style="font-size: 24px; margin-bottom: 10px;">✅</div>
+                <div><strong>Parsing completato con successo!</strong></div>
+                <div style="font-size: 12px; margin-top: 10px;">
+                    Fornitore: ${data.data.fornitore || 'Non rilevato'} • 
+                    Articoli: ${data.data.articoli ? data.data.articoli.length : 0}
+                </div>
+            `;
+        }
+
+        function showParsingWarning(data) {
+            const status = document.getElementById('parsingStatus');
+            status.className = 'parsing-status';
+            status.style.background = '#fef3c7';
+            status.style.color = '#92400e';
+            status.style.border = '1px solid #fbbf24';
+            status.innerHTML = `
+                <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
+                <div><strong>Parsing AI non disponibile</strong></div>
+                <div style="font-size: 12px; margin-top: 10px;">
+                    ${data.warning}<br>
+                    Completa manualmente i dati del form qui sotto
+                </div>
+            `;
+        }
+
+        function showParsingError(error) {
+            const status = document.getElementById('parsingStatus');
+            status.className = 'parsing-status error';
+            status.innerHTML = `
+                <div style="font-size: 24px; margin-bottom: 10px;">❌</div>
+                <div><strong>Errore durante il parsing</strong></div>
+                <div style="font-size: 12px; margin-top: 10px;">${error}</div>
+                <button class="btn btn-sm btn-primary" onclick="uploadPDF(document.getElementById('pdfInput').files[0])" style="margin-top: 15px;">🔄 Riprova</button>
+            `;
+        }
+
+        function populateForm(data) {
+            // Popola campi fornitore e ordine
+            document.getElementById('fornitore').value = data.fornitore || '';
+            document.getElementById('dataOfferta').value = data.data_offerta || new Date().toISOString().substr(0, 10);
+            document.getElementById('numeroOfferta').value = data.numero_offerta || '';
+            document.getElementById('validitaOfferta').value = data.validita_offerta || '';
+            document.getElementById('oggetto').value = data.oggetto || 'Ordine da offerta fornitore';
+            document.getElementById('note').value = data.note || '';
+
+            // Popola articoli
+            const container = document.getElementById('articoliContainer');
+            container.innerHTML = '';
+            articoliCounter = 0;
+
+            if (data.articoli && data.articoli.length > 0) {
+                data.articoli.forEach(articolo => {
+                    aggiungiArticolo(articolo);
+                });
+            } else {
+                // Aggiungi almeno una riga vuota
+                aggiungiArticolo();
+            }
+
+            // Mostra form
+            document.getElementById('ordineForm').classList.add('show');
+        }
+
+        function aggiungiArticolo(datiArticolo = {}) {
+            const container = document.getElementById('articoliContainer');
+            const div = document.createElement('div');
+            div.className = 'articolo-row';
+            div.innerHTML = `
+                <div class="form-group">
+                    <label>Descrizione *</label>
+                    <input type="text" name="articoli[${articoliCounter}][descrizione]" 
+                           value="${datiArticolo.descrizione || ''}" placeholder="Descrizione articolo" required>
+                </div>
+                <div class="form-group">
+                    <label>Quantità *</label>
+                    <input type="number" name="articoli[${articoliCounter}][quantita]" 
+                           value="${datiArticolo.quantita || ''}" placeholder="1" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Prezzo Unit. *</label>
+                    <input type="number" name="articoli[${articoliCounter}][prezzo]" 
+                           value="${datiArticolo.prezzo_unitario || ''}" placeholder="0.00" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviArticolo(this)">🗑️</button>
+                </div>
+            `;
+            container.appendChild(div);
+            articoliCounter++;
+        }
+
+        function rimuoviArticolo(btn) {
+            btn.closest('.articolo-row').remove();
+        }
+
+        function creaOrdine() {
+            const btnCrea = document.getElementById('btnCreaOrdine');
+            const originalText = btnCrea.textContent;
+            btnCrea.textContent = 'Creando ordine...';
+            btnCrea.disabled = true;
+
+            // Validazione campi obbligatori
+            const fornitore = document.getElementById('fornitore').value.trim();
+            const oggetto = document.getElementById('oggetto').value.trim();
+            
+            if (!fornitore || !oggetto) {
+                alert('Fornitore e Oggetto sono campi obbligatori');
+                btnCrea.textContent = originalText;
+                btnCrea.disabled = false;
+                return;
+            }
+
+            // Raccogli dati articoli
+            const articoli = [];
+            const articoliRows = document.querySelectorAll('.articolo-row');
+            
+            for (let row of articoliRows) {
+                const descrizione = row.querySelector('input[name*="[descrizione]"]').value.trim();
+                const quantita = parseFloat(row.querySelector('input[name*="[quantita]"]').value) || 0;
+                const prezzo = parseFloat(row.querySelector('input[name*="[prezzo]"]').value) || 0;
+                
+                if (descrizione && quantita > 0 && prezzo >= 0) {
+                    articoli.push({
+                        descrizione: descrizione,
+                        quantita: quantita,
+                        prezzo_unitario: prezzo
+                    });
+                }
+            }
+
+            if (articoli.length === 0) {
+                alert('Inserisci almeno un articolo con descrizione, quantità e prezzo');
+                btnCrea.textContent = originalText;
+                btnCrea.disabled = false;
+                return;
+            }
+
+            // Prepara dati per invio
+            const ordineData = {
+                fornitore: fornitore,
+                data_offerta: document.getElementById('dataOfferta').value,
+                numero_offerta: document.getElementById('numeroOfferta').value,
+                validita_offerta: document.getElementById('validitaOfferta').value,
+                oggetto: oggetto,
+                priorita: document.getElementById('priorita').value,
+                commessa: document.getElementById('commessa').value,
+                note: document.getElementById('note').value,
+                articoli: articoli,
+                pdf_base64: currentPdfData ? currentPdfData.pdf_base64 : null
+            };
+
+            console.log('Creating order with data:', ordineData);
+
+            fetch('/ordini/crea-da-import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(ordineData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Ordine creato con successo!\n\nNumero: ${data.numero_ordine}\nID: ${data.ordine_id}`);
+                    window.location.href = `/ordini/${data.ordine_id}`;
+                } else {
+                    alert(`Errore durante la creazione: ${data.error}`);
+                    btnCrea.textContent = originalText;
+                    btnCrea.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error creating order:', error);
+                alert('Errore durante la creazione dell\'ordine');
+                btnCrea.textContent = originalText;
+                btnCrea.disabled = false;
+            });
+        }
+
+        function resetUpload() {
+            document.getElementById('uploadArea').style.display = 'block';
+            document.getElementById('pdfPreview').style.display = 'none';
+            document.getElementById('parsingStatus').style.display = 'none';
+            document.getElementById('ordineForm').classList.remove('show');
+            document.getElementById('pdfInput').value = '';
+            currentPdfData = null;
+            articoliCounter = 0;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(taskkill:*)",
+      "Bash(curl:*)",
+      "Bash(sqlite3:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(sed:*)",
+      "Bash(ipconfig)",
+      "Bash(dir:*)",
+      "Bash(clear)",
+      "Bash(cls)",
+      "Bash(tasklist:*)",
+      "Bash(timeout:*)",
+      "Bash(npm run serve:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

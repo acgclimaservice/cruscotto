@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report e Analisi - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Report e Analisi</h2>
+                <p>Dashboard e statistiche</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/reports" class="active">📊 Report</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📊 Report e Analisi</h1>
+            <p>Seleziona il tipo di report da visualizzare</p>
+        </div>
+
+        <div class="reports-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 30px;">
+            
+            <!-- Dashboard Esecutivo -->
+            <div class="card hover-card" onclick="window.location.href='/reports/dashboard'" style="cursor: pointer;">
+                <h3>🎯 Dashboard Esecutivo</h3>
+                <p>KPI principali e indicatori di performance del sistema</p>
+                <ul style="margin: 15px 0; color: #666;">
+                    <li>DDT IN/OUT e conversioni</li>
+                    <li>Valore inventario</li>
+                    <li>Preventivi e offerte</li>
+                    <li>Articoli critici</li>
+                </ul>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 15px;">Visualizza Dashboard</button>
+            </div>
+
+            <!-- Report Movimenti -->
+            <div class="card hover-card" onclick="window.location.href='/reports/movimenti'" style="cursor: pointer;">
+                <h3>📦 Report Movimenti</h3>
+                <p>Analisi movimenti di magazzino con filtri per periodo</p>
+                <ul style="margin: 15px 0; color: #666;">
+                    <li>Movimenti IN/OUT per periodo</li>
+                    <li>Valori e quantità</li>
+                    <li>Filtri per data</li>
+                    <li>Export Excel disponibile</li>
+                </ul>
+                <button class="btn btn-success" style="width: 100%; margin-top: 15px;">Visualizza Movimenti</button>
+            </div>
+
+            <!-- Report Fornitori -->
+            <div class="card hover-card" onclick="window.location.href='/reports/fornitori'" style="cursor: pointer;">
+                <h3>🏢 Report Fornitori</h3>
+                <p>Analisi performance e statistiche fornitori</p>
+                <ul style="margin: 15px 0; color: #666;">
+                    <li>Top fornitori per DDT</li>
+                    <li>Valori acquisti</li>
+                    <li>Performance delivery</li>
+                    <li>Ranking affidabilità</li>
+                </ul>
+                <button class="btn btn-info" style="width: 100%; margin-top: 15px;">Visualizza Fornitori</button>
+            </div>
+
+            <!-- Report Articoli -->
+            <div class="card hover-card" onclick="window.location.href='/reports/articoli'" style="cursor: pointer;">
+                <h3>📋 Report Articoli</h3>
+                <p>Analisi articoli più movimentati e giacenze</p>
+                <ul style="margin: 15px 0; color: #666;">
+                    <li>Top articoli movimentati</li>
+                    <li>Articoli sotto scorta</li>
+                    <li>Rotazioni magazzino</li>
+                    <li>Valore giacenze</li>
+                </ul>
+                <button class="btn btn-warning" style="width: 100%; margin-top: 15px;">Visualizza Articoli</button>
+            </div>
+
+            <!-- Report Mastrini -->
+            <div class="card hover-card" onclick="window.location.href='/reports/mastrini'" style="cursor: pointer;">
+                <h3>💼 Report Mastrini</h3>
+                <p>Analisi ricavi e spese per codici mastrini</p>
+                <ul style="margin: 15px 0; color: #666;">
+                    <li>Ricavi per mastrino</li>
+                    <li>Spese per mastrino</li>
+                    <li>Margini e performance</li>
+                    <li>Export Excel disponibile</li>
+                </ul>
+                <button class="btn btn-dark" style="width: 100%; margin-top: 15px;">Visualizza Mastrini</button>
+            </div>
+
+            <!-- Report Clienti -->
+            <div class="card hover-card" onclick="window.location.href='/reports/clienti'" style="cursor: pointer;">
+                <h3>👥 Report Clienti</h3>
+                <p>Analisi performance e fedeltà clienti</p>
+                <ul style="margin: 15px 0; color: #666;">
+                    <li>Top clienti per DDT OUT</li>
+                    <li>Segmentazione per valore</li>
+                    <li>Analisi fedeltà e status</li>
+                    <li>Clienti inattivi e a rischio</li>
+                </ul>
+                <button class="btn btn-purple" style="width: 100%; margin-top: 15px; background: #6f42c1; color: white;">Visualizza Clienti</button>
+            </div>
+
+            <!-- Report Commesse -->
+            <div class="card hover-card" onclick="window.location.href='/reports/commesse'" style="cursor: pointer;">
+                <h3>🏗️ Report Commesse</h3>
+                <p>Analisi commesse per tipologia e stato</p>
+                <ul style="margin: 15px 0; color: #666;">
+                    <li>Riepilogo per tipologia</li>
+                    <li>Commesse aperte/chiuse/sospese</li>
+                    <li>Top clienti per commesse</li>
+                    <li>Analisi tempi e performance</li>
+                </ul>
+                <button class="btn" style="width: 100%; margin-top: 15px; background: #fd7e14; color: white;">Visualizza Commesse</button>
+            </div>
+
+        </div>
+
+        <!-- Pulsanti di Export Rapidi -->
+        <div class="card" style="margin-top: 30px;">
+            <h3>⬇️ Export Rapidi</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                <button onclick="exportReport('movimenti')" class="btn btn-secondary">
+                    📊 Export Movimenti Excel
+                </button>
+                <button onclick="exportReport('dashboard')" class="btn btn-secondary">
+                    🎯 Export Dashboard Excel  
+                </button>
+                <button onclick="window.location.href='/reports/mastrini/export-excel'" class="btn btn-secondary">
+                    💼 Export Mastrini Excel
+                </button>
+                <button onclick="exportReport('clienti')" class="btn btn-secondary">
+                    👥 Export Clienti Excel
+                </button>
+                <button onclick="window.print()" class="btn btn-secondary">
+                    🖨️ Stampa Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistiche Rapide -->
+        <div class="card" style="margin-top: 20px;">
+            <h3>📈 Statistiche Rapide</h3>
+            <div class="info-grid" style="margin-top: 20px;">
+                <div class="info-item">
+                    <span class="info-label">Periodo di Analisi</span>
+                    <span class="info-value">Ultimi 30 giorni</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Ultimo Aggiornamento</span>
+                    <span class="info-value" id="ultimo-aggiornamento">Caricamento...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Report Disponibili</span>
+                    <span class="info-value">7 tipologie</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Export Formati</span>
+                    <span class="info-value">Excel, PDF, Web</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Export functions
+    function exportReport(type) {
+        window.location.href = `/reports/export/${type}`;
+    }
+
+    // Update timestamp
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        document.getElementById('ultimo-aggiornamento').textContent = now.toLocaleString('it-IT');
+    });
+
+    // Hover effects
+    document.querySelectorAll('.hover-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+            this.style.transition = 'all 0.3s ease';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+        });
+    });
+    </script>
+
+    <style>
+    .hover-card {
+        transition: all 0.3s ease;
+    }
+
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .reports-grid .card {
+        text-align: center;
+        padding: 25px;
+    }
+
+    .reports-grid .card h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.3em;
+    }
+
+    .reports-grid .card ul {
+        text-align: left;
+        list-style: none;
+        padding: 0;
+    }
+
+    .reports-grid .card ul li:before {
+        content: "✓ ";
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    @media print {
+        nav { display: none; }
+        .btn { display: none; }
+        .hover-card { 
+            transform: none !important;
+            box-shadow: none !important;
+        }
+    }
+    </style>
+</body>
+</html>

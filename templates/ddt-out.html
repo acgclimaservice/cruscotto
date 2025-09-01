@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDT OUT - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>DDT in Uscita</h2>
+                <p>Gestione documenti di trasporto in uscita</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📤 DDT in Uscita</h1>
+            <form method="GET" action="/ddt-out" class="filters">
+                <input type="date" name="data_da" value="{{ request.args.get('data_da', '') }}" placeholder="Data da">
+                <input type="date" name="data_a" value="{{ request.args.get('data_a', '') }}" placeholder="Data a">
+                <input type="text" name="cliente" value="{{ request.args.get('cliente', '') }}" placeholder="Cerca cliente...">
+                <input type="text" name="numero_ddt" value="{{ request.args.get('numero_ddt', '') }}" placeholder="N° DDT...">
+                <select name="stato">
+                    <option value="tutti" {{ 'selected' if request.args.get('stato') == 'tutti' or not request.args.get('stato') else '' }}>Tutti gli stati</option>
+                    <option value="bozza" {{ 'selected' if request.args.get('stato') == 'bozza' else '' }}>Bozza</option>
+                    <option value="confermato" {{ 'selected' if request.args.get('stato') == 'confermato' else '' }}>Confermato</option>
+                </select>
+                <button type="submit" class="btn">Filtra</button>
+                <button type="button" class="btn btn-secondary" onclick="location.href='/ddt-out'">Reset</button>
+                <button type="button" class="btn btn-success" onclick="location.href='/ddt-out/nuovo'">+ Nuovo DDT</button>
+            </form>
+        </div>
+
+        {% if buchi_numerazione %}
+        <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+            <h4 style="color: #856404; margin: 0 0 10px 0;">⚠️ Attenzione: Numerazione non sequenziale</h4>
+            <p style="margin: 0; color: #856404;">
+                <strong>Numeri mancanti:</strong> {{ buchi_numerazione | join(', ') }}
+            </p>
+        </div>
+        {% endif %}
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° DDT</th>
+                        <th>Data DDT</th>
+                        <th>Destinazione</th>
+                        <th>Magazzino</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ddt in ddts %}
+                    <tr class="{{ 'draft' if ddt.stato == 'bozza' else '' }}">
+                        <td><strong>{{ ddt.numero_ddt or '-' }}</strong></td>
+                        <td>{{ ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-' }}</td>
+                        <td>{{ ddt.destinazione }}</td>
+                        <td>{{ ddt.magazzino_partenza }}</td>
+                        <td>
+                            <span class="status {{ 'confirmed' if ddt.stato == 'confermato' else 'draft' }}">
+                                {{ ddt.stato|capitalize }}
+                            </span>
+                        </td>
+                        <td class="actions">
+                            <button class="btn btn-small" onclick="location.href='/ddt-out/{{ ddt.id }}'">Visualizza</button>
+                            <button class="btn btn-small btn-secondary" onclick="stampaDDT('{{ ddt.id }}', 'OUT')" title="Stampa DDT">🖨️</button>
+                            <button class="btn btn-small btn-danger" onclick="eliminaDDTOut({{ ddt.id }}, '{{ ddt.numero_ddt or 'BOZZA' }}')">🗑️ Elimina</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+function stampaDDT(ddtId, tipo) {
+    // Apre finestra di stampa per DDT specifico
+    const url = `/stampa-ddt/${tipo.toLowerCase()}/${ddtId}`;
+    const win = window.open(url, '_blank', 'width=800,height=600');
+    
+    // Dopo caricamento, stampa automaticamente
+    win.onload = function() {
+        setTimeout(function() {
+            win.print();
+        }, 500);
+    };
+}
+
+function eliminaDDTOut(ddtId, numeroDDT) {
+    if (confirm(`Sei sicuro di voler eliminare il DDT OUT ${numeroDDT}?\n\nQuesta operazione:\n- Eliminerà il DDT e tutti i suoi articoli\n- Ripristinerà le giacenze nel catalogo\n- Rimuoverà i movimenti di magazzino\n\nL'operazione NON PUÒ essere annullata!`)) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Eliminando...";
+        btn.disabled = true;
+        
+        fetch(`/ddt-out/${ddtId}/elimina`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`DDT OUT eliminato con successo!\n\nArticoli rimossi: ${data.articoli_rimossi}\n\n${data.message}`);
+                location.reload();
+            } else {
+                alert(`Errore durante l'eliminazione: ${data.error}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`Errore durante l'eliminazione: ${error}`);
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+    }
+}
+</script>
+</body>
+</html>

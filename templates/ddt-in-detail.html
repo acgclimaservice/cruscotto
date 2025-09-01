@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Dettaglio DDT IN</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        @media print {
+            /* Rimuove intestazione e piè di pagina del browser */
+            @page {
+                margin: 0;
+            }
+            body {
+                margin: 0.5cm;
+            }
+            nav, .actions-bar {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in" class="active">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>DDT IN: {{ ddt.numero_ddt or 'BOZZA' }}</h1>
+            <div class="actions-bar">
+                {% if ddt.stato == 'bozza' %}
+                <button class="btn btn-success" onclick="confermaDDT({{ ddt.id }})">✅ Conferma DDT</button>
+                <button class="btn btn-warning" onclick="window.location.href='/ddt-in/{{ ddt.id }}/modifica'">✏️ Modifica DDT</button>
+                <button class="btn btn-danger" onclick="eliminaDDTIn({{ ddt.id }})">🗑️ Elimina DDT</button>
+                {% endif %}
+                {% if ddt.stato == 'confermato' %}
+                <button class="btn" onclick="window.location.href='/ddt-in/{{ ddt.id }}/genera-ddt-out'">
+                    📤 Genera DDT OUT
+                </button>
+                <button class="btn btn-info" onclick="window.location.href='/ddt-in/{{ ddt.id }}/crea-preventivo'">
+                    📋 Crea Preventivo
+                </button>
+                {% endif %}
+                <button class="btn btn-secondary" onclick="window.open('/stampa-ddt/in/{{ ddt.id }}', '_blank')">🖨️ Stampa DDT</button>
+                {% if ddt.pdf_allegato %}
+                <button class="btn btn-info" onclick="window.location.href='/ddt-in/{{ ddt.id }}/pdf-unificato'">📄 Scarica PDF Unificato</button>
+                <button class="btn btn-secondary" onclick="window.open('/ddt-in/{{ ddt.id }}/pdf-allegato', '_blank')">⬇️ Scarica PDF</button>
+                {% endif %}
+                <button class="btn btn-secondary" onclick="window.location.href='/ddt-in'">← Torna alla lista</button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Stato</span>
+                    <span class="status {{ 'confirmed' if ddt.stato == 'confermato' else 'draft' }}">
+                        {{ ddt.stato|upper }}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Fornitore</span>
+                    <span class="info-value">{{ ddt.fornitore }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Data DDT Origine</span>
+                    <span class="info-value">{{ ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Destinazione</span>
+                    <span class="info-value">{{ ddt.destinazione }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="articles-section">
+            <h3>Articoli</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Quantità</th>
+                        <th>Costo Unit.</th>
+                        <th>Totale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for articolo in articoli %}
+                    <tr>
+                        <td>{{ articolo.codice_interno or '-' }}</td>
+                        <td>{{ articolo.descrizione }}</td>
+                        <td>{{ articolo.quantita }}</td>
+                        <td>€ {{ "{:.2f}".format(articolo.costo_unitario or 0) }}</td>
+                        <td>€ {{ "{:.2f}".format((articolo.quantita * (articolo.costo_unitario or 0))) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function confermaDDT(id) {
+        if (confirm('Confermare questo DDT IN?')) {
+            fetch(`/ddt-in/${id}/conferma`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('DDT confermato: ' + data.numero);
+                    location.reload();
+                } else {
+                    // Gestione errori di validazione dettagliati
+                    if (data.errori && data.errori.length > 0) {
+                        let messaggioErrore = '❌ VALIDAZIONE FALLITA\n\nCorreggi i seguenti errori prima di confermare:\n\n';
+                        data.errori.forEach((errore, index) => {
+                            messaggioErrore += `${index + 1}. ${errore}\n`;
+                        });
+                        alert(messaggioErrore);
+                    } else {
+                        alert('Errore: ' + data.error);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Errore conferma:', error);
+                alert('Errore di connessione durante la conferma');
+            });
+        }
+    }
+
+    function eliminaDDTIn(id) {
+        if (confirm('⚠️ ATTENZIONE!\n\nEliminare definitivamente questo DDT IN?\n\nQuesta operazione:\n• Eliminerà il DDT e tutti i suoi articoli\n• Rimuoverà gli articoli dal catalogo (se non utilizzati altrove)\n• Eliminerà i movimenti di inventario associati\n\n⚠️ L\'operazione NON PUÒ essere annullata!')) {
+            fetch(`/ddt-in/${id}/elimina`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ ${data.message}\n\n📊 Dettagli operazione:\n• Articoli rimossi: ${data.articoli_rimossi}\n• Movimenti eliminati: ${data.movimenti_eliminati}`);
+                    window.location.href = '/ddt-in';
+                } else {
+                    alert('❌ Errore durante l\'eliminazione: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            });
+        }
+    }
+    </script>
+</body>
+</html>

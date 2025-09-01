@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuovo DDT IN - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+            </ul>
+        </nav>
+
+        <!-- Sezione scelta metodo creazione -->
+        <div class="ddt-header">
+            <h1>📥 Nuovo DDT in Entrata</h1>
+            <div class="filters">
+                <button type="button" class="btn btn-primary" onclick="mostraCreazioneManovale()">✍️ Creazione Manuale</button>
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/ddt-import'">📄 Da PDF Fornitore</button>
+                <button type="button" class="btn btn-secondary" onclick="history.back()">Annulla</button>
+            </div>
+        </div>
+
+        <!-- Sezione caricamento PDF -->
+        <div id="sezione-pdf" style="display: none;">
+            <div class="table-container">
+                <h3>📄 Carica PDF DDT Fornitore</h3>
+                <p>Carica il documento PDF ricevuto dal fornitore per estrarre automaticamente i dati del DDT.</p>
+                
+                <!-- Selezione AI per parsing -->
+                <div style="margin: 20px 0; padding: 15px; background: #e8f4f8; border-radius: 8px;">
+                    <h4>🤖 Motore AI per Parsing:</h4>
+                    <div style="display: flex; gap: 15px; align-items: center; margin-top: 10px;">
+                        <label>
+                            <input type="radio" name="ai-engine" value="dual" checked>
+                            <strong>Dual AI</strong> (Claude + Gemini) - Massima accuratezza
+                        </label>
+                        <label>
+                            <input type="radio" name="ai-engine" value="claude">
+                            <strong>Claude</strong> - Anthropic AI
+                        </label>
+                        <label>
+                            <input type="radio" name="ai-engine" value="gemini">
+                            <strong>Gemini</strong> - Google AI
+                        </label>
+                        <button type="button" class="btn btn-small" onclick="alert('Parsing AI temporaneamente non disponibile')">🔍 Verifica Status</button>
+                    </div>
+                    <div id="ai-status" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+                </div>
+
+                <!-- Opzione visualizzatore PDF -->
+                <div style="margin: 15px 0; padding: 10px; background: #f0f8ff; border-radius: 6px; border-left: 4px solid #007bff;">
+                    <label style="display: flex; align-items: center; font-weight: 500;">
+                        <input type="checkbox" id="enable-pdf-viewer" style="margin-right: 10px;" checked>
+                        🔍 Mostra PDF con evidenziazione dati estratti
+                    </label>
+                    <p style="margin: 5px 0 0 25px; font-size: 12px; color: #666;">
+                        Visualizza il documento originale con i campi estratti evidenziati in trasparenza
+                    </p>
+                </div>
+
+                <div style="margin: 20px 0; padding: 20px; border: 2px dashed #ccc; border-radius: 8px; text-align: center;">
+                    <input type="file" id="pdf-upload" accept=".pdf" style="display: none;" onchange="caricaPDF(this)">
+                    <button type="button" class="btn btn-primary" onclick="document.getElementById('pdf-upload').click()">
+                        📁 Seleziona PDF
+                    </button>
+                    <p style="margin-top: 10px; color: #666; font-size: 12px;">
+                        Formati supportati: PDF (max 10MB)
+                    </p>
+                </div>
+                
+                <div id="pdf-info" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                    <h4>📋 Dati Estratti dal PDF:</h4>
+                    <div id="dati-estratti">
+                        <!-- I dati estratti verranno mostrati qui -->
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button type="button" class="btn btn-success" onclick="confermaDatiPDF()">✓ Conferma e Crea DDT</button>
+                        <button type="button" class="btn btn-secondary" onclick="modificaDatiPDF()">✏️ Modifica Dati</button>
+                    </div>
+                </div>
+
+                <!-- Visualizzatore PDF con evidenziazioni -->
+                <div id="pdf-viewer-container" style="display: none; margin-top: 20px;">
+                    <div class="pdf-viewer-header">
+                        <h4>🔍 Documento PDF con Evidenziazioni</h4>
+                        <div class="pdf-controls">
+                            <div id="highlight-legend" class="highlight-legend">
+                                <!-- La leggenda sarà popolata dinamicamente -->
+                            </div>
+                            <button type="button" class="btn btn-small btn-secondary" onclick="togglePDFViewer()">
+                                Nascondi Visualizzatore
+                            </button>
+                        </div>
+                    </div>
+                    <div id="pdf-canvas-container" class="pdf-canvas-container">
+                        <canvas id="pdf-canvas"></canvas>
+                        <div id="pdf-highlights" class="pdf-highlights-overlay">
+                            <!-- Gli highlight verranno aggiunti dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form creazione manuale -->
+        <form method="POST" action="/ddt-in/nuovo" id="form-manuale">
+            <div class="ddt-header" id="header-manuale" style="display: none;">
+                <h1>✍️ Creazione Manuale DDT</h1>
+                <div class="filters">
+                    <button type="submit" class="btn btn-success">Salva Bozza</button>
+                    <button type="button" class="btn btn-secondary" onclick="history.back()">Annulla</button>
+                </div>
+            </div>
+
+            <div class="table-container" id="sezione-manuale" style="display: none;">
+                <h3>Informazioni DDT</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div>
+                        <label>Data DDT Origine *</label>
+                        <input type="date" name="data_ddt_origine" required style="width: 100%; margin-top: 5px;" max="{{ today }}">
+                    </div>
+                    <div>
+                        <label>Fornitore *</label>
+                        <input type="text" name="fornitore" placeholder="Nome fornitore" required style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div>
+                        <label>Riferimento</label>
+                        <input type="text" name="riferimento" placeholder="N° ordine, bolla, ecc." style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div>
+                        <label>Destinazione *</label>
+                        <input type="text" name="destinazione" placeholder="Magazzino destinazione" required style="width: 100%; margin-top: 5px;" value="{% if magazzino_predefinito %}{{ magazzino_predefinito.descrizione }}{% endif %}">
+                    </div>
+                    <div>
+                        <label>Commessa</label>
+                        <input type="text" name="commessa" placeholder="Codice commessa" style="width: 100%; margin-top: 5px;">
+                    </div>
+                </div>
+
+                <h3>Articoli</h3>
+                <div style="margin-bottom: 15px;">
+                    <button type="button" class="btn btn-secondary" onclick="aggiungiRiga()">+ Aggiungi Articolo</button>
+                    <button type="button" class="btn btn-info" onclick="copiaMastrino()">📋 Copia Mastrino su Tutte le Righe</button>
+                </div>
+                
+                <table id="tabella-articoli">
+                    <thead>
+                        <tr>
+                            <th>Codice Interno <small>(auto)</small></th>
+                            <th>Codice Fornitore*</th>
+                            <th>Descrizione</th>
+                            <th>Costo Unit.</th>
+                            <th>Quantità</th>
+                            <th>Unità Misura</th>
+                            <th>Mastrino</th>
+                            <th>Totale</th>
+                            <th>Note</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" name="articoli[0][codice]" class="autocomplete-articolo-codice" placeholder="Auto: 4 lett. + cod. forn." readonly style="background: #f5f5f5;"></td>
+                            <td><input type="text" name="articoli[0][codice_fornitore]" placeholder="Codice fornitore..." required></td>
+                            <td><input type="text" name="articoli[0][descrizione]" class="autocomplete-articolo-desc" placeholder="Descrizione..." required></td>
+                            <td><input type="number" step="0.01" name="articoli[0][costo]" onchange="calcolaTotale(this)"></td>
+                            <td><input type="number" step="0.01" name="articoli[0][quantita]" onchange="calcolaTotale(this); controllaDecimali(this)"></td>
+                            <td>
+                                <select name="articoli[0][unita_misura]" onchange="controllaDecimali(this.closest('tr').querySelector('[name*=\"quantita\"]'))">
+                                    <option value="PZ">PZ</option>
+                                    <option value="KG">KG</option>
+                                    <option value="MT">MT</option>
+                                    <option value="LT">LT</option>
+                                    <option value="MQ">MQ</option>
+                                    <option value="MC">MC</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" name="articoli[0][mastrino]" class="mastrino-input" placeholder="Inserisci mastrino..." required>
+                            </td>
+                            <td class="totale">€ 0.00</td>
+                            <td><input type="text" name="articoli[0][note]"></td>
+                            <td><button type="button" class="btn btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- Spazio aggiuntivo per migliorare la leggibilità -->
+                <div style="height: 60px;"></div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    let rigaCount = 1;
+    let datiPDFEstratti = null;
+    let loadingInterval = null;
+    
+    // Funzioni navigazione sezioni
+    function mostraCreazioneManovale() {
+        document.getElementById('sezione-pdf').style.display = 'none';
+        document.getElementById('sezione-manuale').style.display = 'block';
+        document.getElementById('header-manuale').style.display = 'block';
+    }
+    
+    function mostraCaricamentoPDF() {
+        document.getElementById('sezione-manuale').style.display = 'none';
+        document.getElementById('header-manuale').style.display = 'none';
+        document.getElementById('sezione-pdf').style.display = 'block';
+    }
+    
+    // Funzioni gestione PDF
+    function caricaPDF(input) {
+        const file = input.files[0];
+        if (!file) return;
+        
+        if (file.type !== 'application/pdf') {
+            alert('Seleziona un file PDF valido');
+            return;
+        }
+        
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File troppo grande. Massimo 10MB');
+            return;
+        }
+        
+        // Mostra loading con animazione
+        const info = document.getElementById('pdf-info');
+        info.style.display = 'block';
+        
+        const loadingHTML = `
+            <div class="parsing-loader">
+                <div class="loader-animation">
+                    <div class="spinner"></div>
+                    <div class="loader-steps">
+                        <div class="step active" id="step1">📄 Lettura PDF...</div>
+                        <div class="step" id="step2">🤖 Analisi contenuto...</div>
+                        <div class="step" id="step3">📊 Estrazione dati...</div>
+                        <div class="step" id="step4">✅ Finalizzazione...</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('dati-estratti').innerHTML = loadingHTML;
+        
+        // Avvia animazione loading
+        startLoadingAnimation();
+        
+        // Parsing con AI selezionata
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Aggiungi motore AI selezionato
+        const selectedAI = document.querySelector('input[name="ai-engine"]:checked').value;
+        formData.append('preferred_ai', selectedAI);
+        
+        // Scegli endpoint basato su opzione visualizzatore
+        const useHighlighting = document.getElementById('enable-pdf-viewer').checked;
+        const endpoint = useHighlighting ? '/api/parsing/parse-pdf-highlight' : '/api/parsing/parse-pdf';
+        
+        fetch(endpoint, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            stopLoadingAnimation();
+            if (data.success) {
+                datiPDFEstratti = data.data;
+                datiPDFEstratti.session_id = data.session_id;
+                datiPDFEstratti.confidence = data.confidence;
+                
+                // Salva dati highlighting se presenti
+                if (data.highlight_data && data.pdf_image) {
+                    datiPDFEstratti.highlight_data = data.highlight_data;
+                    datiPDFEstratti.pdf_image = data.pdf_image;
+                    datiPDFEstratti.fields_highlighted = data.fields_highlighted;
+                }
+                
+                mostraDatiEstratti();
+                
+                // Mostra visualizzatore PDF se disponibile
+                if (useHighlighting && data.highlight_data) {
+                    mostraPDFConHighlight(data.highlight_data, data.pdf_image);
+                }
+            } else {
+                alert('Errore parsing: ' + data.error);
+                // Fallback a simulazione
+                setTimeout(() => simulaEstrazionePDF(file.name), 1000);
+            }
+        })
+        .catch(error => {
+            stopLoadingAnimation();
+            console.error('Errore:', error);
+            alert('Errore di rete. Usando modalità demo...');
+            // Fallback a simulazione
+            setTimeout(() => simulaEstrazionePDF(file.name), 1000);
+        });
+    }
+    
+    function simulaEstrazionePDF(filename) {
+        // Simula dati estratti dal PDF
+        datiPDFEstratti = {
+            fornitore: 'Fornitore Estratto S.r.l.',
+            data_ddt_origine: '2024-01-20',
+            riferimento: 'DDT-001/2024',
+            destinazione: 'Magazzino Centrale',
+            articoli: [
+                { codice: 'ART001', descrizione: 'Monitor LED 27"', quantita: 2, costo_unitario: 150.00, unita_misura: 'PZ' },
+                { codice: 'ART002', descrizione: 'Tastiera Meccanica', quantita: 1, costo_unitario: 89.00, unita_misura: 'PZ' }
+            ],
+            totale_documento: 389.00,
+            note: 'Parsed con modalità demo',
+            confidence: 0.85,
+            source: 'simulation',
+            session_id: 'demo_' + Date.now()
+        };
+        
+        mostraDatiEstratti();
+    }
+    
+    function mostraDatiEstratti() {
+        const confidence = datiPDFEstratti.confidence || 0.8;
+        const confidenceColor = confidence > 0.9 ? 'green' : confidence > 0.7 ? 'orange' : 'red';
+        const source = datiPDFEstratti.source || 'unknown';
+        
+        let html = `
+            <div style="margin-bottom: 15px; padding: 10px; background: #f0f8ff; border-radius: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span><strong>🤖 Parsing con ${source === 'claude_ai' ? 'Claude AI' : 'Modalità Demo'}</strong></span>
+                    <span style="color: ${confidenceColor}; font-weight: bold;">
+                        Confidenza: ${(confidence * 100).toFixed(1)}%
+                    </span>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div><strong>Fornitore:</strong> ${datiPDFEstratti.fornitore}</div>
+                <div><strong>Data DDT:</strong> ${datiPDFEstratti.data_ddt_origine}</div>
+                <div><strong>Riferimento:</strong> ${datiPDFEstratti.riferimento || 'N/A'}</div>
+                <div><strong>Destinazione:</strong> ${datiPDFEstratti.destinazione || 'N/A'}</div>
+                <div><strong>N° DDT Origine:</strong> ${datiPDFEstratti.numero_ddt_origine || 'N/A'}</div>
+            </div>
+            
+            <h5>Articoli (${datiPDFEstratti.articoli.length}):</h5>
+            <table style="width: 100%; font-size: 12px;">
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Qt.à</th>
+                        <th>Costo</th>
+                        <th>U.M.</th>
+                        <th>Totale</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        let totaleDocumento = 0;
+        datiPDFEstratti.articoli.forEach(art => {
+            const totale = art.quantita * art.costo_unitario;
+            totaleDocumento += totale;
+            html += `
+                <tr>
+                    <td>${art.codice}</td>
+                    <td>${art.descrizione}</td>
+                    <td>${art.quantita}</td>
+                    <td>€${art.costo_unitario.toFixed(2)}</td>
+                    <td>${art.unita_misura || 'PZ'}</td>
+                    <td>€${totale.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+        
+        html += `</tbody>
+                <tfoot>
+                    <tr style="font-weight: bold; background: #f8f9fa;">
+                        <td colspan="5" style="text-align: right;">TOTALE:</td>
+                        <td>€${totaleDocumento.toFixed(2)}</td>
+                    </tr>
+                </tfoot>
+             </table>`;
+             
+        if (confidence < 0.8) {
+            html += `
+                <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+                    ⚠️ <strong>Confidenza bassa:</strong> Verifica attentamente i dati estratti prima di confermare.
+                </div>
+            `;
+        }
+        
+        document.getElementById('dati-estratti').innerHTML = html;
+    }
+    
+    function confermaDatiPDF() {
+        if (!datiPDFEstratti) return;
+        
+        // Crea DDT con i dati estratti
+        fetch('/ddt-in/nuovo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datiPDFEstratti)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('DDT creato con successo da PDF!');
+                window.location.href = '/ddt-in';
+            } else {
+                alert('Errore: ' + data.error);
+            }
+        });
+    }
+    
+    function modificaDatiPDF() {
+        if (!datiPDFEstratti) return;
+        
+        // Salva dati originali per training
+        window.originalPDFData = JSON.parse(JSON.stringify(datiPDFEstratti));
+        
+        // Popola form manuale con dati PDF
+        document.querySelector('[name="fornitore"]').value = datiPDFEstratti.fornitore;
+        document.querySelector('[name="data_ddt_origine"]').value = datiPDFEstratti.data_ddt_origine;
+        document.querySelector('[name="riferimento"]').value = datiPDFEstratti.riferimento || '';
+        document.querySelector('[name="destinazione"]').value = datiPDFEstratti.destinazione || '{% if magazzino_predefinito %}{{ magazzino_predefinito.descrizione }}{% endif %}';
+        
+        
+        // Popola articoli
+        const tbody = document.querySelector('#tabella-articoli tbody');
+        tbody.innerHTML = '';
+        
+        datiPDFEstratti.articoli.forEach((art, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" name="articoli[${index}][codice]" value="${art.codice}"></td>
+                <td><input type="text" name="articoli[${index}][descrizione]" value="${art.descrizione}" required></td>
+                <td><input type="number" step="0.01" name="articoli[${index}][costo]" value="${art.costo_unitario}" onchange="calcolaTotale(this)"></td>
+                <td><input type="number" step="0.01" name="articoli[${index}][quantita]" value="${art.quantita}" onchange="calcolaTotale(this); controllaDecimali(this)"></td>
+                <td>
+                    <select name="articoli[${index}][unita_misura]" onchange="controllaDecimali(this.closest('tr').querySelector('[name*=\\"quantita\\"]'))">
+                        <option value="PZ" ${(art.unita_misura === 'PZ' || !art.unita_misura) ? 'selected' : ''}>PZ</option>
+                        <option value="KG" ${art.unita_misura === 'KG' ? 'selected' : ''}>KG</option>
+                        <option value="MT" ${art.unita_misura === 'MT' ? 'selected' : ''}>MT</option>
+                        <option value="LT" ${art.unita_misura === 'LT' ? 'selected' : ''}>LT</option>
+                        <option value="MQ" ${art.unita_misura === 'MQ' ? 'selected' : ''}>MQ</option>
+                        <option value="MC" ${art.unita_misura === 'MC' ? 'selected' : ''}>MC</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="text" name="articoli[${index}][mastrino]" class="mastrino-input" placeholder="Inserisci mastrino..." required>
+                </td>
+                <td class="totale">€ ${(art.costo_unitario * art.quantita).toFixed(2)}</td>
+                <td><input type="text" name="articoli[${index}][note]"></td>
+                <td><button type="button" class="btn btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        rigaCount = datiPDFEstratti.articoli.length;
+        
+        // Aggiunge handler per tracciare modifiche
+        document.getElementById('form-manuale').onsubmit = function(e) {
+            if (window.originalPDFData) {
+                inviaCorrezioniTraining();
+            }
+        };
+        
+        mostraCreazioneManovale();
+    }
+    
+    function inviaCorrezioniTraining() {
+        if (!window.originalPDFData || !datiPDFEstratti.session_id) return;
+        
+        // Raccoglie dati corretti dal form
+        const formData = new FormData(document.getElementById('form-manuale'));
+        const correctedData = {
+            fornitore: formData.get('fornitore'),
+            data_ddt_origine: formData.get('data_ddt_origine'),
+            riferimento: formData.get('riferimento'),
+            destinazione: formData.get('destinazione'),
+            articoli: []
+        };
+        
+        // Raccoglie articoli corretti
+        let i = 0;
+        while (formData.get(`articoli[${i}][descrizione]`)) {
+            correctedData.articoli.push({
+                codice: formData.get(`articoli[${i}][codice]`),
+                descrizione: formData.get(`articoli[${i}][descrizione]`),
+                quantita: parseFloat(formData.get(`articoli[${i}][quantita]`)),
+                costo_unitario: parseFloat(formData.get(`articoli[${i}][costo]`)),
+                unita_misura: formData.get(`articoli[${i}][unita_misura]`) || 'PZ'
+            });
+            i++;
+        }
+        
+        // Invia correzioni per training
+        fetch('/api/parsing/correct-parsing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: datiPDFEstratti.session_id,
+                corrected_data: correctedData,
+                user_feedback: 'Dati corretti manualmente dall\'utente'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('✅ Correzioni salvate per training:', data.improvements_saved, 'miglioramenti');
+            }
+        })
+        .catch(error => console.error('Errore salvataggio correzioni:', error));
+    }
+    
+    // Funzioni gestione tabella articoli
+    // Lista mastrini per autocompletamento dinamico
+    let mastriniAcquisti = [
+        {% if mastrini %}
+            {% for mastrino in mastrini %}
+            { codice: "{{ mastrino.codice }}", descrizione: "{{ mastrino.descrizione }}" },
+            {% endfor %}
+        {% endif %}
+    ];
+
+    function aggiungiRiga() {
+        const tbody = document.querySelector('#tabella-articoli tbody');
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td><input type="text" name="articoli[${rigaCount}][codice]" class="autocomplete-articolo-codice" placeholder="Auto: 4 lett. + cod. forn." readonly style="background: #f5f5f5;"></td>
+            <td><input type="text" name="articoli[${rigaCount}][codice_fornitore]" placeholder="Codice fornitore..." required></td>
+            <td><input type="text" name="articoli[${rigaCount}][descrizione]" class="autocomplete-articolo-desc" placeholder="Descrizione..." required></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][costo]" onchange="calcolaTotale(this)"></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][quantita]" onchange="calcolaTotale(this); controllaDecimali(this)"></td>
+            <td>
+                <select name="articoli[${rigaCount}][unita_misura]" onchange="controllaDecimali(this.closest('tr').querySelector('[name*=\\"quantita\\"]'))">
+                    <option value="PZ">PZ</option>
+                    <option value="KG">KG</option>
+                    <option value="MT">MT</option>
+                    <option value="LT">LT</option>
+                    <option value="MQ">MQ</option>
+                    <option value="MC">MC</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" name="articoli[${rigaCount}][mastrino]" class="mastrino-input" placeholder="Inserisci mastrino..." required>
+            </td>
+            <td class="totale">€ 0.00</td>
+            <td><input type="text" name="articoli[${rigaCount}][note]"></td>
+            <td><button type="button" class="btn btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+        `;
+        tbody.appendChild(newRow);
+        
+        // Inizializza autocompletamento sui nuovi campi
+        initAutocompleteArticoli();
+        initializeMastriniForNewRow();
+        
+        rigaCount++;
+    }
+    
+    function rimuoviRiga(button) {
+        const row = button.closest('tr');
+        if (document.querySelectorAll('#tabella-articoli tbody tr').length > 1) {
+            row.remove();
+        }
+    }
+    
+    function calcolaTotale(input) {
+        const row = input.closest('tr');
+        const costo = parseFloat(row.querySelector('[name*="costo"]').value) || 0;
+        const quantita = parseFloat(row.querySelector('[name*="quantita"]').value) || 0;
+        const totale = costo * quantita;
+        row.querySelector('.totale').textContent = '€ ' + totale.toFixed(2);
+    }
+    
+    function controllaDecimali(inputQuantita) {
+        const row = inputQuantita.closest('tr');
+        const unitaMisura = row.querySelector('[name*="unita_misura"]')?.value || 'PZ';
+        
+        if (unitaMisura === 'PZ') {
+            // Per i pezzi, non accettare decimali
+            const valore = parseFloat(inputQuantita.value);
+            if (valore % 1 !== 0) {
+                inputQuantita.value = Math.round(valore);
+                inputQuantita.style.borderColor = '#ffc107';
+                setTimeout(() => {
+                    inputQuantita.style.borderColor = '';
+                }, 1500);
+            }
+            inputQuantita.step = "1";
+        } else {
+            // Per altre unità, consentire decimali
+            inputQuantita.step = "0.01";
+        }
+    }
+    
+    // Funzioni animazione loading
+    function startLoadingAnimation() {
+        let progress = 0;
+        let currentStep = 1;
+        
+        loadingInterval = setInterval(() => {
+            progress += 2;
+            
+            // Aggiorna barra progresso
+            const progressBar = document.getElementById('progressBar');
+            if (progressBar) {
+                progressBar.style.width = progress + '%';
+            }
+            
+            // Aggiorna step
+            if (progress > 25 && currentStep === 1) {
+                updateStep(2);
+                currentStep = 2;
+            } else if (progress > 50 && currentStep === 2) {
+                updateStep(3);
+                currentStep = 3;
+            } else if (progress > 75 && currentStep === 3) {
+                updateStep(4);
+                currentStep = 4;
+            }
+            
+            if (progress >= 100) {
+                clearInterval(loadingInterval);
+            }
+        }, 50);
+    }
+    
+    function updateStep(stepNumber) {
+        // Rimuovi active da tutti
+        document.querySelectorAll('.step').forEach(step => {
+            step.classList.remove('active');
+        });
+        
+        // Aggiungi active al current step
+        const currentStepEl = document.getElementById('step' + stepNumber);
+        if (currentStepEl) {
+            currentStepEl.classList.add('active');
+        }
+    }
+    
+    function stopLoadingAnimation() {
+        if (loadingInterval) {
+            clearInterval(loadingInterval);
+            loadingInterval = null;
+        }
+    }
+    
+    function verificaStatusAI() {
+        fetch('/api/parsing/ai-status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const status = data.status;
+                    const statusDiv = document.getElementById('ai-status');
+                    
+                    let statusText = `Status AI: `;
+                    if (status.claude_available) {
+                        statusText += `✅ Claude attivo `;
+                    } else {
+                        statusText += `❌ Claude non disponibile `;
+                    }
+                    
+                    if (status.gemini_available) {
+                        statusText += `✅ Gemini attivo `;
+                    } else {
+                        statusText += `❌ Gemini non disponibile `;
+                    }
+                    
+                    statusText += `| Servizi AI: ${status.total_ai_services}/2`;
+                    statusDiv.innerHTML = statusText;
+                    statusDiv.style.color = status.total_ai_services > 0 ? '#28a745' : '#dc3545';
+                } else {
+                    document.getElementById('ai-status').innerHTML = '❌ Errore verifica status';
+                }
+            })
+            .catch(error => {
+                document.getElementById('ai-status').innerHTML = '❌ Errore connessione API';
+            });
+    }
+    
+    // Verifica status AI all'avvio - DISABLED
+    window.addEventListener('load', function() {
+        // verificaStatusAI(); // Disabled due to API error
+        document.getElementById('ai-status').innerHTML = '⚠️ Parsing AI temporaneamente non disponibile';
+    });
+
+    // Funzioni per visualizzatore PDF con highlighting
+    function mostraPDFConHighlight(highlightData, pdfImageBase64) {
+        const container = document.getElementById('pdf-viewer-container');
+        const canvas = document.getElementById('pdf-canvas');
+        const highlightsOverlay = document.getElementById('pdf-highlights');
+        const legend = document.getElementById('highlight-legend');
+        
+        if (!pdfImageBase64 || !highlightData) {
+            console.log('Dati PDF o highlighting non disponibili');
+            return;
+        }
+        
+        // Mostra il container
+        container.style.display = 'block';
+        
+        // Carica immagine PDF sul canvas
+        const img = new Image();
+        img.onload = function() {
+            const ctx = canvas.getContext('2d');
+            
+            // Imposta dimensioni canvas
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Disegna l'immagine PDF
+            ctx.drawImage(img, 0, 0);
+            
+            // Aggiungi overlays highlight
+            aggiungiHighlights(highlightData, canvas.width, canvas.height);
+        };
+        
+        img.src = pdfImageBase64;
+        
+        // Crea leggenda colori
+        creaLegendaHighlight(highlightData, legend);
+    }
+    
+    function aggiungiHighlights(highlightData, canvasWidth, canvasHeight) {
+        const overlayContainer = document.getElementById('pdf-highlights');
+        overlayContainer.innerHTML = ''; // Pulisci highlights precedenti
+        
+        if (!highlightData.highlights) return;
+        
+        highlightData.highlights.forEach((highlight, index) => {
+            highlight.coordinates.forEach((coord, coordIndex) => {
+                const highlightDiv = document.createElement('div');
+                highlightDiv.className = 'pdf-highlight';
+                
+                // Calcola posizione relativa (coordinate PDF a percentuali)
+                const leftPercent = (coord.x0 / coord.width) * 100;
+                const topPercent = (coord.y0 / coord.height) * 100;
+                const widthPercent = ((coord.x1 - coord.x0) / coord.width) * 100;
+                const heightPercent = ((coord.y1 - coord.y0) / coord.height) * 100;
+                
+                // Applica stile
+                highlightDiv.style.cssText = `
+                    position: absolute;
+                    left: ${leftPercent}%;
+                    top: ${topPercent}%;
+                    width: ${widthPercent}%;
+                    height: ${heightPercent}%;
+                    background-color: ${highlight.color};
+                    opacity: 0.3;
+                    border: 1px solid ${highlight.color};
+                    border-radius: 2px;
+                    pointer-events: none;
+                    transition: opacity 0.2s;
+                `;
+                
+                // Tooltip con info campo
+                highlightDiv.title = `${highlight.field_label}: ${highlight.field_value} (Confidence: ${(highlight.confidence * 100).toFixed(0)}%)`;
+                
+                overlayContainer.appendChild(highlightDiv);
+            });
+        });
+    }
+    
+    function creaLegendaHighlight(highlightData, legendContainer) {
+        if (!highlightData.highlights) return;
+        
+        let legendHTML = '<strong>Campi evidenziati:</strong> ';
+        
+        // Raggruppa per field_name per evitare duplicati
+        const uniqueFields = {};
+        highlightData.highlights.forEach(h => {
+            if (!uniqueFields[h.field_name]) {
+                uniqueFields[h.field_name] = h;
+            }
+        });
+        
+        Object.values(uniqueFields).forEach(highlight => {
+            legendHTML += `
+                <span class="legend-item" style="margin-right: 15px;">
+                    <span class="legend-color" style="
+                        display: inline-block; 
+                        width: 12px; 
+                        height: 12px; 
+                        background-color: ${highlight.color}; 
+                        margin-right: 5px;
+                        border-radius: 2px;
+                        vertical-align: middle;
+                    "></span>
+                    <span style="font-size: 12px;">${highlight.field_label}</span>
+                </span>
+            `;
+        });
+        
+        legendHTML += `<br><small style="color: #666;">Trovati ${highlightData.fields_found}/${highlightData.total_fields} campi</small>`;
+        legendContainer.innerHTML = legendHTML;
+    }
+    
+    function togglePDFViewer() {
+        const container = document.getElementById('pdf-viewer-container');
+        const isVisible = container.style.display !== 'none';
+        
+        if (isVisible) {
+            container.style.display = 'none';
+        } else {
+            container.style.display = 'block';
+        }
+    }
+    
+    // Funzione per evidenziare/de-evidenziare un campo specifico
+    function highlightField(fieldName, highlight = true) {
+        const highlights = document.querySelectorAll('.pdf-highlight');
+        highlights.forEach(h => {
+            if (h.title.includes(fieldName)) {
+                h.style.opacity = highlight ? '0.6' : '0.3';
+                h.style.transform = highlight ? 'scale(1.02)' : 'scale(1)';
+            }
+        });
+    }
+    </script>
+    
+    <style>
+    .parsing-loader {
+        text-align: center;
+        padding: 30px;
+    }
+    
+    .loader-animation {
+        margin-bottom: 20px;
+    }
+    
+    .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .loader-steps {
+        margin: 20px 0;
+    }
+    
+    .step {
+        padding: 8px 0;
+        color: #999;
+        transition: color 0.3s ease;
+    }
+    
+    .step.active {
+        color: #3498db;
+        font-weight: bold;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 4px;
+        background: #eee;
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 20px;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3498db, #2ecc71);
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+
+    /* Stili per visualizzatore PDF */
+    .pdf-viewer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px 8px 0 0;
+        border-bottom: 2px solid #007bff;
+    }
+
+    .pdf-viewer-header h4 {
+        color: #007bff;
+        margin: 0;
+    }
+
+    .pdf-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+    }
+
+    .highlight-legend {
+        font-size: 12px;
+        text-align: right;
+        max-width: 400px;
+    }
+
+    .pdf-canvas-container {
+        position: relative;
+        display: inline-block;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        overflow: auto;
+        max-height: 600px;
+        max-width: 100%;
+    }
+
+    #pdf-canvas {
+        display: block;
+        max-width: 100%;
+        height: auto;
+    }
+
+    .pdf-highlights-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    .pdf-highlight {
+        transition: all 0.2s ease;
+        cursor: help;
+    }
+
+    .pdf-highlight:hover {
+        opacity: 0.6 !important;
+        transform: scale(1.02);
+        z-index: 10;
+    }
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 15px;
+        margin-bottom: 5px;
+    }
+
+    .legend-color {
+        flex-shrink: 0;
+    }
+
+    /* Responsive per dispositivi mobili */
+    @media (max-width: 768px) {
+        .pdf-viewer-header {
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .pdf-controls {
+            align-items: stretch;
+        }
+        
+        .highlight-legend {
+            text-align: left;
+            max-width: none;
+        }
+        
+        .pdf-canvas-container {
+            max-height: 400px;
+        }
+    }
+    </style>
+</body>
+</html>
+
+<script>
+// Autocompletamento fornitori
+function setupFornitoreAutocomplete() {
+    const fornitoreInput = document.querySelector('input[name="fornitore"], select[name="fornitore"]');
+    if (!fornitoreInput || fornitoreInput.tagName === 'SELECT') return;
+    
+    let timeout;
+    
+    fornitoreInput.addEventListener('input', function() {
+        clearTimeout(timeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            hideFornitoriSuggestions();
+            return;
+        }
+        
+        timeout = setTimeout(() => {
+            fetch(`/api/fornitori/search?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(fornitori => showFornitoriSuggestions(fornitori))
+                .catch(console.error);
+        }, 300);
+    });
+}
+
+function showFornitoriSuggestions(fornitori) {
+    let suggestionsDiv = document.getElementById('fornitori-suggestions');
+    
+    if (!suggestionsDiv) {
+        suggestionsDiv = document.createElement('div');
+        suggestionsDiv.id = 'fornitori-suggestions';
+        suggestionsDiv.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        `;
+        
+        const fornitoreInput = document.querySelector('input[name="fornitore"]');
+        fornitoreInput.parentElement.style.position = 'relative';
+        fornitoreInput.parentElement.appendChild(suggestionsDiv);
+    }
+    
+    suggestionsDiv.innerHTML = '';
+    
+    fornitori.forEach(fornitore => {
+        const div = document.createElement('div');
+        div.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;';
+        div.innerHTML = `<strong>${fornitore.ragione_sociale}</strong><br><small>P.IVA: ${fornitore.partita_iva} - ${fornitore.citta}</small>`;
+        
+        div.addEventListener('click', () => {
+            document.querySelector('input[name="fornitore"]').value = fornitore.ragione_sociale;
+            hideFornitoriSuggestions();
+        });
+        
+        div.addEventListener('mouseenter', () => div.style.backgroundColor = '#f0f0f0');
+        div.addEventListener('mouseleave', () => div.style.backgroundColor = 'white');
+        
+        suggestionsDiv.appendChild(div);
+    });
+    
+    suggestionsDiv.style.display = fornitori.length > 0 ? 'block' : 'none';
+}
+
+function hideFornitoriSuggestions() {
+    const suggestionsDiv = document.getElementById('fornitori-suggestions');
+    if (suggestionsDiv) {
+        suggestionsDiv.style.display = 'none';
+    }
+}
+
+// Inizializza al caricamento
+document.addEventListener('DOMContentLoaded', function() {
+    // Nuovo sistema autocomplete unificato
+    const fornitoreInput = document.querySelector('input[name="fornitore"]');
+    if (fornitoreInput) {
+        window.AutocompleteHelpers.setupFornitoriAutocomplete(fornitoreInput);
+    }
+    
+    
+    const commessaInput = document.querySelector('input[name="commessa"]');
+    if (commessaInput) {
+        window.AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
+    }
+    
+    // Mantieni sistema esistente per magazzini
+    setupMagazziniAutocomplete();
+});
+
+// Nascondi suggerimenti cliccando altrove
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#fornitori-suggestions') && !e.target.matches('input[name="fornitore"]')) {
+        hideFornitoriSuggestions();
+    }
+    if (!e.target.closest('#magazzini-suggestions') && !e.target.matches('input[name="destinazione"]')) {
+        hideMagazziniSuggestions();
+    }
+});
+
+
+// ===== AUTOCOMPLETAMENTO MAGAZZINI =====
+function setupMagazziniAutocomplete() {
+    const magazzinoInput = document.querySelector('input[name="destinazione"]');
+    if (!magazzinoInput) return;
+
+    magazzinoInput.addEventListener('input', function() {
+        cercaMagazzini(this.value);
+    });
+}
+
+function cercaMagazzini(query) {
+    if (query.length < 2) {
+        hideMagazziniSuggestions();
+        return;
+    }
+
+    fetch(`/api/magazzini/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(magazzini => showMagazziniSuggestions(magazzini))
+        .catch(error => console.error('Errore ricerca magazzini:', error));
+}
+
+function showMagazziniSuggestions(magazzini) {
+    hideMagazziniSuggestions();
+
+    if (magazzini.length === 0) return;
+
+    const magazzinoInput = document.querySelector('input[name="destinazione"]');
+    if (!magazzinoInput) return;
+
+    const suggestionsDiv = document.createElement('div');
+    suggestionsDiv.id = 'magazzini-suggestions';
+    suggestionsDiv.style.cssText = `
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-top: none;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    `;
+
+    if (!magazzinoInput.parentElement.style.position) {
+        magazzinoInput.parentElement.style.position = 'relative';
+    }
+    magazzinoInput.parentElement.appendChild(suggestionsDiv);
+
+    magazzini.forEach(magazzino => {
+        const div = document.createElement('div');
+        div.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;';
+        div.innerHTML = `<strong>${magazzino.codice}</strong> - ${magazzino.descrizione}<br><small>Responsabile: ${magazzino.responsabile || 'N/A'}</small>`;
+        
+        div.addEventListener('click', function() {
+            magazzinoInput.value = magazzino.descrizione;
+            hideMagazziniSuggestions();
+        });
+
+        div.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f5f5f5';
+        });
+
+        div.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = 'white';
+        });
+
+        suggestionsDiv.appendChild(div);
+    });
+}
+
+function hideMagazziniSuggestions() {
+    const suggestions = document.getElementById('magazzini-suggestions');
+    if (suggestions) {
+        suggestions.remove();
+    }
+}
+
+// Funzioni autocompletamento articoli
+function initAutocompleteArticoli() {
+    // Autocompletamento per campi codice articolo
+    document.querySelectorAll('.autocomplete-articolo-codice').forEach(input => {
+        if (!input.hasAttribute('data-autocomplete-initialized')) {
+            input.setAttribute('data-autocomplete-initialized', 'true');
+            setupAutocompleteArticolo(input, 'codice');
+        }
+    });
+    
+    // Autocompletamento per campi descrizione articolo
+    document.querySelectorAll('.autocomplete-articolo-desc').forEach(input => {
+        if (!input.hasAttribute('data-autocomplete-initialized')) {
+            input.setAttribute('data-autocomplete-initialized', 'true');
+            setupAutocompleteArticolo(input, 'descrizione');
+        }
+    });
+    
+    // Autocompletamento per mastrini
+    document.querySelectorAll('.mastrino-input').forEach(input => {
+        if (!input.hasAttribute('data-mastrino-initialized')) {
+            input.setAttribute('data-mastrino-initialized', 'true');
+            if (window.AutocompleteHelpers && window.AutocompleteHelpers.setupMastriniAutocomplete) {
+                window.AutocompleteHelpers.setupMastriniAutocomplete(input, 'ACQUISTO');
+            }
+        }
+    });
+}
+
+function setupAutocompleteArticolo(input, tipo) {
+    let timeout = null;
+    let currentSuggestions = null;
+    
+    input.addEventListener('input', function() {
+        clearTimeout(timeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            rimuoviSuggerimentiArticoli();
+            return;
+        }
+        
+        timeout = setTimeout(() => {
+            cercaArticoli(query, input, tipo);
+        }, 300);
+    });
+    
+    input.addEventListener('blur', function() {
+        setTimeout(() => rimuoviSuggerimentiArticoli(), 200);
+    });
+}
+
+function cercaArticoli(query, input, tipo) {
+    fetch(`/api/articoli/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            mostraSuggerimentiArticoli(data, input, tipo);
+        })
+        .catch(error => {
+            console.error('Errore ricerca articoli:', error);
+        });
+}
+
+function mostraSuggerimentiArticoli(articoli, input, tipo) {
+    rimuoviSuggerimentiArticoli();
+    
+    if (articoli.length === 0) return;
+    
+    const suggestions = document.createElement('div');
+    suggestions.id = 'articoli-suggestions';
+    suggestions.style.cssText = `
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        width: ${input.offsetWidth}px;
+    `;
+    
+    articoli.forEach(articolo => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        `;
+        item.innerHTML = `
+            <strong>${articolo.codice || 'N/A'}</strong><br>
+            <small style="color: #666;">${articolo.descrizione || 'N/A'}</small><br>
+            <small style="color: #28a745;">Cod. Fornitore: ${articolo.codice_fornitore || 'N/A'}</small><br>
+            <small style="color: #007bff;">Costo: €${(articolo.costo || 0).toFixed(2)} | UM: ${articolo.unita || 'PZ'}</small>
+        `;
+        
+        item.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8f9fa';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+        
+        item.addEventListener('click', function() {
+            const row = input.closest('tr');
+            if (row) {
+                // Compila tutti i campi della riga
+                const codiceInput = row.querySelector('[name*="[codice]"]');
+                const codiceFornitoreInput = row.querySelector('[name*="[codice_fornitore]"]');
+                const descrizioneInput = row.querySelector('[name*="[descrizione]"]');
+                const costoInput = row.querySelector('[name*="[costo]"]');
+                const unitaMisuraSelect = row.querySelector('[name*="[unita_misura]"]');
+                
+                if (codiceInput) codiceInput.value = articolo.codice || '';
+                if (codiceFornitoreInput) codiceFornitoreInput.value = articolo.codice_fornitore || '';
+                if (descrizioneInput) descrizioneInput.value = articolo.descrizione || '';
+                if (costoInput) costoInput.value = articolo.costo || '';
+                if (unitaMisuraSelect && articolo.unita) {
+                    // Seleziona l'unità di misura se esiste nell'elenco
+                    for (let option of unitaMisuraSelect.options) {
+                        if (option.value === articolo.unita) {
+                            option.selected = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // Calcola il totale se quantità è già inserita
+                const quantitaInput = row.querySelector('[name*="[quantita]"]');
+                if (quantitaInput && quantitaInput.value && costoInput) {
+                    calcolaTotale(costoInput);
+                }
+            }
+            
+            rimuoviSuggerimentiArticoli();
+        });
+        
+        suggestions.appendChild(item);
+    });
+    
+    // Posiziona i suggerimenti
+    const rect = input.getBoundingClientRect();
+    suggestions.style.top = (rect.bottom + window.scrollY) + 'px';
+    suggestions.style.left = rect.left + 'px';
+    
+    document.body.appendChild(suggestions);
+}
+
+function rimuoviSuggerimentiArticoli() {
+    const suggestions = document.getElementById('articoli-suggestions');
+    if (suggestions) {
+        suggestions.remove();
+    }
+}
+
+// Funzione per copiare il mastrino su tutte le righe
+function copiaMastrino() {
+    const firstMastrino = document.querySelector('input[name*="[mastrino]"]');
+    if (!firstMastrino || !firstMastrino.value) {
+        alert('Inserisci prima un mastrino nella prima riga');
+        return;
+    }
+    
+    const masterinoValue = firstMastrino.value;
+    const allMastrini = document.querySelectorAll('input[name*="[mastrino]"]');
+    
+    allMastrini.forEach(input => {
+        input.value = masterinoValue;
+    });
+    
+    alert(`Mastrino "${masterinoValue}" copiato su tutte le righe`);
+}
+
+// Autocompletamento mastrini per articoli
+function setupMastriniAutocompleteForArticoli() {
+    const mastriniInputs = document.querySelectorAll('.mastrino-input');
+    
+    mastriniInputs.forEach((input, idx) => {
+        setupSingleMastrinoAutocomplete(input, `mastrini-suggestions-${idx}`);
+    });
+}
+
+function setupSingleMastrinoAutocomplete(input, suggestionId) {
+    if (!input) return;
+    
+    let timeout;
+    
+    input.addEventListener('input', function() {
+        clearTimeout(timeout);
+        const query = this.value.trim();
+        
+        if (query.length < 1) {
+            hideMastriniSuggestions(suggestionId);
+            return;
+        }
+        
+        timeout = setTimeout(() => {
+            fetch(`/api/mastrini/search?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(mastrini => showMastriniSuggestions(mastrini, input, suggestionId))
+                .catch(console.error);
+        }, 300);
+    });
+}
+
+function showMastriniSuggestions(mastrini, inputElement, suggestionId) {
+    let suggestionsDiv = document.getElementById(suggestionId);
+    
+    if (!suggestionsDiv) {
+        suggestionsDiv = document.createElement('div');
+        suggestionsDiv.id = suggestionId;
+        suggestionsDiv.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        `;
+        
+        inputElement.parentElement.style.position = 'relative';
+        inputElement.parentElement.appendChild(suggestionsDiv);
+    }
+    
+    suggestionsDiv.innerHTML = '';
+    
+    mastrini.forEach(mastrino => {
+        const div = document.createElement('div');
+        div.style.cssText = 'padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;';
+        div.innerHTML = `<strong>${mastrino.codice}</strong> - ${mastrino.descrizione}`;
+        
+        div.addEventListener('click', () => {
+            inputElement.value = mastrino.codice;
+            hideMastriniSuggestions(suggestionId);
+        });
+        
+        div.addEventListener('mouseenter', () => div.style.backgroundColor = '#f0f0f0');
+        div.addEventListener('mouseleave', () => div.style.backgroundColor = 'white');
+        
+        suggestionsDiv.appendChild(div);
+    });
+    
+    suggestionsDiv.style.display = mastrini.length > 0 ? 'block' : 'none';
+}
+
+function hideMastriniSuggestions(suggestionId) {
+    const suggestionsDiv = document.getElementById(suggestionId);
+    if (suggestionsDiv) {
+        suggestionsDiv.style.display = 'none';
+    }
+}
+
+// Funzione per inizializzare autocomplete anche per righe aggiunte dinamicamente
+function initializeMastriniForNewRow() {
+    const inputs = document.querySelectorAll('.mastrino-input');
+    const lastInput = inputs[inputs.length - 1];
+    if (lastInput) {
+        setupSingleMastrinoAutocomplete(lastInput, `mastrini-suggestions-${inputs.length - 1}`);
+    }
+}
+
+// Inizializza l'autocompletamento quando la pagina è caricata
+document.addEventListener('DOMContentLoaded', function() {
+    initAutocompleteArticoli();
+    setupMastriniAutocompleteForArticoli();
+});
+
+// Nascondi suggerimenti cliccando altrove
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('[id^="mastrini-suggestions-"]') && !e.target.matches('.mastrino-input')) {
+        // Nascondi tutti i suggerimenti mastrini
+        document.querySelectorAll('[id^="mastrini-suggestions-"]').forEach(div => {
+            div.style.display = 'none';
+        });
+    }
+});
+</script>
+

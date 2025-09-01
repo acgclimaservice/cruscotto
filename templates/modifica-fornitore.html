@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifica Fornitore - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/clienti">👥 Clienti</a></li>
+                <li><a href="/fornitori" class="active">🏭 Fornitori</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>✏️ Modifica Fornitore</h1>
+        </div>
+
+        <form method="POST">
+            <div class="info-section">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Ragione Sociale *</span>
+                        <input type="text" name="ragione_sociale" value="{{ fornitore.ragione_sociale }}" required class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Partita IVA</span>
+                        <input type="text" name="partita_iva" value="{{ fornitore.partita_iva or '' }}" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Codice Fiscale</span>
+                        <input type="text" name="codice_fiscale" value="{{ fornitore.codice_fiscale or '' }}" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Indirizzo</span>
+                        <input type="text" name="indirizzo" value="{{ fornitore.indirizzo or '' }}" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Città</span>
+                        <input type="text" name="citta" value="{{ fornitore.citta or '' }}" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Provincia</span>
+                        <input type="text" name="provincia" value="{{ fornitore.provincia or '' }}" maxlength="2" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">CAP</span>
+                        <input type="text" name="cap" value="{{ fornitore.cap or '' }}" maxlength="5" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Telefono</span>
+                        <input type="text" name="telefono" value="{{ fornitore.telefono or '' }}" class="info-value">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email</span>
+                        <input type="email" name="email" value="{{ fornitore.email or '' }}" class="info-value">
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px; text-align: center;">
+                    <button type="submit" class="btn">Salva Modifiche</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/fornitori'">Annulla</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

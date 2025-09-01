@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Report Movimenti - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/reports">📊 Report</a></li>
+                <li><a href="/reports/movimenti" class="active">📦 Report Movimenti</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📦 Report Movimenti</h1>
+            <p>Analisi movimenti IN, OUT e interni con tipologia</p>
+            <form method="GET" style="margin-top: 15px;">
+                <input type="date" name="data_da" value="{{ data_da or '' }}" placeholder="Da">
+                <input type="date" name="data_a" value="{{ data_a or '' }}" placeholder="A">
+                <button type="submit" class="btn">📅 Filtra per Data</button>
+                <button onclick="window.print()" class="btn btn-secondary">🖨️ Stampa</button>
+                <button onclick="exportMovimenti()" class="btn btn-success">📊 Export Excel</button>
+            </form>
+        </div>
+
+        <!-- Statistiche Generali -->
+        <div class="info-grid" style="margin-bottom: 30px;">
+            <div class="info-item">
+                <span class="info-label">Totale Movimenti</span>
+                <span class="info-value">{{ totale_movimenti or 0 }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Movimenti Entrata</span>
+                <span class="info-value" style="color: #28a745;">{{ movimenti_entrata or 0 }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Movimenti Uscita</span>
+                <span class="info-value" style="color: #dc3545;">{{ movimenti_uscita or 0 }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Movimenti Interni</span>
+                <span class="info-value" style="color: #ffc107;">{{ movimenti_interni or 0 }}</span>
+            </div>
+        </div>
+
+        <!-- Valori Economici -->
+        <div class="info-grid" style="margin-bottom: 30px;">
+            <div class="info-item">
+                <span class="info-label">Valore Entrate</span>
+                <span class="info-value" style="color: #28a745;">€ {{ "{:,.2f}".format(valore_entrate or 0) }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Valore Uscite</span>
+                <span class="info-value" style="color: #dc3545;">€ {{ "{:,.2f}".format(valore_uscite or 0) }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Saldo</span>
+                <span class="info-value" style="color: {% if (valore_entrate or 0) - (valore_uscite or 0) >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+                    € {{ "{:,.2f}".format((valore_entrate or 0) - (valore_uscite or 0)) }}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Periodo</span>
+                <span class="info-value">
+                    {% if data_da or data_a %}
+                        {{ data_da or 'Inizio' }} / {{ data_a or 'Fine' }}
+                    {% else %}
+                        Tutti i periodi
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <!-- Tabella Movimenti Unificata -->
+        <div class="card">
+            <h3>📋 Dettaglio Movimenti</h3>
+            <p>Tutti i movimenti di magazzino con indicazione tipologia</p>
+            
+            {% if movimenti %}
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tipologia</th>
+                                <th>Data</th>
+                                <th>Codice</th>
+                                <th>Descrizione</th>
+                                <th>Quantità</th>
+                                <th>Valore Unitario</th>
+                                <th>Valore Totale</th>
+                                <th>Origine/Destinazione</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mov in movimenti %}
+                            <tr>
+                                <td>
+                                    {% if mov[0] == 'ENTRATA' %}
+                                        <span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 3px; font-size: 0.8em; font-weight: bold;">
+                                            📥 ENTRATA
+                                        </span>
+                                    {% elif mov[0] == 'USCITA' %}
+                                        <span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 3px; font-size: 0.8em; font-weight: bold;">
+                                            📤 USCITA
+                                        </span>
+                                    {% elif mov[0] == 'INTERNO' %}
+                                        <span style="background: #ffc107; color: black; padding: 3px 8px; border-radius: 3px; font-size: 0.8em; font-weight: bold;">
+                                            🔄 INTERNO
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ mov[5] if mov[5] else '-' }}</td>
+                                <td><strong>{{ mov[1] if mov[1] else '-' }}</strong></td>
+                                <td>{{ mov[2] if mov[2] else '-' }}</td>
+                                <td style="text-align: center;">
+                                    {% if mov[0] == 'ENTRATA' %}
+                                        <span style="color: #28a745; font-weight: bold;">+{{ mov[3] or 0 }}</span>
+                                    {% elif mov[0] == 'USCITA' %}
+                                        <span style="color: #dc3545; font-weight: bold;">-{{ mov[3] or 0 }}</span>
+                                    {% else %}
+                                        {{ mov[3] or 0 }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if mov[4] and mov[4] > 0 %}
+                                        € {{ "{:.2f}".format(mov[4]) }}
+                                    {% else %}
+                                        <span style="color: #999;">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if mov[3] and mov[4] and mov[3] > 0 and mov[4] > 0 %}
+                                        <strong>€ {{ "{:.2f}".format(mov[3] * mov[4]) }}</strong>
+                                    {% else %}
+                                        <span style="color: #999;">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ mov[6] if mov[6] else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 60px; color: #999;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">📦</div>
+                    <h3>Nessun movimento trovato</h3>
+                    <p>
+                        {% if data_da or data_a %}
+                            Non ci sono movimenti nel periodo selezionato
+                        {% else %}
+                            Non ci sono movimenti di magazzino registrati
+                        {% endif %}
+                    </p>
+                    {% if data_da or data_a %}
+                        <a href="/reports/movimenti" class="btn btn-primary">🗓️ Mostra Tutti i Periodi</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Azioni Rapide -->
+        <div class="card" style="margin-top: 30px;">
+            <h3>⚡ Azioni Rapide</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                <button onclick="exportMovimenti()" class="btn btn-success">
+                    📊 Export Excel
+                </button>
+                <button onclick="stampaMovimenti()" class="btn btn-secondary">
+                    🖨️ Stampa Report
+                </button>
+                <button onclick="window.location.href='/movimenti'" class="btn btn-info">
+                    📋 Gestione Movimenti
+                </button>
+                <button onclick="window.location.href='/reports'" class="btn btn-secondary">
+                    🔙 Torna ai Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function exportMovimenti() {
+        // Costruisci URL con filtri attuali
+        let url = '/movimenti/export-excel';
+        const params = new URLSearchParams();
+        
+        const dataDa = document.querySelector('input[name="data_da"]').value;
+        const dataA = document.querySelector('input[name="data_a"]').value;
+        
+        if (dataDa) params.append('data_da', dataDa);
+        if (dataA) params.append('data_a', dataA);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        window.location.href = url;
+    }
+
+    function stampaMovimenti() {
+        window.print();
+    }
+
+    // Print styles
+    window.addEventListener('beforeprint', function() {
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.style.display = 'none';
+        });
+    });
+
+    window.addEventListener('afterprint', function() {
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.style.display = '';
+        });
+    });
+    </script>
+
+    <style>
+    .table-container {
+        overflow-x: auto;
+        margin-top: 20px;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .data-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+    }
+
+    .data-table tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    @media print {
+        nav { display: none; }
+        .btn { display: none !important; }
+        .card { break-inside: avoid; }
+        .data-table { font-size: 0.9em; }
+        .table-container { overflow: visible; }
+    }
+
+    @media (max-width: 768px) {
+        .info-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .data-table {
+            font-size: 0.8em;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 8px 4px;
+        }
+    }
+    </style>
+</body>
+</html>

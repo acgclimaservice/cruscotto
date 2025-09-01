@@ -1,0 +1,38 @@
+import pandas as pd
+from datetime import datetime
+
+# Creo un template Excel per l'importazione commesse
+template_data = {
+    'numero_progressivo': ['COM-2025-001', 'COM-2025-002'],
+    'cliente_nome': ['RAGIONE SOCIALE CLIENTE 1', 'RAGIONE SOCIALE CLIENTE 2'],
+    'tipologia': ['Riqualificazione', 'Manutenzione Ordinaria'],
+    'descrizione': ['Esempio commessa riqualificazione', 'Esempio manutenzione ordinaria'],
+    'note': ['Note esempio 1', 'Note esempio 2'],
+    'data_apertura': [datetime.now().strftime('%d/%m/%Y'), datetime.now().strftime('%d/%m/%Y')],
+    'stato': ['aperta', 'aperta']
+}
+
+df = pd.DataFrame(template_data)
+
+# Aggiungo riga di istruzioni come prima riga
+instructions_row = {
+    'numero_progressivo': 'Inserire numero progressivo univoco',
+    'cliente_nome': 'Inserire ragione sociale esatta come in anagrafica clienti',
+    'tipologia': 'Riqualificazione/Manutenzione Ordinaria/Manutenzione Straordinaria',
+    'descrizione': 'Descrizione della commessa',
+    'note': 'Note opzionali',
+    'data_apertura': 'Formato: gg/mm/aaaa (opzionale)',
+    'stato': 'aperta/chiusa (default: aperta)'
+}
+
+# Creo il DataFrame con le istruzioni in prima riga
+df_final = pd.DataFrame([instructions_row])
+df_final = pd.concat([df_final, df], ignore_index=True)
+
+# Aggiungo riga vuota per compilazione
+empty_row = {col: '' for col in df_final.columns}
+df_final = pd.concat([df_final, pd.DataFrame([empty_row])], ignore_index=True)
+
+# Salvo il template
+df_final.to_excel('commesse-import-template.xlsx', index=False, sheet_name='Commesse')
+print("Template Excel aggiornato: commesse-import-template.xlsx")

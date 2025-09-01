@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Fornitori - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/reports">📊 Report</a></li>
+                <li><a href="/reports/fornitori" class="active">🏢 Report Fornitori</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>🏢 Report Fornitori</h1>
+            <p>Analisi performance e statistiche fornitori principali</p>
+            <div style="margin-top: 15px;">
+                <button onclick="window.print()" class="btn btn-secondary">🖨️ Stampa</button>
+                <button onclick="exportFornitori()" class="btn btn-success">📊 Export Excel</button>
+                <button onclick="window.location.href='/fornitori'" class="btn btn-info">🏭 Gestisci Fornitori</button>
+            </div>
+        </div>
+
+        <!-- Filtri Periodo -->
+        <div class="card">
+            <h3>📅 Filtri Periodo</h3>
+            <form method="GET" class="form-inline">
+                <div class="form-group">
+                    <label for="data_da">Dal:</label>
+                    <input type="date" id="data_da" name="data_da" value="{{ request.args.get('data_da', '') }}">
+                </div>
+                <div class="form-group">
+                    <label for="data_a">Al:</label>
+                    <input type="date" id="data_a" name="data_a" value="{{ request.args.get('data_a', '') }}">
+                </div>
+                <button type="submit" class="btn btn-primary">🔍 Filtra</button>
+                <button type="button" class="btn btn-secondary" onclick="resetFiltri()">🗑️ Reset</button>
+            </form>
+        </div>
+
+        <!-- Statistiche Rapide -->
+        <div class="info-grid" style="margin-bottom: 30px;">
+            <div class="info-item">
+                <span class="info-label">Fornitori Attivi</span>
+                <span class="info-value">{{ top_fornitori|length }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">DDT IN Totali</span>
+                <span class="info-value">{{ top_fornitori|sum(attribute='totale_ddt')|int }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Valore Acquisti</span>
+                <span class="info-value">€ {{ "{:,.2f}".format(top_fornitori|sum(attribute='valore_totale') or 0) }}</span>
+            </div>
+            <div class="info-item {{ 'warning' if fornitori_inattivi > 5 else 'success' }}">
+                <span class="info-label">Fornitori Inattivi</span>
+                <span class="info-value">{{ fornitori_inattivi|default(0) }}</span>
+            </div>
+        </div>
+
+        <!-- Top Fornitori per DDT -->
+        <div class="card">
+            <h3>🏆 Top Fornitori per Numero DDT</h3>
+            <p>Fornitori con maggior numero di documenti di trasporto</p>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Ragione Sociale</th>
+                            <th>Città</th>
+                            <th>DDT IN</th>
+                            <th>Valore Medio DDT</th>
+                            <th>Valore Totale</th>
+                            <th>Ultimo DDT</th>
+                            <th>Performance</th>
+                            <th>Affidabilità</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fornitore in top_fornitori %}
+                        {% set valore_medio = (fornitore.valore_totale or 0) / (fornitore.totale_ddt or 1) %}
+                        {% set giorni_ultimo = (fornitore.giorni_ultimo_ddt or 0) %}
+                        <tr class="{{ 'success' if fornitore.totale_ddt > 10 else 'warning' if fornitore.totale_ddt > 5 else '' }}">
+                            <td><strong>{{ loop.index }}</strong></td>
+                            <td><strong>{{ fornitore.ragione_sociale[:40] + '...' if fornitore.ragione_sociale and fornitore.ragione_sociale|length > 40 else (fornitore.ragione_sociale or '-') }}</strong></td>
+                            <td>{{ fornitore.citta or '-' }}</td>
+                            <td style="color: #28a745; font-weight: bold;">{{ fornitore.totale_ddt or 0 }}</td>
+                            <td>€ {{ "{:.2f}".format(valore_medio) }}</td>
+                            <td><strong>€ {{ "{:,.2f}".format(fornitore.valore_totale or 0) }}</strong></td>
+                            <td>
+                                {% if giorni_ultimo <= 7 %}
+                                    <span style="color: #28a745;">{{ giorni_ultimo }} gg fa</span>
+                                {% elif giorni_ultimo <= 30 %}
+                                    <span style="color: #ffc107;">{{ giorni_ultimo }} gg fa</span>
+                                {% else %}
+                                    <span style="color: #dc3545;">{{ giorni_ultimo }} gg fa</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if fornitore.totale_ddt > 15 %}
+                                    <span style="color: #28a745; font-weight: bold;">🔥 ALTA</span>
+                                {% elif fornitore.totale_ddt > 5 %}
+                                    <span style="color: #ffc107; font-weight: bold;">⚡ MEDIA</span>
+                                {% else %}
+                                    <span style="color: #dc3545;">📉 BASSA</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set affidabilita = 100 - (giorni_ultimo * 2) if giorni_ultimo < 50 else 0 %}
+                                {% if affidabilita > 80 %}
+                                    <span style="color: #28a745;">✅ Alta ({{ affidabilita }}%)</span>
+                                {% elif affidabilita > 50 %}
+                                    <span style="color: #ffc107;">⚠️ Media ({{ affidabilita }}%)</span>
+                                {% else %}
+                                    <span style="color: #dc3545;">❌ Bassa ({{ affidabilita }}%)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Analisi Performance per Città -->
+        <div class="card" style="margin-top: 30px;">
+            <h3>🌍 Distribuzione Geografica Fornitori</h3>
+            <p>Performance per località principali</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                
+                {% set citta_stats = top_fornitori|groupby('citta') %}
+                {% for citta, fornitori_citta in citta_stats %}
+                {% if citta %}
+                {% set count_citta = fornitori_citta|list|length %}
+                {% set ddt_citta = fornitori_citta|sum(attribute='totale_ddt') %}
+                {% set valore_citta = fornitori_citta|sum(attribute='valore_totale') %}
+                
+                <div style="padding: 20px; border-left: 4px solid #007bff; background: #f8f9fa;">
+                    <h4 style="color: #007bff; margin: 0 0 10px 0;">📍 {{ citta }}</h4>
+                    <div style="color: #666;">
+                        <strong>{{ count_citta }}</strong> fornitori<br>
+                        <strong>{{ ddt_citta }}</strong> DDT totali<br>
+                        <strong>€ {{ "{:,.0f}".format(valore_citta) }}</strong> valore
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                
+            </div>
+        </div>
+
+        <!-- Analisi Temporale -->
+        <div class="card" style="margin-top: 30px;">
+            <h3>📅 Analisi Temporale Attività</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+                
+                <div style="padding: 20px; border-left: 4px solid #28a745; background: #f0f8f0;">
+                    <h4 style="color: #28a745; margin: 0 0 10px 0;">🔥 Attivi Ultima Settimana</h4>
+                    <p style="margin: 0; color: #666;">
+                        <strong>{{ top_fornitori|selectattr('giorni_ultimo_ddt', 'le', 7)|list|length }}</strong> fornitori<br>
+                        Consegne regolari
+                    </p>
+                </div>
+
+                <div style="padding: 20px; border-left: 4px solid #ffc107; background: #fff8e1;">
+                    <h4 style="color: #ff8f00; margin: 0 0 10px 0;">⚡ Attivi Ultimo Mese</h4>
+                    <p style="margin: 0; color: #666;">
+                        <strong>{{ top_fornitori|selectattr('giorni_ultimo_ddt', 'le', 30)|list|length - top_fornitori|selectattr('giorni_ultimo_ddt', 'le', 7)|list|length }}</strong> fornitori<br>
+                        Consegne occasionali
+                    </p>
+                </div>
+
+                <div style="padding: 20px; border-left: 4px solid #dc3545; background: #fff5f5;">
+                    <h4 style="color: #dc3545; margin: 0 0 10px 0;">🐌 Inattivi da Tempo</h4>
+                    <p style="margin: 0; color: #666;">
+                        <strong>{{ top_fornitori|selectattr('giorni_ultimo_ddt', 'gt', 30)|list|length }}</strong> fornitori<br>
+                        Necessario controllo
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Fornitori Critici -->
+        {% set fornitori_critici = top_fornitori|selectattr('giorni_ultimo_ddt', 'gt', 60)|list %}
+        {% if fornitori_critici %}
+        <div class="card" style="margin-top: 30px;">
+            <h3>⚠️ Fornitori Inattivi da Oltre 60 Giorni</h3>
+            <p style="color: #dc3545;">Fornitori che potrebbero richiedere verifica</p>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ragione Sociale</th>
+                            <th>Città</th>
+                            <th>Totale DDT</th>
+                            <th>Ultimo DDT</th>
+                            <th>Giorni Inattività</th>
+                            <th>Azione Suggerita</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fornitore in fornitori_critici %}
+                        <tr class="warning">
+                            <td><strong>{{ fornitore.ragione_sociale or '-' }}</strong></td>
+                            <td>{{ fornitore.citta or '-' }}</td>
+                            <td>{{ fornitore.totale_ddt or 0 }}</td>
+                            <td>{{ fornitore.ultimo_ddt_data or '-' }}</td>
+                            <td style="color: #dc3545; font-weight: bold;">{{ fornitore.giorni_ultimo_ddt }} giorni</td>
+                            <td>
+                                {% if fornitore.giorni_ultimo_ddt > 120 %}
+                                    <span style="color: #dc3545;">🔍 Verifica stato</span>
+                                {% else %}
+                                    <span style="color: #ffc107;">📞 Contatta fornitore</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="card" style="margin-top: 30px; text-align: center; padding: 40px;">
+            <h3 style="color: #28a745;">✅ Situazione Normale</h3>
+            <p>Tutti i fornitori sono attivi negli ultimi 60 giorni</p>
+        </div>
+        {% endif %}
+
+        <!-- Collegamenti Rapidi -->
+        <div class="card" style="margin-top: 20px;">
+            <h3>🔗 Azioni Rapide</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                <button onclick="window.location.href='/fornitori'" class="btn btn-primary">
+                    🏭 Gestisci Fornitori
+                </button>
+                <button onclick="window.location.href='/ddt-in'" class="btn btn-secondary">
+                    📥 DDT IN
+                </button>
+                <button onclick="window.location.href='/reports/dashboard'" class="btn btn-info">
+                    🎯 Dashboard Esecutivo
+                </button>
+                <button onclick="window.location.href='/reports/movimenti'" class="btn btn-success">
+                    📊 Report Movimenti
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    function exportFornitori() {
+        const dataDa = document.getElementById('data_da').value;
+        const dataA = document.getElementById('data_a').value;
+        
+        let url = '/reports/export/fornitori';
+        const params = [];
+        
+        if (dataDa) params.push('data_da=' + dataDa);
+        if (dataA) params.push('data_a=' + dataA);
+        
+        if (params.length > 0) {
+            url += '?' + params.join('&');
+        }
+        
+        window.location.href = url;
+    }
+
+    function resetFiltri() {
+        document.getElementById('data_da').value = '';
+        document.getElementById('data_a').value = '';
+        window.location.href = '/reports/fornitori';
+    }
+
+    // Calcola totali per le statistiche
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aggiorna timestamp
+        console.log('Report Fornitori caricato');
+    });
+    </script>
+
+    <style>
+    .form-inline {
+        display: flex;
+        align-items: end;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .form-inline .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .form-inline label {
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.9rem;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        margin-top: 15px;
+    }
+
+    .success {
+        background-color: #d4edda !important;
+    }
+
+    .warning {
+        background-color: #fff3cd !important;
+    }
+
+    .info-item.success .info-value {
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    .info-item.warning .info-value {
+        color: #ffc107;
+        font-weight: bold;
+    }
+
+    @media print {
+        nav { display: none; }
+        .btn { display: none; }
+        .card { page-break-inside: avoid; }
+        .table-container { overflow: visible; }
+    }
+    </style>
+</body>
+</html>

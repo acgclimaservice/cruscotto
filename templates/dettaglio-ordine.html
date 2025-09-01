@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dettaglio Ordine {{ ordine.numero_ordine }} - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/ordini" class="active">🛒 Ordini</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h1>🛒 Ordine {{ ordine.numero_ordine or 'BOZZA' }}</h1>
+                    <p style="color: #8492a6; margin-top: 8px;">
+                        Fornitore: {{ ordine.fornitore_nome }} | 
+                        Stato: 
+                        <span class="status-badge status-{{ ordine.stato }}">
+                            {% if ordine.stato == 'bozza' %}📝 Bozza
+                            {% elif ordine.stato == 'inviato' %}📤 Inviato
+                            {% elif ordine.stato == 'confermato' %}✅ Confermato
+                            {% elif ordine.stato == 'ricevuto' %}📦 Ricevuto
+                            {% elif ordine.stato == 'completato' %}🏁 Completato
+                            {% else %}{{ ordine.stato }}
+                            {% endif %}
+                        </span>
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="/ordini" class="btn btn-secondary">← Torna alla Lista</a>
+                    <a href="/ordini/{{ ordine.id }}/pdf" class="btn btn-info" target="_blank">🖨️ Stampa PDF</a>
+                    {% if ordine.stato == 'bozza' %}
+                        <a href="/ordini/{{ ordine.id }}/modifica" class="btn">✏️ Modifica</a>
+                        <button class="btn btn-success" onclick="inviaOrdine({{ ordine.id }})">📤 Invia Ordine</button>
+                    {% elif ordine.stato == 'inviato' %}
+                        <button class="btn btn-warning" onclick="confermaOrdine({{ ordine.id }})">✅ Conferma Ricevimento</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="info-grid" style="margin-bottom: 30px;">
+            <div class="info-item">
+                <span class="info-label">Data Ordine</span>
+                <span class="info-value">{{ ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else '-' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Oggetto</span>
+                <span class="info-value">{{ ordine.oggetto or '-' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Priorità</span>
+                <span class="info-value">
+                    <span class="priority-badge priority-{{ ordine.priorita }}">
+                        {% if ordine.priorita == 'alta' %}🔴 Alta
+                        {% elif ordine.priorita == 'media' %}🟡 Media  
+                        {% elif ordine.priorita == 'bassa' %}🟢 Bassa
+                        {% else %}{{ ordine.priorita }}
+                        {% endif %}
+                    </span>
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Scadenza</span>
+                <span class="info-value">{{ ordine.data_scadenza.strftime('%d/%m/%Y') if ordine.data_scadenza else '-' }}</span>
+            </div>
+        </div>
+
+        {% if ordine.note %}
+        <div class="section">
+            <h3>📝 Note</h3>
+            <div class="note-content">{{ ordine.note }}</div>
+        </div>
+        {% endif %}
+
+        <div class="section">
+            <h3>📦 Dettagli Articoli</h3>
+            {% if dettagli %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Codice</th>
+                                <th>Codice Fornitore</th>
+                                <th>Descrizione</th>
+                                <th>Quantità</th>
+                                <th>U.M.</th>
+                                <th>Prezzo Unit.</th>
+                                <th>Sconto %</th>
+                                <th>Totale</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dettaglio in dettagli %}
+                            <tr>
+                                <td><strong>{{ dettaglio.codice_articolo or '-' }}</strong></td>
+                                <td>{{ dettaglio.codice_fornitore or '-' }}</td>
+                                <td>{{ dettaglio.descrizione }}</td>
+                                <td>{{ "{:.2f}".format(dettaglio.quantita) }}</td>
+                                <td>{{ dettaglio.unita_misura or 'PZ' }}</td>
+                                <td>€ {{ "{:.2f}".format(dettaglio.prezzo_unitario or 0) }}</td>
+                                <td>{{ "{:.1f}".format(dettaglio.sconto_percentuale or 0) }}%</td>
+                                <td><strong>€ {{ "{:.2f}".format(dettaglio.totale_riga or 0) }}</strong></td>
+                                <td>{{ dettaglio.note or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 40px; color: #a0aec0;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                    <div>Nessun articolo nell'ordine</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="totals-section">
+            <div class="totals-card">
+                <div class="total-row">
+                    <span>Totale Netto:</span>
+                    <strong>€ {{ "{:.2f}".format(ordine.totale_netto or 0) }}</strong>
+                </div>
+                <div class="total-row">
+                    <span>IVA ({{ ordine.iva or 22 }}%):</span>
+                    <strong>€ {{ "{:.2f}".format((ordine.totale_lordo or 0) - (ordine.totale_netto or 0)) }}</strong>
+                </div>
+                <div class="total-row total-final">
+                    <span>Totale Lordo:</span>
+                    <strong>€ {{ "{:.2f}".format(ordine.totale_lordo or 0) }}</strong>
+                </div>
+            </div>
+        </div>
+
+        {% if ordine.stato != 'bozza' %}
+        <div class="section">
+            <h3>📅 Cronologia Stati</h3>
+            <div class="timeline">
+                <div class="timeline-item completed">
+                    <div class="timeline-icon">📝</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Ordine creato come bozza</div>
+                        <div class="timeline-date">{{ ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else '-' }}</div>
+                    </div>
+                </div>
+                {% if ordine.data_invio %}
+                <div class="timeline-item completed">
+                    <div class="timeline-icon">📤</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Ordine inviato al fornitore</div>
+                        <div class="timeline-date">{{ ordine.data_invio.strftime('%d/%m/%Y') }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if ordine.data_conferma %}
+                <div class="timeline-item completed">
+                    <div class="timeline-icon">✅</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Ordine confermato dal fornitore</div>
+                        <div class="timeline-date">{{ ordine.data_conferma.strftime('%d/%m/%Y') }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+<script>
+function inviaOrdine(ordineId) {
+    if (confirm('Inviare questo ordine al fornitore?\\n\\nL\'ordine verrà marcato come "inviato" e non potrà più essere modificato.')) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Inviando...";
+        btn.disabled = true;
+        
+        fetch(`/ordini/${ordineId}/invia`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Ordine inviato con successo!');
+                location.reload();
+            } else {
+                alert(`Errore durante l'invio: ${data.errore}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`Errore durante l'invio: ${error}`);
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+    }
+}
+
+function confermaOrdine(ordineId) {
+    if (confirm('Confermare la ricezione di questo ordine dal fornitore?\\n\\nL\'ordine verrà marcato come "confermato".')) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Confermando...";
+        btn.disabled = true;
+        
+        fetch(`/ordini/${ordineId}/conferma`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Ordine confermato con successo!');
+                location.reload();
+            } else {
+                alert(`Errore durante la conferma: ${data.errore}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`Errore durante la conferma: ${error}`);
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+    }
+}
+</script>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 35px;
+    bottom: -20px;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+.timeline-item.completed .timeline-icon {
+    background: #10b981;
+    color: white;
+}
+
+.timeline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    margin-right: 15px;
+    z-index: 1;
+    position: relative;
+}
+
+.timeline-content {
+    flex: 1;
+}
+
+.timeline-title {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.timeline-date {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+</style>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Preventivo {{ preventivo.numero_preventivo }}</title>
+    <style>
+        @page {
+            margin: 2cm 1.5cm;
+            size: A4;
+        }
+        
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #1e40af;
+            font-size: 28px;
+            margin: 0 0 10px 0;
+        }
+        
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        
+        .company-info {
+            text-align: left;
+        }
+        
+        .preventivo-info {
+            text-align: right;
+        }
+        
+        .info-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .info-item {
+            margin-bottom: 10px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 3px;
+        }
+        
+        .info-value {
+            color: #1f2937;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-bozza { background: #fef3c7; color: #92400e; }
+        .status-inviato { background: #dbeafe; color: #1d4ed8; }
+        .status-accettato { background: #d1fae5; color: #065f46; }
+        .status-rifiutato { background: #fee2e2; color: #991b1b; }
+        
+        .dettagli-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+        
+        .dettagli-table th {
+            background: #e5e7eb;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #d1d5db;
+        }
+        
+        .dettagli-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .dettagli-table tr:nth-child(even) {
+            background: #f9fafb;
+        }
+        
+        .totali-section {
+            margin-top: 30px;
+            float: right;
+            width: 400px;
+        }
+        
+        .totale-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .totale-finale {
+            background: #f0f9ff;
+            padding: 12px;
+            margin-top: 10px;
+            border: 2px solid #3b82f6;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 1cm;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 11px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 10px;
+        }
+        
+        .note-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: 600; }
+        
+        @media print {
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PREVENTIVO</h1>
+        <div class="header-info">
+            <div class="company-info">
+                <strong>ACG Clima Service S.r.l.</strong><br>
+                <strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)<br>
+                <strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)<br>
+                Tel: 0383/640606 | Email: info@acgclimaservice.com<br>
+                P.IVA: 02735970069 | C.F: 02735970069
+            </div>
+            <div class="preventivo-info">
+                <div class="info-item">
+                    <div class="info-label">Numero Preventivo</div>
+                    <div class="info-value font-bold">{{ preventivo.numero_preventivo }}</div>
+                </div>
+                <div class="info-item" style="margin-top: 15px;">
+                    <div class="info-label">Data Preventivo</div>
+                    <div class="info-value">{{ preventivo.data_preventivo.strftime('%d/%m/%Y') if preventivo.data_preventivo }}</div>
+                </div>
+                <div class="info-item" style="margin-top: 15px;">
+                    <span class="status-badge status-{{ preventivo.stato }}">
+                        {% if preventivo.stato == 'bozza' %}Bozza
+                        {% elif preventivo.stato == 'inviato' %}Inviato
+                        {% elif preventivo.stato == 'accettato' %}Accettato
+                        {% elif preventivo.stato == 'rifiutato' %}Rifiutato
+                        {% elif preventivo.stato == 'scaduto' %}Scaduto
+                        {% else %}{{ preventivo.stato }}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h3 style="margin-top: 0; color: #1e40af;">Informazioni Cliente</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Cliente</div>
+                <div class="info-value">{{ preventivo.cliente_nome }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Oggetto</div>
+                <div class="info-value">{{ preventivo.oggetto }}</div>
+            </div>
+            {% if preventivo.data_scadenza %}
+            <div class="info-item">
+                <div class="info-label">Data Scadenza</div>
+                <div class="info-value">{{ preventivo.data_scadenza.strftime('%d/%m/%Y') }}</div>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <div class="info-label">IVA</div>
+                <div class="info-value">{{ preventivo.iva }}%</div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="color: #1e40af; margin-top: 30px;">Dettagli Preventivo</h3>
+    
+    {% if preventivo.dettagli %}
+        <table class="dettagli-table">
+            <thead>
+                <tr>
+                    <th>Codice</th>
+                    <th>Descrizione</th>
+                    <th class="text-center">Quantità</th>
+                    <th class="text-center">U.M.</th>
+                    <th class="text-right">Prezzo Unit.</th>
+                    <th class="text-center">Sconto %</th>
+                    <th class="text-right">Totale</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dettaglio in preventivo.dettagli %}
+                <tr>
+                    <td>{{ dettaglio.codice_articolo or '-' }}</td>
+                    <td>{{ dettaglio.descrizione }}</td>
+                    <td class="text-center">{{ dettaglio.quantita }}</td>
+                    <td class="text-center">{{ dettaglio.unita_misura }}</td>
+                    <td class="text-right">€ {{ "%.2f"|format(dettaglio.prezzo_unitario or 0) }}</td>
+                    <td class="text-center">{{ dettaglio.sconto_percentuale or 0 }}%</td>
+                    <td class="text-right font-bold">€ {{ "%.2f"|format(dettaglio.totale_riga or 0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div style="text-align: center; padding: 40px; color: #9ca3af;">
+            Nessun dettaglio presente nel preventivo
+        </div>
+    {% endif %}
+
+    <div class="totali-section">
+        <div class="totale-row">
+            <span>Totale Netto:</span>
+            <span>€ {{ "%.2f"|format(preventivo.totale_netto or 0) }}</span>
+        </div>
+        <div class="totale-row">
+            <span>IVA ({{ preventivo.iva }}%):</span>
+            <span>€ {{ "%.2f"|format((preventivo.totale_netto or 0) * (preventivo.iva or 0) / 100) }}</span>
+        </div>
+        <div class="totale-row totale-finale">
+            <span>Totale Lordo:</span>
+            <span>€ {{ "%.2f"|format(preventivo.totale_lordo or 0) }}</span>
+        </div>
+    </div>
+    
+    <div style="clear: both;"></div>
+
+    {% if preventivo.note %}
+    <div class="note-section">
+        <h4 style="margin-top: 0; color: #d97706;">Note</h4>
+        <p style="margin: 0;">{{ preventivo.note }}</p>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        Preventivo generato il {{ "now"|date('%d/%m/%Y alle %H:%M') }} - Sistema Gestione DDT
+    </div>
+</body>
+</html>

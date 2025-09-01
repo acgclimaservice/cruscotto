@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifica Commessa - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .form-group textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1976D2;
+        }
+        
+        .btn-secondary {
+            background-color: #666;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #555;
+        }
+        
+        .required {
+            color: #dc3545;
+        }
+        
+        .info-box {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #2196F3;
+            margin-bottom: 20px;
+        }
+        
+        .cliente-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Modifica Commessa</h2>
+                <p>{{ commessa.numero_progressivo }}</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/movimenti-interni">🔄 Movimenti Interni</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/commesse" class="active">🏗️ Commesse</a></li>
+                <li><a href="/clienti">👥 Clienti</a></li>
+                <li><a href="/fornitori">🏭 Fornitori</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="form-container">
+            <h1>✏️ Modifica Commessa</h1>
+            
+            {% if error %}
+                <div class="error-message">
+                    {{ error }}
+                </div>
+            {% endif %}
+            
+            <div class="info-box">
+                <strong>ℹ️ Informazioni:</strong> Modifica i dati della commessa. I campi contrassegnati con <span class="required">*</span> sono obbligatori.
+            </div>
+
+            <form method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="numero_progressivo">Numero Progressivo <span class="required">*</span></label>
+                        <input type="text" id="numero_progressivo" name="numero_progressivo" 
+                               value="{{ commessa.numero_progressivo }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="data_apertura">Data Apertura</label>
+                        <input type="date" id="data_apertura" name="data_apertura" 
+                               value="{{ commessa.data_apertura.strftime('%Y-%m-%d') if commessa.data_apertura else '' }}">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="data_scadenza">Data Scadenza</label>
+                        <input type="date" id="data_scadenza" name="data_scadenza" 
+                               value="{{ commessa.data_scadenza.strftime('%Y-%m-%d') if commessa.data_scadenza else '' }}">
+                    </div>
+                    <div class="form-group"></div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cliente_search">Cliente (Anagrafica)</label>
+                        <div class="autocomplete-container" style="position: relative;">
+                            <input type="text" id="cliente_search" 
+                                   placeholder="Digita per cercare cliente..." 
+                                   value="{% if commessa.cliente_id %}{% for cliente in clienti %}{% if cliente.id == commessa.cliente_id %}{{ cliente.ragione_sociale }}{% endif %}{% endfor %}{% endif %}"
+                                   autocomplete="off"
+                                   onkeyup="filtraClienti()"
+                                   onfocus="mostraDropdown()"
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+                            
+                            <div id="clienti-dropdown" class="autocomplete-dropdown" style="
+                                position: absolute;
+                                top: 100%;
+                                left: 0;
+                                right: 0;
+                                background: white;
+                                border: 1px solid #ddd;
+                                border-top: none;
+                                max-height: 200px;
+                                overflow-y: auto;
+                                z-index: 1000;
+                                display: none;
+                            ">
+                                {% for cliente in clienti %}
+                                    <div class="dropdown-item" 
+                                         data-cliente-id="{{ cliente.id }}"
+                                         data-ragione-sociale="{{ cliente.ragione_sociale }}"
+                                         onclick="selezionaCliente({{ cliente.id }}, '{{ cliente.ragione_sociale }}')"
+                                         style="
+                                            padding: 10px;
+                                            cursor: pointer;
+                                            border-bottom: 1px solid #eee;
+                                         ">
+                                        <strong>{{ cliente.ragione_sociale }}</strong>
+                                        {% if cliente.citta %}
+                                            <small style="color: #666;"> - {{ cliente.citta }}</small>
+                                        {% endif %}
+                                        {% if cliente.partita_iva %}
+                                            <small style="color: #666;"> - P.IVA: {{ cliente.partita_iva }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" id="cliente_id" name="cliente_id" value="{{ commessa.cliente_id or '' }}">
+                        
+                        <div class="cliente-info" id="clienteInfo" style="
+                            margin-top: 10px;
+                            padding: 10px;
+                            background-color: #e8f5e8;
+                            border-radius: 4px;
+                            font-size: 14px;
+                            color: #2d5a2d;
+                            {% if not commessa.cliente_id %}display: none;{% endif %}
+                        ">
+                            ✓ Cliente collegato all'anagrafica
+                        </div>
+                        
+                        <small style="color: #6c757d; margin-top: 5px; display: block;">
+                            Digitare per filtrare i clienti dall'anagrafica
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cliente_nome">Nome Cliente (Manuale)</label>
+                        <input type="text" id="cliente_nome" name="cliente_nome" 
+                               value="{{ commessa.cliente_nome or '' }}"
+                               placeholder="Inserire solo se non in anagrafica">
+                        <small style="color: #6c757d;">Se selezioni un cliente dall'anagrafica, questo campo sarà automaticamente compilato</small>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tipologia">Tipologia</label>
+                        <select id="tipologia" name="tipologia">
+                            <option value="">-- Seleziona Tipologia --</option>
+                            <option value="Riqualificazione" {% if commessa.tipologia == 'Riqualificazione' %}selected{% endif %}>Riqualificazione</option>
+                            <option value="Manutenzione Ordinaria" {% if commessa.tipologia == 'Manutenzione Ordinaria' %}selected{% endif %}>Manutenzione Ordinaria</option>
+                            <option value="Manutenzione Straordinaria" {% if commessa.tipologia == 'Manutenzione Straordinaria' %}selected{% endif %}>Manutenzione Straordinaria</option>
+                            <option value="Installazione" {% if commessa.tipologia == 'Installazione' %}selected{% endif %}>Installazione</option>
+                            <option value="Collaudo" {% if commessa.tipologia == 'Collaudo' %}selected{% endif %}>Collaudo</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="stato">Stato</label>
+                        <select id="stato" name="stato">
+                            <option value="aperta" {% if commessa.stato == 'aperta' %}selected{% endif %}>Aperta</option>
+                            <option value="chiusa" {% if commessa.stato == 'chiusa' %}selected{% endif %}>Chiusa</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="descrizione">Descrizione <span class="required">*</span></label>
+                    <textarea id="descrizione" name="descrizione" required>{{ commessa.descrizione or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="note">Note</label>
+                    <textarea id="note" name="note">{{ commessa.note or '' }}</textarea>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">💾 Salva Modifiche</button>
+                    <a href="/commesse/{{ commessa.id }}" class="btn btn-secondary">❌ Annulla</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function filtraClienti() {
+            const searchInput = document.getElementById('cliente_search');
+            const dropdown = document.getElementById('clienti-dropdown');
+            const filter = searchInput.value.toLowerCase();
+            const items = dropdown.getElementsByClassName('dropdown-item');
+            
+            let hasVisibleItems = false;
+            
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const text = item.textContent.toLowerCase();
+                
+                if (text.indexOf(filter) > -1) {
+                    item.style.display = '';
+                    hasVisibleItems = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            }
+            
+            // Mostra dropdown solo se ci sono risultati e il campo non è vuoto
+            if (hasVisibleItems && filter.length > 0) {
+                dropdown.style.display = 'block';
+            } else if (filter.length === 0) {
+                dropdown.style.display = 'block'; // Mostra tutto se campo vuoto
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+        
+        function mostraDropdown() {
+            const dropdown = document.getElementById('clienti-dropdown');
+            const searchInput = document.getElementById('cliente_search');
+            
+            if (searchInput.value.length === 0) {
+                // Mostra tutti i clienti se il campo è vuoto
+                const items = dropdown.getElementsByClassName('dropdown-item');
+                for (let i = 0; i < items.length; i++) {
+                    items[i].style.display = '';
+                }
+            }
+            
+            dropdown.style.display = 'block';
+        }
+        
+        function selezionaCliente(clienteId, ragioneSociale) {
+            const searchInput = document.getElementById('cliente_search');
+            const hiddenInput = document.getElementById('cliente_id');
+            const clienteNomeInput = document.getElementById('cliente_nome');
+            const dropdown = document.getElementById('clienti-dropdown');
+            const clienteInfo = document.getElementById('clienteInfo');
+            
+            // Imposta i valori
+            searchInput.value = ragioneSociale;
+            hiddenInput.value = clienteId;
+            clienteNomeInput.value = ragioneSociale;
+            
+            // Nascondi dropdown
+            dropdown.style.display = 'none';
+            
+            // Mostra info e imposta readonly per cliente_nome
+            clienteInfo.style.display = 'block';
+            clienteNomeInput.style.backgroundColor = '#f8f9fa';
+            clienteNomeInput.readOnly = true;
+        }
+        
+        function resetCliente() {
+            const searchInput = document.getElementById('cliente_search');
+            const hiddenInput = document.getElementById('cliente_id');
+            const clienteNomeInput = document.getElementById('cliente_nome');
+            const clienteInfo = document.getElementById('clienteInfo');
+            
+            if (searchInput.value.length === 0) {
+                hiddenInput.value = '';
+                clienteNomeInput.value = '';
+                clienteInfo.style.display = 'none';
+                clienteNomeInput.style.backgroundColor = '';
+                clienteNomeInput.readOnly = false;
+            }
+        }
+        
+        // Nascondi dropdown quando si clicca fuori
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('clienti-dropdown');
+            const searchInput = document.getElementById('cliente_search');
+            
+            if (!searchInput.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+        
+        // Gestisci backspace per reset cliente
+        document.getElementById('cliente_search').addEventListener('keyup', function(e) {
+            if (this.value.length === 0) {
+                resetCliente();
+            }
+            filtraClienti();
+        });
+        
+        // Gestisci hover sugli elementi dropdown
+        document.addEventListener('DOMContentLoaded', function() {
+            const items = document.getElementsByClassName('dropdown-item');
+            for (let i = 0; i < items.length; i++) {
+                items[i].addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                items[i].addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                });
+            }
+        });
+        
+        // Conferma prima del salvataggio
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const numeroProgressivo = document.getElementById('numero_progressivo').value.trim();
+            const descrizione = document.getElementById('descrizione').value.trim();
+            
+            if (!numeroProgressivo || !descrizione) {
+                e.preventDefault();
+                alert('I campi "Numero Progressivo" e "Descrizione" sono obbligatori');
+                return;
+            }
+            
+            if (!confirm('Confermi le modifiche alla commessa?')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

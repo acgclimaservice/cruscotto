@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventivi - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
+    <script src="{{ url_for('static', filename='autocompletamento.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header aziendale con logo -->
+        <div class="company-header">
+            <div class="company-logo">
+                <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="logo-img">
+            </div>
+            <div class="company-info">
+                <h1 class="company-name">ACG Clima Service S.r.l.</h1>
+                <div class="company-details">
+                    <p><strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)</p>
+                    <p><strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)</p>
+                    <p>Tel: 0383/640606 | Email: info@acgclimaservice.com</p>
+                    <p>P.IVA: 02735970069 | C.F: 02735970069</p>
+                </div>
+            </div>
+            <div class="system-info">
+                <h2>Preventivi</h2>
+                <p>Gestione preventivi e offerte</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/preventivi" class="active">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📋 Gestione Preventivi</h1>
+            <p style="color: #8492a6; margin-top: 8px;">Creazione e gestione preventivi per clienti</p>
+        </div>
+
+        <div class="dashboard" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="card">
+                <h2><span class="icon">📝</span>Preventivi in Bozza</h2>
+                <div class="stat-value">{{ preventivi_bozza|default(0) }}</div>
+                <div class="stat-label">Da completare</div>
+                <a href="#" class="btn">Gestisci</a>
+            </div>
+            
+            <div class="card">
+                <h2><span class="icon">📤</span>Preventivi Inviati</h2>
+                <div class="stat-value">{{ preventivi_inviati|default(0) }}</div>
+                <div class="stat-label">In attesa risposta</div>
+                <a href="#" class="btn">Solleciti</a>
+            </div>
+            
+            <div class="card">
+                <h2><span class="icon">💰</span>Preventivi Accettati</h2>
+                <div class="stat-value">€ {{ valore_accettati|default("0.00") }}</div>
+                <div class="stat-label">Valore questo mese</div>
+                <a href="#" class="btn">Dettagli</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🛠️ Strumenti Preventivazione</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                <a href="/preventivi/nuovo" class="btn btn-success">+ Nuovo Preventivo</a>
+                <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">📊 Analisi Margini</button>
+                <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">🎯 Template Preventivo</button>
+                <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">📈 Report Conversione</button>
+                <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">🔄 Trasforma in DDT</button>
+                <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">📧 Invio Automatico</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>📋 Lista Preventivi</h3>
+                <a href="/preventivi/nuovo" class="btn btn-success">+ Nuovo Preventivo</a>
+            </div>
+            
+            {% if preventivi %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Numero</th>
+                            <th>Data</th>
+                            <th>Cliente</th>
+                            <th>Oggetto</th>
+                            <th>Stato</th>
+                            <th>Totale</th>
+                            <th>Scadenza</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for preventivo in preventivi %}
+                        <tr>
+                            <td><strong>{{ preventivo.numero_preventivo }}</strong></td>
+                            <td>{{ preventivo.data_preventivo.strftime('%d/%m/%Y') if preventivo.data_preventivo }}</td>
+                            <td>{{ preventivo.cliente_nome }}</td>
+                            <td>{{ preventivo.oggetto }}</td>
+                            <td>
+                                <span class="status-badge status-{{ preventivo.stato }}">
+                                    {% if preventivo.stato == 'bozza' %}📝 Bozza
+                                    {% elif preventivo.stato == 'inviato' %}📤 Inviato
+                                    {% elif preventivo.stato == 'accettato' %}✅ Accettato
+                                    {% elif preventivo.stato == 'rifiutato' %}❌ Rifiutato
+                                    {% elif preventivo.stato == 'scaduto' %}⏰ Scaduto
+                                    {% else %}{{ preventivo.stato }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>€ {{ "%.2f"|format(preventivo.totale_lordo or 0) }}</td>
+                            <td>
+                                {% if preventivo.data_scadenza %}
+                                    {{ preventivo.data_scadenza.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    <span style="color: #8492a6;">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/preventivi/{{ preventivo.id }}" class="btn btn-sm">👁️ Visualizza</a>
+                                    {% if preventivo.stato == 'bozza' %}
+                                        <button class="btn btn-sm btn-primary" onclick="alert('Funzionalità in sviluppo - Modifica preventivo')">✍️ Modifica</button>
+                                        <form method="POST" action="/preventivi/{{ preventivo.id }}/invia" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Inviare questo preventivo?')">📤 Invia</button>
+                                        </form>
+                                    {% elif preventivo.stato == 'inviato' %}
+                                        <form method="POST" action="/preventivi/{{ preventivo.id }}/accetta" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Segnare come accettato?')">✅ Accettato</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div style="text-align: center; padding: 60px 20px; color: #a0aec0;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Nessun preventivo presente</div>
+                    <div style="font-size: 14px; margin-bottom: 20px;">Inizia creando il tuo primo preventivo</div>
+                    <a href="/preventivi/nuovo" class="btn btn-success">+ Crea Primo Preventivo</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

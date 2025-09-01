@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDT IN {{ ddt.numero_ddt or ddt.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #2c5282;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 20px;
+        }
+        
+        .company-logo {
+            height: 60px;
+            width: auto;
+        }
+        
+        .header-text {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #2c5282;
+        }
+        
+        .header h2 {
+            margin: 5px 0 0 0;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .company-info {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .ddt-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .ddt-info div {
+            flex: 1;
+        }
+        
+        .info-section {
+            margin-bottom: 20px;
+        }
+        
+        .info-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #2c5282;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        
+        .info-row .label {
+            font-weight: bold;
+            width: 120px;
+            color: #666;
+        }
+        
+        .info-row .value {
+            flex: 1;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-bozza { background: #fee2e2; color: #dc2626; }
+        .status-confermato { background: #dcfce7; color: #166534; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 11px;
+        }
+        
+        table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .totals-section {
+            margin-top: 30px;
+            text-align: right;
+        }
+        
+        .totals-table {
+            display: inline-block;
+            text-align: left;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            min-width: 200px;
+        }
+        
+        .total-row.final {
+            border-top: 2px solid #2c5282;
+            padding-top: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        
+        @media print {
+            body { 
+                margin: 0.5cm; 
+                padding: 15px; 
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="company-logo">
+            <div class="header-text">
+                <h1>DOCUMENTO DI TRASPORTO IN</h1>
+                <h2>{{ ddt.numero_ddt or ('BOZZA #' + ddt.id|string) }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="company-info">
+        <strong>ACG CLIMA SERVICE S.R.L.</strong><br>
+        <strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)<br>
+        <strong>Sede Operativa:</strong> Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)<br>
+        Tel: 0383/640606 | Email: info@acgclimaservice.com<br>
+        P.IVA: 02735970069 | C.F: 02735970069
+    </div>
+    
+    <div class="ddt-info">
+        <div class="info-section">
+            <h3>📋 Informazioni DDT</h3>
+            <div class="info-row">
+                <span class="label">Data DDT:</span>
+                <span class="value">{{ ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Data Origine:</span>
+                <span class="value">{{ ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Riferimento:</span>
+                <span class="value">{{ ddt.riferimento or '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Stato:</span>
+                <span class="value">
+                    <span class="status-badge status-{{ ddt.stato }}">
+                        {% if ddt.stato == 'bozza' %}BOZZA
+                        {% elif ddt.stato == 'confermato' %}CONFERMATO
+                        {% else %}{{ ddt.stato|upper }}
+                        {% endif %}
+                    </span>
+                </span>
+            </div>
+            {% if ddt.commessa %}
+            <div class="info-row">
+                <span class="label">Commessa:</span>
+                <span class="value"><strong>{{ ddt.commessa }}</strong></span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="info-section">
+            <h3>🏭 Fornitore</h3>
+            <div class="info-row">
+                <span class="label">Ragione Sociale:</span>
+                <span class="value"><strong>{{ ddt.fornitore or '-' }}</strong></span>
+            </div>
+            <div class="info-row">
+                <span class="label">Destinazione:</span>
+                <span class="value">{{ ddt.destinazione or '-' }}</span>
+            </div>
+            {% if ddt.mastrino_ddt %}
+            <div class="info-row">
+                <span class="label">Mastrino:</span>
+                <span class="value">{{ ddt.mastrino_ddt }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if articoli %}
+    <div class="info-section">
+        <h3>📦 Articoli</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 100px;">Codice</th>
+                    <th>Descrizione</th>
+                    <th style="width: 80px;">Quantità</th>
+                    <th style="width: 100px;">Costo Unit.</th>
+                    <th style="width: 100px;">Totale</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set totale_generale = 0 %}
+                {% for articolo in articoli %}
+                {% set totale_riga = (articolo.quantita or 0) * (articolo.costo_unitario or 0) %}
+                {% set totale_generale = totale_generale + totale_riga %}
+                <tr>
+                    <td><strong>{{ articolo.codice_interno or '-' }}</strong></td>
+                    <td>{{ articolo.descrizione }}</td>
+                    <td style="text-align: right;">{{ "{:.2f}".format(articolo.quantita or 0) }}</td>
+                    <td style="text-align: right;">€ {{ "{:.2f}".format(articolo.costo_unitario or 0) }}</td>
+                    <td style="text-align: right;"><strong>€ {{ "{:.2f}".format(totale_riga) }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="totals-section">
+        <div class="totals-table">
+            <div class="total-row final">
+                <span>TOTALE GENERALE:</span>
+                <strong>€ {{ "{:.2f}".format(totale_generale) }}</strong>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="footer">
+        <div>Documento generato automaticamente dal sistema ACG CLIMA SERVICE</div>
+        <div style="margin-top: 5px;">Sistema Gestione DDT v2.7</div>
+    </div>
+</body>
+</html>

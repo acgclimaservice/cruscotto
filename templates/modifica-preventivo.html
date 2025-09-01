@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifica Preventivo - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/preventivi" class="active">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>✍️ Modifica Preventivo {{ preventivo.numero_preventivo }}</h1>
+            <div class="buttons">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/preventivi/{{ preventivo.id }}'">← Torna al Preventivo</button>
+            </div>
+        </div>
+
+        <form method="POST" action="/preventivi/{{ preventivo.id }}/modifica">
+            <!-- Dati testata preventivo -->
+            <div class="card">
+                <h3>📋 Informazioni Generali</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="cliente_nome">Cliente *</label>
+                        <input type="text" id="cliente_nome" name="cliente_nome" 
+                               value="{{ preventivo.cliente_nome }}" 
+                               placeholder="Digita per cercare cliente..." required>
+                        <input type="hidden" id="cliente_id" name="cliente_id" value="{{ preventivo.cliente_id or '' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="oggetto">Oggetto *</label>
+                        <input type="text" id="oggetto" name="oggetto" 
+                               value="{{ preventivo.oggetto }}" required
+                               placeholder="Descrizione preventivo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="data_scadenza">Data Scadenza</label>
+                        <input type="date" id="data_scadenza" name="data_scadenza"
+                               value="{{ preventivo.data_scadenza.strftime('%Y-%m-%d') if preventivo.data_scadenza }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="iva">IVA (%)</label>
+                        <input type="number" id="iva" name="iva" 
+                               value="{{ preventivo.iva or 22 }}" 
+                               min="0" max="100" step="0.01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="commessa">Commessa</label>
+                        <input type="text" id="commessa" name="commessa" 
+                               value="{{ preventivo.commessa or '' }}"
+                               placeholder="Digita per cercare commessa..." autocomplete="off">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="note">Note</label>
+                    <textarea id="note" name="note" rows="3" placeholder="Note aggiuntive...">{{ preventivo.note or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Dettagli preventivo -->
+            <div class="card">
+                <h3>📝 Dettagli Preventivo</h3>
+                <div id="dettagli-container">
+                    {% set dettagli = preventivo.dettagli or [] %}
+                    {% for dettaglio in dettagli %}
+                    <div class="dettaglio-riga" data-index="{{ loop.index0 }}">
+                        <div class="dettaglio-grid">
+                            <div class="form-group">
+                                <label>Codice</label>
+                                <input type="text" name="dettagli[{{ loop.index0 }}][codice]" 
+                                       value="{{ dettaglio.codice_articolo or '' }}"
+                                       placeholder="Codice articolo">
+                            </div>
+                            <div class="form-group">
+                                <label>Descrizione *</label>
+                                <input type="text" name="dettagli[{{ loop.index0 }}][descrizione]" 
+                                       value="{{ dettaglio.descrizione }}"
+                                       placeholder="Digita per cercare articolo..." required>
+                            </div>
+                            <div class="form-group">
+                                <label>Quantità</label>
+                                <input type="number" name="dettagli[{{ loop.index0 }}][quantita]" 
+                                       value="{{ dettaglio.quantita or 1 }}"
+                                       step="0.01" min="0" onchange="calcolaTotaleRiga({{ loop.index0 }})">
+                            </div>
+                            <div class="form-group">
+                                <label>U.M.</label>
+                                <select name="dettagli[{{ loop.index0 }}][unita]">
+                                    <option value="PZ" {{ 'selected' if dettaglio.unita_misura == 'PZ' else '' }}>PZ</option>
+                                    <option value="MT" {{ 'selected' if dettaglio.unita_misura == 'MT' else '' }}>MT</option>
+                                    <option value="KG" {{ 'selected' if dettaglio.unita_misura == 'KG' else '' }}>KG</option>
+                                    <option value="LT" {{ 'selected' if dettaglio.unita_misura == 'LT' else '' }}>LT</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Prezzo €</label>
+                                <input type="number" name="dettagli[{{ loop.index0 }}][prezzo_unitario]" 
+                                       value="{{ dettaglio.prezzo_unitario or 0 }}"
+                                       step="0.01" min="0" onchange="calcolaTotaleRiga({{ loop.index0 }})">
+                            </div>
+                            <div class="form-group">
+                                <label>Sconto %</label>
+                                <input type="number" name="dettagli[{{ loop.index0 }}][sconto]" 
+                                       value="{{ dettaglio.sconto_percentuale or 0 }}"
+                                       step="0.01" min="0" max="100" onchange="calcolaTotaleRiga({{ loop.index0 }})">
+                            </div>
+                            <div class="form-group">
+                                <label>Totale €</label>
+                                <input type="text" id="totale_{{ loop.index0 }}" readonly 
+                                       value="{{ '%.2f'|format(dettaglio.totale_riga or 0) }}">
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="btn-remove" onclick="rimuoviRiga(this)">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <button type="button" class="btn btn-secondary" onclick="aggiungiRiga()">➕ Aggiungi Riga</button>
+            </div>
+
+            <!-- Riepilogo -->
+            <div class="card">
+                <h3>💰 Riepilogo</h3>
+                <div class="riepilogo-grid">
+                    <div>
+                        <label>Totale Netto:</label>
+                        <span id="totale-netto">€ {{ '%.2f'|format(preventivo.totale_netto or 0) }}</span>
+                    </div>
+                    <div>
+                        <label>IVA:</label>
+                        <span id="totale-iva">€ {{ '%.2f'|format((preventivo.totale_netto or 0) * (preventivo.iva or 0) / 100) }}</span>
+                    </div>
+                    <div>
+                        <label>Totale Lordo:</label>
+                        <span id="totale-lordo"><strong>€ {{ '%.2f'|format(preventivo.totale_lordo or 0) }}</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">💾 Salva Modifiche</button>
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/preventivi/{{ preventivo.id }}'">❌ Annulla</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    let indiceRiga = {{ dettagli|length or 0 }};
+    
+    function aggiungiRiga() {
+        const container = document.getElementById('dettagli-container');
+        const div = document.createElement('div');
+        div.className = 'dettaglio-riga';
+        div.dataset.index = indiceRiga;
+        div.innerHTML = `
+            <div class="dettaglio-grid">
+                <div class="form-group">
+                    <label>Codice</label>
+                    <input type="text" name="dettagli[${indiceRiga}][codice]" placeholder="Codice articolo">
+                </div>
+                <div class="form-group">
+                    <label>Descrizione *</label>
+                    <input type="text" name="dettagli[${indiceRiga}][descrizione]" placeholder="Digita per cercare articolo..." required>
+                </div>
+                <div class="form-group">
+                    <label>Quantità</label>
+                    <input type="number" name="dettagli[${indiceRiga}][quantita]" value="1" step="0.01" min="0" onchange="calcolaTotaleRiga(${indiceRiga})">
+                </div>
+                <div class="form-group">
+                    <label>U.M.</label>
+                    <select name="dettagli[${indiceRiga}][unita]">
+                        <option value="PZ">PZ</option>
+                        <option value="MT">MT</option>
+                        <option value="KG">KG</option>
+                        <option value="LT">LT</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Prezzo €</label>
+                    <input type="number" name="dettagli[${indiceRiga}][prezzo_unitario]" value="0" step="0.01" min="0" onchange="calcolaTotaleRiga(${indiceRiga})">
+                </div>
+                <div class="form-group">
+                    <label>Sconto %</label>
+                    <input type="number" name="dettagli[${indiceRiga}][sconto]" value="0" step="0.01" min="0" max="100" onchange="calcolaTotaleRiga(${indiceRiga})">
+                </div>
+                <div class="form-group">
+                    <label>Totale €</label>
+                    <input type="text" id="totale_${indiceRiga}" readonly value="0.00">
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn-remove" onclick="rimuoviRiga(this)">🗑️</button>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        indiceRiga++;
+        
+        // Setup autocompletamento per la nuova riga
+        const descrizioneInput = div.querySelector('input[name*="[descrizione]"]');
+        if (window.AutocompleteHelpers) {
+            window.AutocompleteHelpers.setupArticoliAutocomplete(descrizioneInput);
+        }
+    }
+    
+    function rimuoviRiga(btn) {
+        btn.closest('.dettaglio-riga').remove();
+        calcolaTotaleGenerale();
+    }
+    
+    function calcolaTotaleRiga(index) {
+        const quantita = parseFloat(document.querySelector(`[name="dettagli[${index}][quantita]"]`).value) || 0;
+        const prezzo = parseFloat(document.querySelector(`[name="dettagli[${index}][prezzo_unitario]"]`).value) || 0;
+        const sconto = parseFloat(document.querySelector(`[name="dettagli[${index}][sconto]"]`).value) || 0;
+        
+        const totale = quantita * prezzo * (1 - sconto/100);
+        document.getElementById(`totale_${index}`).value = totale.toFixed(2);
+        
+        calcolaTotaleGenerale();
+    }
+    
+    function calcolaTotaleGenerale() {
+        let totaleNetto = 0;
+        
+        document.querySelectorAll('[id^="totale_"]').forEach(input => {
+            if (input.id !== 'totale-netto' && input.id !== 'totale-iva' && input.id !== 'totale-lordo') {
+                totaleNetto += parseFloat(input.value) || 0;
+            }
+        });
+        
+        const iva = parseFloat(document.getElementById('iva').value) || 0;
+        const totaleIva = totaleNetto * iva / 100;
+        const totaleLordo = totaleNetto + totaleIva;
+        
+        document.getElementById('totale-netto').textContent = '€ ' + totaleNetto.toFixed(2);
+        document.getElementById('totale-iva').textContent = '€ ' + totaleIva.toFixed(2);
+        document.getElementById('totale-lordo').innerHTML = '<strong>€ ' + totaleLordo.toFixed(2) + '</strong>';
+    }
+    
+    // Inizializza autocompletamento
+    document.addEventListener('DOMContentLoaded', function() {
+        const clienteInput = document.getElementById('cliente_nome');
+        if (clienteInput && window.AutocompleteHelpers) {
+            window.AutocompleteHelpers.setupClientiAutocomplete(clienteInput);
+        }
+        
+        // Setup autocompletamento commesse
+        const commessaInput = document.getElementById('commessa');
+        if (commessaInput && window.AutocompleteHelpers) {
+            window.AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
+        }
+        
+        // Setup autocompletamento per righe esistenti
+        document.querySelectorAll('input[name*="[descrizione]"]').forEach(input => {
+            if (window.AutocompleteHelpers) {
+                window.AutocompleteHelpers.setupArticoliAutocomplete(input);
+            }
+        });
+        
+        // Calcola totale iniziale
+        calcolaTotaleGenerale();
+    });
+    </script>
+
+    <style>
+    .dettaglio-grid {
+        display: grid;
+        grid-template-columns: 100px 2fr 80px 60px 100px 80px 100px 40px;
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+    
+    .btn-remove {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .btn-remove:hover {
+        background: #c82333;
+    }
+    
+    .riepilogo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .riepilogo-grid > div {
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+    
+    .riepilogo-grid label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    @media (max-width: 768px) {
+        .dettaglio-grid {
+            grid-template-columns: 1fr;
+            gap: 5px;
+        }
+        
+        .riepilogo-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    </style>
+</body>
+</html>

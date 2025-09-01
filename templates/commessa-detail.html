@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commessa {{ commessa.numero_progressivo }} - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/movimenti-interni">🔄 Movimenti Interni</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/commesse" class="active">🏗️ Commesse</a></li>
+                <li><a href="/clienti">👥 Clienti</a></li>
+                <li><a href="/fornitori">🏭 Fornitori</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>🏗️ Commessa {{ commessa.numero_progressivo }}</h1>
+            <div class="actions">
+                <a href="/commesse" class="btn btn-secondary">← Torna alle Commesse</a>
+                {% if commessa.stato == 'aperta' %}
+                <button class="btn btn-danger" onclick="chiudiCommessa({{ commessa.id }})">Chiudi Commessa</button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Informazioni Generali -->
+        <div class="card-detail">
+            <div class="card-header">
+                <h3>📋 Informazioni Generali</h3>
+                <span class="status {{ 'confirmed' if commessa.stato == 'aperta' else 'draft' }}">
+                    {{ commessa.stato|upper }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Cliente</label>
+                        <value>{{ commessa.cliente_nome }}</value>
+                    </div>
+                    <div class="detail-item">
+                        <label>Tipologia</label>
+                        <value>
+                            <span class="badge badge-{{ commessa.tipologia|lower|replace(' ', '-') }}">
+                                {{ commessa.tipologia }}
+                            </span>
+                        </value>
+                    </div>
+                    <div class="detail-item">
+                        <label>Data Apertura</label>
+                        <value>{{ commessa.data_apertura.strftime('%d/%m/%Y') if commessa.data_apertura else '-' }}</value>
+                    </div>
+                    <div class="detail-item">
+                        <label>Data Scadenza</label>
+                        <value>{{ commessa.data_scadenza.strftime('%d/%m/%Y') if commessa.data_scadenza else '-' }}</value>
+                    </div>
+                    {% if commessa.data_chiusura %}
+                    <div class="detail-item">
+                        <label>Data Chiusura</label>
+                        <value>{{ commessa.data_chiusura.strftime('%d/%m/%Y') }}</value>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if commessa.descrizione %}
+                <div class="detail-item full-width">
+                    <label>Descrizione</label>
+                    <value>{{ commessa.descrizione }}</value>
+                </div>
+                {% endif %}
+                
+                {% if commessa.note %}
+                <div class="detail-item full-width">
+                    <label>Note</label>
+                    <value>{{ commessa.note }}</value>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- DDT Collegati -->
+        <div class="card-detail">
+            <div class="card-header">
+                <h3>📦 DDT Collegati</h3>
+                <span class="count-badge">{{ ddt_collegati|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if ddt_collegati %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Numero DDT</th>
+                                <th>Data</th>
+                                <th>Stato</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ddt in ddt_collegati %}
+                            <tr>
+                                <td>
+                                    <span class="badge {{ 'badge-in' if ddt.tipo == 'IN' else 'badge-out' }}">
+                                        {{ ddt.tipo }}
+                                    </span>
+                                </td>
+                                <td><strong>{{ ddt.numero_ddt }}</strong></td>
+                                <td>{{ ddt.data_documento.strftime('%d/%m/%Y') if ddt.data_documento else '-' }}</td>
+                                <td>
+                                    <span class="status {{ 'confirmed' if ddt.stato == 'confermato' else 'draft' }}">
+                                        {{ ddt.stato|upper }}
+                                    </span>
+                                </td>
+                                <td class="actions">
+                                    {% if ddt.tipo == 'IN' %}
+                                    <a href="/ddt-in/{{ ddt.id }}" class="btn btn-sm">Visualizza</a>
+                                    {% else %}
+                                    <a href="/ddt-out/{{ ddt.id }}" class="btn btn-sm">Visualizza</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px; color: #888;">
+                    Nessun DDT collegato a questa commessa
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Preventivi Collegati -->
+        <div class="card-detail">
+            <div class="card-header">
+                <h3>📋 Preventivi Collegati</h3>
+                <span class="count-badge">{{ preventivi_collegati|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if preventivi_collegati %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Numero</th>
+                                <th>Cliente</th>
+                                <th>Data</th>
+                                <th>Stato</th>
+                                <th>Totale</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for preventivo in preventivi_collegati %}
+                            <tr>
+                                <td><strong>{{ preventivo.numero_preventivo }}</strong></td>
+                                <td>{{ preventivo.cliente_nome }}</td>
+                                <td>{{ preventivo.data_preventivo.strftime('%d/%m/%Y') if preventivo.data_preventivo else '-' }}</td>
+                                <td>
+                                    <span class="status {{ 'confirmed' if preventivo.stato == 'accettato' else 'draft' }}">
+                                        {{ preventivo.stato|upper }}
+                                    </span>
+                                </td>
+                                <td>€ {{ "{:,.2f}".format(preventivo.totale_lordo or 0) }}</td>
+                                <td class="actions">
+                                    <a href="/preventivi/{{ preventivo.id }}" class="btn btn-sm">Visualizza</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px; color: #888;">
+                    Nessun preventivo collegato a questa commessa
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Ordini Collegati -->
+        <div class="card-detail">
+            <div class="card-header">
+                <h3>📦 Ordini Collegati</h3>
+                <span class="count-badge">{{ ordini_collegati|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if ordini_collegati %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Numero</th>
+                                <th>Fornitore</th>
+                                <th>Data</th>
+                                <th>Stato</th>
+                                <th>Priorità</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ordine in ordini_collegati %}
+                            <tr>
+                                <td><strong>{{ ordine.numero_ordine }}</strong></td>
+                                <td>{{ ordine.fornitore_nome }}</td>
+                                <td>{{ ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else '-' }}</td>
+                                <td>
+                                    <span class="status {{ 'confirmed' if ordine.stato == 'completato' else 'draft' }}">
+                                        {{ ordine.stato|upper }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="priority-badge {{ ordine.priorita }}">
+                                        {% if ordine.priorita == 'alta' %}🔴 Alta{% elif ordine.priorita == 'media' %}🟡 Media{% else %}🟢 Bassa{% endif %}
+                                    </span>
+                                </td>
+                                <td class="actions">
+                                    <a href="/ordini/{{ ordine.id }}" class="btn btn-sm">Visualizza</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px; color: #888;">
+                    Nessun ordine collegato a questa commessa
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Statistiche -->
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 30px;">
+            <div class="stat-card">
+                <h3>{{ ddt_collegati|length }}</h3>
+                <p>DDT Totali</p>
+            </div>
+            <div class="stat-card">
+                <h3 style="color: #059669;">{{ ddt_collegati|selectattr('tipo', 'equalto', 'IN')|list|length }}</h3>
+                <p>DDT IN</p>
+            </div>
+            <div class="stat-card">
+                <h3 style="color: #dc2626;">{{ ddt_collegati|selectattr('tipo', 'equalto', 'OUT')|list|length }}</h3>
+                <p>DDT OUT</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function chiudiCommessa(id) {
+        if (confirm('Sei sicuro di voler chiudere questa commessa?')) {
+            fetch(`/commesse/${id}/chiudi`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Commessa chiusa con successo');
+                    location.reload();
+                } else {
+                    alert('Errore: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore durante la chiusura della commessa');
+            });
+        }
+    }
+    </script>
+
+    <style>
+    .card-detail {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: #f8fafc;
+        padding: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-header h3 {
+        margin: 0;
+        color: #1e293b;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .detail-item.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .detail-item label {
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .detail-item value {
+        color: #1e293b;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+    .count-badge {
+        background: #3b82f6;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.9em;
+        font-weight: 600;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .badge-riqualificazione { background: #dbeafe; color: #1d4ed8; }
+    .badge-manutenzione-ordinaria { background: #d1fae5; color: #065f46; }
+    .badge-manutenzione-straordinaria { background: #fef3c7; color: #92400e; }
+    .badge-in { background: #dcfce7; color: #166534; }
+    .badge-out { background: #fee2e2; color: #dc2626; }
+
+    @media (max-width: 768px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .card-header {
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+    }
+    </style>
+</body>
+</html>

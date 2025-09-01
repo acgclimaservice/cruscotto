@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Massivo PDF - DDT IN</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .drag-drop-area {
+            border: 3px dashed #ccc;
+            border-radius: 10px;
+            width: 100%;
+            height: 200px;
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            transition: border-color 0.3s ease;
+            background: #f9f9f9;
+        }
+        
+        .drag-drop-area.dragover {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+        }
+        
+        .file-list {
+            margin: 20px 0;
+            padding: 0;
+            list-style: none;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+        
+        .file-info {
+            flex-grow: 1;
+        }
+        
+        .file-status {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .status-pending { background: #ffc107; color: white; }
+        .status-processing { background: #17a2b8; color: white; }
+        .status-completed { background: #28a745; color: white; }
+        .status-failed { background: #dc3545; color: white; }
+        
+        .progress-container, .upload-progress-container {
+            display: none;
+            margin: 20px 0;
+        }
+        
+        .progress-bar, .upload-progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill, .upload-progress-fill {
+            height: 100%;
+            background: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .upload-progress-fill {
+            background: #28a745;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes subtleGlow {
+            0% { box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); }
+        }
+        
+        .processing-animation {
+            animation: subtleGlow 2s ease-in-out infinite;
+            border: 2px solid #007bff;
+        }
+        
+        .processing-text {
+            animation: fadeInOut 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        .upload-status {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .results-container {
+            display: none;
+            margin: 20px 0;
+        }
+        
+        .result-summary {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .ddt-links {
+            margin: 10px 0;
+        }
+        
+        .ddt-link {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px 10px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+        }
+        
+        .ddt-link:hover {
+            background: #0056b3;
+            color: white;
+        }
+        
+        .error-details {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Import Massivo PDF - DDT IN</h1>
+            <p>Carica fino a 10 PDF contemporaneamente per generare altrettante bozze DDT IN</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Area Drag & Drop -->
+            <div class="drag-drop-area" id="dragDropArea">
+                <h3>📁 Trascina i PDF qui o clicca per selezionare</h3>
+                <p>Massimo 10 file PDF • Dimensione max: 10MB per file</p>
+                <input type="file" id="fileInput" multiple accept=".pdf" style="position: absolute; left: -9999px; opacity: 0;">
+                <button type="button" class="btn btn-primary" id="selectFilesBtn">
+                    📂 Seleziona File PDF
+                </button>
+            </div>
+
+            <!-- Lista File Selezionati -->
+            <div id="fileListContainer" style="display: none;">
+                <h3>📋 File Selezionati</h3>
+                <ul class="file-list" id="fileList"></ul>
+                
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-success" id="startImportBtn" onclick="startBatchImport()">
+                        🚀 Avvia Elaborazione
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearFiles()">
+                        🗑️ Cancella Tutto
+                    </button>
+                </div>
+            </div>
+
+            <!-- Upload Progress Bar -->
+            <div class="upload-progress-container" id="uploadProgressContainer">
+                <h3>📤 Caricamento File...</h3>
+                <div class="upload-progress-bar">
+                    <div class="upload-progress-fill" id="uploadProgressFill">
+                        <div class="loading-spinner"></div> &nbsp; 0%
+                    </div>
+                </div>
+                <p class="upload-status" id="uploadStatus">Preparazione caricamento...</p>
+            </div>
+
+            <!-- Processing Progress Bar -->
+            <div class="progress-container" id="progressContainer">
+                <h3>⚙️ Elaborazione in Corso...</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+                <p id="progressText">Preparazione...</p>
+            </div>
+
+            <!-- Risultati -->
+            <div class="results-container" id="resultsContainer">
+                <h3>✅ Elaborazione Completata</h3>
+                <div class="result-summary" id="resultSummary"></div>
+                
+                <div id="successfulDDTs" style="display: none;">
+                    <h4>📋 DDT IN Creati</h4>
+                    <div class="ddt-links" id="ddtLinks"></div>
+                </div>
+                
+                <div id="failedFiles" style="display: none;">
+                    <h4>❌ File con Errori</h4>
+                    <div id="errorsList"></div>
+                </div>
+                
+                <div class="action-buttons" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-primary" onclick="location.href='/ddt-in'">
+                        📄 Vai alla Lista DDT IN
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="location.reload()">
+                        🔄 Nuovo Import Batch
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        let currentJobId = null;
+        let pollingInterval = null;
+        let isFileSelecting = false;
+        let isPolling = false;
+        let pollingStopped = false;
+
+        // Gestione Page Visibility per polling continuo
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log('🔍 Tab nascosta - polling continuerà in background');
+            } else {
+                console.log('🔍 Tab visibile - riprendendo controlli');
+                if (currentJobId && !pollingStopped) {
+                    // Controlla immediatamente lo stato quando si torna alla pagina
+                    checkJobStatus();
+                }
+            }
+        });
+
+        // Richiedi permessi notifiche
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Gestione Drag & Drop
+        const dragDropArea = document.getElementById('dragDropArea');
+        const fileInput = document.getElementById('fileInput');
+        const selectFilesBtn = document.getElementById('selectFilesBtn');
+
+        dragDropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dragDropArea.classList.add('dragover');
+        });
+
+        dragDropArea.addEventListener('dragleave', () => {
+            dragDropArea.classList.remove('dragover');
+        });
+
+        dragDropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragDropArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        // Handler per l'area drag-drop (non il bottone)
+        dragDropArea.addEventListener('click', (e) => {
+            // Solo se il click NON è sul bottone
+            if (!e.target.closest('#selectFilesBtn')) {
+                e.preventDefault();
+                triggerFileSelection();
+            }
+        });
+
+        // Handler separato per il bottone
+        selectFilesBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Fallback: crea un nuovo input temporaneo
+            console.log('Button clicked - trying fallback method...');
+            const tempInput = document.createElement('input');
+            tempInput.type = 'file';
+            tempInput.multiple = true;
+            tempInput.accept = '.pdf';
+            tempInput.style.display = 'none';
+            
+            tempInput.addEventListener('change', (event) => {
+                console.log('Temp input files:', event.target.files.length);
+                if (event.target.files.length > 0) {
+                    handleFiles(event.target.files);
+                }
+                document.body.removeChild(tempInput);
+            });
+            
+            document.body.appendChild(tempInput);
+            tempInput.click();
+        });
+
+        function triggerFileSelection() {
+            if (!isFileSelecting) {
+                console.log('Triggering file selection...');
+                console.log('FileInput element:', fileInput);
+                console.log('FileInput disabled:', fileInput.disabled);
+                console.log('FileInput style:', fileInput.style.cssText);
+                
+                isFileSelecting = true;
+                
+                // Assicurati che l'elemento non sia disabilitato
+                fileInput.disabled = false;
+                
+                // Prova click diretto con focus prima
+                try {
+                    fileInput.focus();
+                    fileInput.click();
+                    console.log('Method: focus + click called');
+                } catch (e) {
+                    console.error('Method failed:', e);
+                }
+                
+                setTimeout(() => {
+                    isFileSelecting = false;
+                }, 1000);
+            } else {
+                console.log('File selection already in progress...');
+            }
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                console.log('File selezionati:', e.target.files.length);
+                handleFiles(e.target.files);
+            }
+            // Reset input per permettere selezione stesso file
+            e.target.value = '';
+        });
+
+        function handleFiles(files) {
+            console.log('handleFiles chiamata con:', files.length, 'file');
+            
+            const validFiles = Array.from(files).filter(file => {
+                console.log('Validando file:', file.name, 'tipo:', file.type, 'dimensione:', file.size);
+                
+                if (file.type !== 'application/pdf') {
+                    alert(`${file.name} non è un file PDF valido`);
+                    return false;
+                }
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`${file.name} supera la dimensione massima di 10MB`);
+                    return false;
+                }
+                return true;
+            });
+
+            console.log('File validi:', validFiles.length);
+
+            if (selectedFiles.length + validFiles.length > 10) {
+                alert('Puoi selezionare massimo 10 file PDF');
+                return;
+            }
+
+            if (validFiles.length > 0) {
+                selectedFiles.push(...validFiles);
+                console.log('File totali selezionati:', selectedFiles.length);
+                updateFileList();
+            } else {
+                console.log('Nessun file valido da aggiungere');
+            }
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            const fileListContainer = document.getElementById('fileListContainer');
+
+            if (selectedFiles.length === 0) {
+                fileListContainer.style.display = 'none';
+                return;
+            }
+
+            fileListContainer.style.display = 'block';
+            fileList.innerHTML = '';
+
+            selectedFiles.forEach((file, index) => {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                li.innerHTML = `
+                    <div class="file-info">
+                        <strong>${file.name}</strong>
+                        <br>
+                        <small>${formatFileSize(file.size)} • PDF</small>
+                    </div>
+                    <div>
+                        <span class="file-status status-pending">In attesa</span>
+                        <button type="button" class="btn btn-small btn-danger" onclick="removeFile(${index})" style="margin-left: 10px;">
+                            ❌ Rimuovi
+                        </button>
+                    </div>
+                `;
+                fileList.appendChild(li);
+            });
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        }
+
+        function clearFiles() {
+            selectedFiles = [];
+            updateFileList();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function startBatchImport() {
+            if (selectedFiles.length === 0) {
+                alert('Seleziona almeno un file PDF');
+                return;
+            }
+
+            const startBtn = document.getElementById('startImportBtn');
+            startBtn.disabled = true;
+            startBtn.textContent = '⏳ Caricamento...';
+
+            // Mostra upload progress
+            showUploadProgress();
+
+            try {
+                const formData = new FormData();
+                selectedFiles.forEach((file, index) => {
+                    formData.append('pdf_files', file);
+                });
+
+                // Crea XMLHttpRequest per monitorare upload progress
+                const xhr = new XMLHttpRequest();
+                
+                // Monitor upload progress
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        updateUploadProgress(percentComplete, e.loaded, e.total);
+                    }
+                });
+
+                // Handle completion
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        const result = JSON.parse(xhr.responseText);
+                        if (result.success) {
+                            hideUploadProgress();
+                            currentJobId = result.job_id;
+                            showProgress();
+                            startPolling();
+                        } else {
+                            alert('Errore durante il caricamento: ' + result.error);
+                            resetUploadState(startBtn);
+                        }
+                    } else {
+                        alert('Errore di connessione durante upload');
+                        resetUploadState(startBtn);
+                    }
+                });
+
+                // Handle errors
+                xhr.addEventListener('error', () => {
+                    alert('Errore di connessione durante upload');
+                    resetUploadState(startBtn);
+                });
+
+                // Start upload
+                xhr.open('POST', '/ddt-in/import-batch');
+                xhr.send(formData);
+
+            } catch (error) {
+                alert('Errore di connessione: ' + error.message);
+                resetUploadState(startBtn);
+            }
+        }
+
+        function showUploadProgress() {
+            document.getElementById('fileListContainer').style.display = 'none';
+            document.getElementById('uploadProgressContainer').style.display = 'block';
+            document.getElementById('uploadStatus').textContent = 'Caricamento file in corso...';
+        }
+
+        function updateUploadProgress(percent, loaded, total) {
+            const progressFill = document.getElementById('uploadProgressFill');
+            const status = document.getElementById('uploadStatus');
+            
+            progressFill.style.width = percent + '%';
+            progressFill.innerHTML = `<div class="loading-spinner"></div> &nbsp; ${percent}%`;
+            
+            const loadedMB = (loaded / (1024 * 1024)).toFixed(1);
+            const totalMB = (total / (1024 * 1024)).toFixed(1);
+            status.textContent = `Caricati ${loadedMB}MB di ${totalMB}MB (${selectedFiles.length} file)`;
+        }
+
+        function hideUploadProgress() {
+            document.getElementById('uploadProgressContainer').style.display = 'none';
+        }
+
+        function resetUploadState(startBtn) {
+            hideUploadProgress();
+            document.getElementById('fileListContainer').style.display = 'block';
+            startBtn.disabled = false;
+            startBtn.textContent = '🚀 Avvia Elaborazione';
+        }
+
+        function showProgress() {
+            document.getElementById('fileListContainer').style.display = 'none';
+            document.getElementById('progressContainer').style.display = 'block';
+        }
+
+        function startPolling() {
+            if (isPolling) return;
+            
+            isPolling = true;
+            pollingStopped = false;
+            console.log('🔄 Avvio polling per job:', currentJobId);
+            
+            pollingInterval = setInterval(() => {
+                checkJobStatus();
+            }, 2000);
+            
+            // Primo check immediato
+            checkJobStatus();
+        }
+
+        async function checkJobStatus() {
+            if (!currentJobId || pollingStopped) return;
+            
+            try {
+                const response = await fetch(`/ddt-in/import-batch/status/${currentJobId}`);
+                const status = await response.json();
+                
+                console.log('📊 Status update:', status.status, `${status.processed_files}/${status.total_files}`);
+                updateProgress(status);
+                
+                if (status.status === 'completed' || status.status === 'failed') {
+                    stopPolling();
+                    showResults(status);
+                    
+                    // Notifica desktop se la pagina è nascosta
+                    if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+                        new Notification('📄 Elaborazione PDF Completata', {
+                            body: `Processati ${status.successful_files} file su ${status.total_files}`,
+                            icon: '/favicon.ico'
+                        });
+                    }
+                    
+                    // Suono di completamento Windows-style
+                    try {
+                        // Crea un suono Windows-like con oscillatore
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        
+                        // Primo tono (900Hz)
+                        const oscillator1 = audioContext.createOscillator();
+                        const gainNode1 = audioContext.createGain();
+                        oscillator1.connect(gainNode1);
+                        gainNode1.connect(audioContext.destination);
+                        oscillator1.frequency.setValueAtTime(900, audioContext.currentTime);
+                        oscillator1.type = 'sine';
+                        gainNode1.gain.setValueAtTime(0.3, audioContext.currentTime);
+                        gainNode1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                        oscillator1.start(audioContext.currentTime);
+                        oscillator1.stop(audioContext.currentTime + 0.2);
+                        
+                        // Secondo tono (600Hz) con delay
+                        setTimeout(() => {
+                            const oscillator2 = audioContext.createOscillator();
+                            const gainNode2 = audioContext.createGain();
+                            oscillator2.connect(gainNode2);
+                            gainNode2.connect(audioContext.destination);
+                            oscillator2.frequency.setValueAtTime(600, audioContext.currentTime);
+                            oscillator2.type = 'sine';
+                            gainNode2.gain.setValueAtTime(0.2, audioContext.currentTime);
+                            gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                            oscillator2.start(audioContext.currentTime);
+                            oscillator2.stop(audioContext.currentTime + 0.3);
+                        }, 100);
+                        
+                    } catch (e) {
+                        console.log('Audio notification failed:', e);
+                    }
+                }
+            } catch (error) {
+                console.error('Errore polling:', error);
+                // Riprova dopo un errore
+                setTimeout(checkJobStatus, 5000);
+            }
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+            isPolling = false;
+            pollingStopped = true;
+            console.log('⏹️ Polling fermato');
+        }
+
+        function updateProgress(status) {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            const percentage = Math.round((status.processed_files / status.total_files) * 100);
+            progressFill.style.width = percentage + '%';
+            progressFill.textContent = percentage + '%';
+            
+            progressText.textContent = `Elaborati ${status.processed_files} di ${status.total_files} file`;
+            
+            // Aggiorna titolo pagina con progresso e animazione
+            if (status.status === 'processing') {
+                document.title = `⚙️ ${percentage}% - Import PDF Batch`;
+                progressContainer.classList.add('processing-animation');
+                progressText.classList.add('processing-text');
+            } else if (status.status === 'completed') {
+                document.title = `✅ Completato - Import PDF Batch`;
+                progressContainer.classList.remove('processing-animation');
+                progressText.classList.remove('processing-text');
+            } else if (status.status === 'failed') {
+                document.title = `❌ Errore - Import PDF Batch`;
+            }
+        }
+
+        function showResults(status) {
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('resultsContainer').style.display = 'block';
+            
+            const summary = document.getElementById('resultSummary');
+            summary.innerHTML = `
+                <h4>📊 Riepilogo Elaborazione</h4>
+                <p><strong>File Processati:</strong> ${status.processed_files} di ${status.total_files}</p>
+                <p><strong>✅ Successi:</strong> ${status.successful_files}</p>
+                <p><strong>❌ Errori:</strong> ${status.failed_files}</p>
+            `;
+            
+            if (status.successful_ddts && status.successful_ddts.length > 0) {
+                const successDiv = document.getElementById('successfulDDTs');
+                const ddtLinks = document.getElementById('ddtLinks');
+                
+                successDiv.style.display = 'block';
+                ddtLinks.innerHTML = '';
+                
+                status.successful_ddts.forEach(ddt => {
+                    const link = document.createElement('a');
+                    link.href = `/ddt-in/${ddt.id}`;
+                    link.className = 'ddt-link';
+                    link.textContent = `DDT IN ${ddt.numero_ddt || ddt.id}`;
+                    ddtLinks.appendChild(link);
+                });
+            }
+            
+            if (status.failed_files > 0 && status.errors) {
+                const failedDiv = document.getElementById('failedFiles');
+                const errorsList = document.getElementById('errorsList');
+                
+                failedDiv.style.display = 'block';
+                errorsList.innerHTML = '';
+                
+                status.errors.forEach(error => {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'error-details';
+                    errorDiv.innerHTML = `
+                        <strong>${error.filename}:</strong> ${error.error}
+                    `;
+                    errorsList.appendChild(errorDiv);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

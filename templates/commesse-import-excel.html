@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importazione Commesse da Excel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .info-section {
+            background-color: #e3f2fd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .file-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .file-input:hover {
+            border-color: #2196F3;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1976D2;
+        }
+        
+        .btn-secondary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #45a049;
+        }
+        
+        .btn-back {
+            background-color: #666;
+            color: white;
+        }
+        
+        .btn-back:hover {
+            background-color: #555;
+        }
+        
+        .progress {
+            display: none;
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #2196F3;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .result-section {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        
+        .result-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .error-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        .error-item {
+            padding: 5px;
+            background-color: rgba(255,255,255,0.5);
+            margin: 2px 0;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        
+        .template-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .required-columns {
+            margin-top: 15px;
+        }
+        
+        .column-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .column-item {
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Importazione Commesse da Excel</h1>
+        
+        <div class="info-section">
+            <h3>ℹ️ Informazioni sull'importazione</h3>
+            <p>Questa funzione permette di importare multiple commesse da un file Excel.</p>
+            <p><strong>Nota:</strong> Il sistema verificherà automaticamente se le commesse esistono già nel database usando il numero progressivo.</p>
+        </div>
+        
+        <div class="template-info">
+            <h4>📋 Template Excel</h4>
+            <p>Il file Excel deve contenere le seguenti colonne (alcune sono opzionali):</p>
+            <div class="required-columns">
+                <strong>Colonne obbligatorie:</strong>
+                <div class="column-list">
+                    <div class="column-item">numero_progressivo</div>
+                    <div class="column-item">cliente_nome (deve corrispondere alla ragione sociale in anagrafica)</div>
+                    <div class="column-item">tipologia</div>
+                    <div class="column-item">descrizione</div>
+                </div>
+                <br>
+                <strong>Colonne opzionali:</strong>
+                <div class="column-list">
+                    <div class="column-item">data_apertura (formato: dd/mm/yyyy)</div>
+                    <div class="column-item">note</div>
+                    <div class="column-item">stato (default: aperta)</div>
+                </div>
+            </div>
+        </div>
+        
+        <form id="importForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="excelFile">Seleziona file Excel (.xlsx o .xls):</label>
+                <input type="file" id="excelFile" name="excel_file" accept=".xlsx,.xls" required>
+            </div>
+            
+            <div class="button-group">
+                <a href="/commesse/template-excel" class="btn btn-secondary">📥 Scarica Template</a>
+                <button type="submit" id="importBtn" class="btn btn-primary">📤 Importa Commesse</button>
+                <a href="/commesse" class="btn btn-back">← Torna alle Commesse</a>
+            </div>
+        </form>
+        
+        <div class="progress" id="progressSection">
+            <p>Importazione in corso...</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        
+        <div class="result-section" id="resultSection">
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('importForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Seleziona un file Excel da importare');
+                return;
+            }
+            
+            // Verifica estensione file
+            const fileName = file.name.toLowerCase();
+            if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+                alert('Il file deve essere in formato Excel (.xlsx o .xls)');
+                return;
+            }
+            
+            // Mostra progress
+            document.getElementById('progressSection').style.display = 'block';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('importBtn').disabled = true;
+            document.getElementById('importBtn').textContent = 'Importazione in corso...';
+            
+            // Simula progress
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress > 90) progress = 90;
+                document.getElementById('progressFill').style.width = progress + '%';
+            }, 200);
+            
+            // Prepara FormData
+            const formData = new FormData();
+            formData.append('excel_file', file);
+            
+            // Invio dati
+            fetch('/commesse/import-excel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                document.getElementById('progressFill').style.width = '100%';
+                
+                setTimeout(() => {
+                    document.getElementById('progressSection').style.display = 'none';
+                    document.getElementById('resultSection').style.display = 'block';
+                    
+                    const resultContent = document.getElementById('resultContent');
+                    
+                    if (data.success) {
+                        resultContent.innerHTML = `
+                            <h3>✅ Importazione completata!</h3>
+                            <p><strong>${data.imported_count}</strong> commesse importate con successo.</p>
+                            ${data.errors && data.errors.length > 0 ? 
+                                `<h4>⚠️ Avvisi:</h4>
+                                <div class="error-list">
+                                    ${data.errors.map(error => `<div class="error-item">${error}</div>`).join('')}
+                                </div>` : 
+                                ''
+                            }
+                            <div style="margin-top: 20px; text-align: center;">
+                                <a href="/commesse" class="btn btn-primary">📋 Vai alle Commesse</a>
+                            </div>
+                        `;
+                        document.getElementById('resultSection').className = 'result-section result-success';
+                    } else {
+                        resultContent.innerHTML = `
+                            <h3>❌ Errore durante l'importazione</h3>
+                            <p>${data.error}</p>
+                            ${data.errors && data.errors.length > 0 ? 
+                                `<div class="error-list">
+                                    ${data.errors.map(error => `<div class="error-item">${error}</div>`).join('')}
+                                </div>` : 
+                                ''
+                            }
+                        `;
+                        document.getElementById('resultSection').className = 'result-section result-error';
+                    }
+                    
+                    // Reset form
+                    document.getElementById('importBtn').disabled = false;
+                    document.getElementById('importBtn').textContent = '📤 Importa Commesse';
+                    fileInput.value = '';
+                    
+                }, 500);
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                document.getElementById('progressSection').style.display = 'none';
+                document.getElementById('resultSection').style.display = 'block';
+                document.getElementById('resultSection').className = 'result-section result-error';
+                
+                document.getElementById('resultContent').innerHTML = `
+                    <h3>❌ Errore di connessione</h3>
+                    <p>Errore durante l'invio del file: ${error.message}</p>
+                `;
+                
+                // Reset form
+                document.getElementById('importBtn').disabled = false;
+                document.getElementById('importBtn').textContent = '📤 Importa Commesse';
+            });
+        });
+    </script>
+</body>
+</html>

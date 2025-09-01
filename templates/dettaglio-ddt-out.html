@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDT OUT {{ ddt.numero_ddt or 'Bozza' }} - Sistema DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-bozza {
+            background: #fed7aa;
+            color: #92400e;
+        }
+        .status-confermato {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .actions-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .info-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+        }
+        td {
+            font-size: 14px;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .totali-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out" class="active">📤 DDT OUT</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1>📤 DDT OUT {{ ddt.numero_ddt or 'BOZZA' }}</h1>
+                    <span class="status-badge status-{{ ddt.stato }}">{{ ddt.stato }}</span>
+                </div>
+                
+                <div class="actions-bar">
+                    {% if ddt.stato == 'bozza' %}
+                        <a href="/ddt-out/{{ ddt.id }}/modifica" class="btn btn-secondary">✏️ Modifica</a>
+                        <button class="btn btn-success" onclick="confermaDDT({{ ddt.id }})">✅ Conferma DDT</button>
+                    {% endif %}
+                    {% if ddt.stato == 'confermato' %}
+                        <button class="btn btn-secondary" onclick="stampaDDT()">🖨️ Stampa</button>
+                    {% endif %}
+                    <a href="/ddt-out" class="btn btn-secondary">⬅️ Torna alla Lista</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📋 Informazioni DDT</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Numero DDT</span>
+                    <span class="info-value">{{ ddt.numero_ddt or 'Da assegnare' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Data DDT</span>
+                    <span class="info-value">{{ ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else 'Da assegnare' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Data DDT Origine</span>
+                    <span class="info-value">{{ ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Nome Origine</span>
+                    <span class="info-value">{{ ddt.nome_origine or 'ACG Clima Service S.r.l.' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Destinazione</span>
+                    <span class="info-value">{{ ddt.destinazione or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Riferimento</span>
+                    <span class="info-value">{{ ddt.riferimento or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Commessa</span>
+                    <span class="info-value">{{ ddt.commessa or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Magazzino Partenza</span>
+                    <span class="info-value">{{ ddt.magazzino_partenza or 'Magazzino Centrale' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Mastrino DDT</span>
+                    <span class="info-value">{{ ddt.mastrino_ddt or '-' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📦 Articoli ({{ articoli|length }})</h3>
+            
+            {% if articoli %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codice Interno</th>
+                        <th>Descrizione</th>
+                        <th>Fornitore</th>
+                        <th class="text-right">Q.tà</th>
+                        <th>U.M.</th>
+                        <th class="text-right">Prezzo Unit.</th>
+                        <th class="text-right">Totale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for articolo in articoli %}
+                    <tr>
+                        <td><strong>{{ articolo.codice_interno or '-' }}</strong></td>
+                        <td>{{ articolo.descrizione }}</td>
+                        <td>{{ articolo.fornitore or '-' }}</td>
+                        <td class="text-right">{{ articolo.quantita or 0 }}</td>
+                        <td>{{ articolo.unita_misura or 'PZ' }}</td>
+                        <td class="text-right">€ {{ "%.2f"|format(articolo.prezzo_unitario or 0) }}</td>
+                        <td class="text-right"><strong>€ {{ "%.2f"|format((articolo.quantita or 0) * (articolo.prezzo_unitario or 0)) }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="totali-box">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; text-align: center;">
+                    <div>
+                        <div class="info-label">Totale Articoli</div>
+                        <div style="font-size: 1.5em; font-weight: bold;">{{ articoli|length }}</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Quantità Totale</div>
+                        <div style="font-size: 1.5em; font-weight: bold;">{{ totale_quantita }}</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Valore Totale</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #059669;">€ {{ "%.2f"|format(totale_valore) }}</div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: #6b7280;">
+                <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Nessun articolo presente</div>
+                <div style="font-size: 14px;">Questo DDT non contiene articoli</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+    function confermaDDT(id) {
+        if (confirm('Confermare il DDT OUT? Una volta confermato non potrà più essere modificato.')) {
+            fetch(`/ddt-out/${id}/conferma`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`DDT OUT confermato: ${data.numero}`);
+                    location.reload();
+                } else {
+                    alert('Errore: ' + (data.error || 'Conferma fallita'));
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Errore di rete');
+            });
+        }
+    }
+    
+    function stampaDDT() {
+        window.print();
+    }
+    </script>
+</body>
+</html>

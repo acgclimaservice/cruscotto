@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import DDT da PDF - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+    <style>
+        #pdf-preview {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            display: none;
+        }
+        .preview-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .info-item {
+            position: relative;
+        }
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+        .campo-corretto { 
+            background: #fef3c7 !important; 
+        }
+        .loading-ai {
+            text-align: center;
+            padding: 40px;
+            background: #f0f8ff;
+            border-radius: 10px;
+            display: none;
+        }
+        .claude-loader {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Stili per indicatore AI */
+        .ai-indicator {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .ai-badge.claude {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .ai-badge.gemini {
+            background: linear-gradient(135deg, #4285f4 0%, #0f9d58 50%, #f4b400 100%);
+            color: white;
+        }
+        .ai-badge.fallback {
+            background: linear-gradient(135deg, #ffa726 0%, #ff7043 100%);
+            color: white;
+        }
+        .ai-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-import" class="active">📄 Import PDF</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📄 Import DDT da PDF con AI</h1>
+            <p>Carica il PDF del fornitore per estrarre automaticamente i dati</p>
+        </div>
+
+        <!-- Upload Area -->
+        <div class="card">
+            <div id="upload-area" style="text-align: center; padding: 40px;">
+                <div style="font-size: 64px; margin-bottom: 20px;">📄</div>
+                <input type="file" id="pdfFile" accept=".pdf" style="display: none;">
+                
+            <div style="margin: 20px 0; text-align: center; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                <h3>Scegli il motore AI per il parsing:</h3>
+                <label style="margin-right: 20px; cursor: pointer;">
+                    <input type="radio" name="ai_provider" value="claude" checked> 
+                    🤖 Claude AI (consigliato)
+                </label>
+                <label style="cursor: pointer;">
+                    <input type="radio" name="ai_provider" value="gemini"> 
+                    🧠 Gemini AI
+                </label>
+            </div>
+                <button class="btn btn-success" onclick="document.getElementById('pdfFile').click()">
+                    Seleziona PDF del Fornitore
+                </button>
+                <div id="fileName" style="margin-top: 20px; color: #666;"></div>
+            </div>
+        </div>
+
+        <!-- Loading AI -->
+        <div id="loading-ai" class="loading-ai">
+            <div class="claude-loader"></div>
+            <h3 style="margin-top: 20px;">Claude AI sta analizzando il documento...</h3>
+            <p>Estrazione dati in corso, attendere...</p>
+        </div>
+
+        <!-- Layout principale con PDF e dati affiancati -->
+        <div id="main-layout" style="display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+                
+                <!-- PDF a sinistra -->
+                <div class="card">
+                    <h3>📄 PDF Originale</h3>
+                    <div style="position: relative;">
+                        <!-- Prima opzione: iframe -->
+                        <iframe id="pdf-preview" src="" width="100%" height="800px" style="border: 1px solid #ddd;"></iframe>
+                        
+                        <!-- Seconda opzione: embed -->
+                        <embed id="pdf-embed" src="" type="application/pdf" width="100%" height="800px" style="display: none; border: 1px solid #ddd;">
+                        
+                        <!-- Terza opzione: object -->
+                        <object id="pdf-object" data="" type="application/pdf" width="100%" height="800px" style="display: none; border: 1px solid #ddd;">
+                            <p>Il tuo browser non supporta la visualizzazione PDF.</p>
+                        </object>
+                        
+                        <!-- Fallback finale -->
+                        <div id="pdf-fallback" style="display: none; padding: 40px; background: #f5f5f5; border: 1px solid #ddd; text-align: center; border-radius: 8px;">
+                            <h4 style="color: #666; margin-top: 0;">🔒 Visualizzazione PDF Bloccata</h4>
+                            <p style="color: #666; margin: 20px 0;">Il browser blocca la visualizzazione diretta del PDF per motivi di sicurezza.</p>
+                            <p>📄 <a id="pdf-download-link" href="" target="_blank" class="btn btn-primary" style="display: inline-block; padding: 12px 20px;">
+                                🔗 Apri PDF in Nuova Finestra
+                            </a></p>
+                            <p><small style="color: #888;">Il PDF si aprirà in una nuova scheda dove potrai visualizzarlo mentre compili i dati</small></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dati estratti a destra -->
+                <div id="results" class="card">
+                    <h3 id="results-title">✅ Dati Estratti con AI</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label class="info-label">Numero DDT</label>
+                    <input type="text" id="numero_ddt" class="campo-corretto">
+                </div>
+                <div class="info-item">
+                    <label class="info-label">Data DDT</label>
+                    <input type="date" id="data_ddt" class="campo-corretto">
+                </div>
+                <div class="info-item">
+                    <label class="info-label">Fornitore</label>
+                    <input type="text" id="fornitore" class="campo-corretto" placeholder="Cerca fornitore...">
+                    <div id="fornitori-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
+                </div>
+                <div class="info-item">
+                    <label class="info-label">P.IVA Fornitore</label>
+                    <input type="text" id="partita_iva" class="campo-corretto">
+                </div>
+                <div class="info-item">
+                    <label class="info-label">Magazzino Destinazione</label>
+                    <input type="text" id="magazzino_destinazione" class="campo-corretto" placeholder="Cerca magazzino..." required>
+                    <div id="magazzini-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
+                </div>
+                <div class="info-item">
+                    <label class="info-label">Commessa</label>
+                    <input type="text" id="commessa" class="campo-corretto" placeholder="Codice commessa (opzionale)">
+                </div>
+                
+                <!-- Indicatore AI Usata -->
+                <div id="ai-indicator" class="ai-indicator" style="display: none;">
+                    <div class="ai-badge">
+                        <span id="ai-icon">🤖</span>
+                        <span id="ai-text">Elaborato con Claude AI</span>
+                    </div>
+                    <div id="ai-reason" class="ai-reason" style="margin-top: 10px; font-size: 12px; color: #666; text-align: center; line-height: 1.4;"></div>
+                </div>
+            </div>
+            
+            <h4>Articoli Estratti</h4>
+            <div class="alert-item alert-warning" style="margin-bottom: 15px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
+                <strong>⚠️ Importante:</strong> Il mastrino è obbligatorio per ogni articolo. Utilizza solo mastrini di tipo ACQUISTO.
+            </div>
+            <div style="margin-bottom: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="copiaMastrinoImport()" style="font-size: 12px;">
+                    📋 Copia Mastrino su Tutte le Righe
+                </button>
+            </div>
+            <table id="articoliTable">
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Quantità</th>
+                        <th>Prezzo Unitario</th>
+                        <th>Mastrino <span style="color: red;">*</span></th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn btn-success" onclick="creaDDTDaImport()">
+                    ✅ Crea DDT IN
+                </button>
+                <button class="btn btn-secondary" onclick="resetForm()">
+                    🔄 Nuovo Import
+                </button>
+            </div>
+                
+                </div> <!-- Fine colonna destra (dati) -->
+            </div> <!-- Fine layout grid -->
+        </div> <!-- Fine main-layout -->
+    </div> <!-- Fine container -->
+
+    <script>
+    let uploadedPdfData = null;
+    let pdfUrl = null;
+    
+    // Lista mastrini per autocompletamento dinamico
+    window.mastriniAcquisti = [
+        {% if mastrini %}
+            {% for mastrino in mastrini %}
+            { codice: "{{ mastrino.codice }}", descrizione: "{{ mastrino.descrizione }}" },
+            {% endfor %}
+        {% endif %}
+    ];
+    
+    function copiaMastrinoImport() {
+        const firstMastrino = document.querySelector('.mastrino-input');
+        if (!firstMastrino || !firstMastrino.value.trim()) {
+            alert('Inserisci prima un mastrino nella prima riga');
+            return;
+        }
+        const masterinoValue = firstMastrino.value;
+        const allMastrini = document.querySelectorAll('.mastrino-input');
+        allMastrini.forEach(input => {
+            input.value = masterinoValue;
+        });
+        alert(`Mastrino "${masterinoValue}" copiato su tutte le righe`);
+    }
+
+    document.getElementById('pdfFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('fileName').textContent = file.name;
+            
+            // Crea URL locale per preview immediata
+            const localPdfUrl = URL.createObjectURL(file);
+            
+            // Mostra il layout principale con PDF e form affiancati
+            document.getElementById('main-layout').style.display = 'block';
+            
+            // Mostra subito il PDF con URL locale
+            tryDisplayPDF(localPdfUrl, file.name);
+            
+            // Avvia parsing (che fornirà un URL server migliore)
+            uploadPDF(file);
+        }
+    });
+
+    function uploadPDF(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Leggi la selezione dell'AI
+        const selectedAI = document.querySelector('input[name="ai_provider"]:checked').value;
+        formData.append('preferred_ai', selectedAI);
+        
+        document.getElementById('upload-area').style.display = 'none';
+        document.getElementById('loading-ai').style.display = 'block';
+        
+        console.log('Uploading PDF for parsing with:', selectedAI.toUpperCase(), 'AI');
+        
+        // Aggiorna il messaggio di caricamento basato sull'AI selezionata
+        const loadingTitle = document.querySelector('#loading-ai h3');
+        loadingTitle.textContent = selectedAI === 'gemini' ? 
+            'Gemini AI sta analizzando il documento...' : 
+            'Claude AI sta analizzando il documento...';
+        
+        // USA IL PARSER MULTI-AI
+        fetch('/ddt-import/parse-pdf-claude', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(result => {
+            console.log('Claude AI Result:', result);
+            
+            document.getElementById('loading-ai').style.display = 'none';
+            
+            if (result.success && result.data) {
+                console.log('Real data from Claude AI');
+                showResults(result.data);
+            } else {
+                console.log('Claude AI Error:', result.error);
+                alert('Errore parsing Claude AI: ' + (result.error || 'Analisi fallita'));
+                resetForm();
+            }
+        })
+        .catch(err => {
+            console.error('💥 Error:', err);
+            document.getElementById('loading-ai').style.display = 'none';
+            alert('Errore connessione: ' + err);
+            resetForm();
+        });
+    }
+
+    function showResults(data) {
+        console.log('Showing real extracted data:', data);
+        
+        // Mostra quale AI è stata usata
+        displayAIUsed(data.ai_used || 'unknown', data.ai_reason);
+        
+        // I dati sono già visibili nel layout affiancato
+        
+        // Se abbiamo l'URL del PDF dal server, sostituisci quello locale
+        if (data.pdf_url) {
+            console.log('Updating PDF with server URL:', data.pdf_url);
+            // L'iframe dovrebbe già essere visibile, aggiorna solo la source
+            const pdfPreview = document.getElementById('pdf-preview');
+            if (pdfPreview) {
+                pdfPreview.src = data.pdf_url;
+            }
+        }
+        
+        // Popola campi con dati reali
+        document.getElementById('numero_ddt').value = data.numero_ddt || '';
+        document.getElementById('data_ddt').value = data.data_ddt || '';
+        document.getElementById('fornitore').value = data.fornitore?.ragione_sociale || data.fornitore || '';
+        document.getElementById('partita_iva').value = data.fornitore?.partita_iva || '';
+        
+        // Popola articoli reali
+        const tbody = document.querySelector('#articoliTable tbody');
+        tbody.innerHTML = '';
+        
+        if (data.articoli && data.articoli.length > 0) {
+            data.articoli.forEach((art, index) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><input type="text" value="${art.codice || ''}" id="codice-${index}"></td>
+                        <td><input type="text" value="${art.descrizione || ''}" id="descrizione-${index}"></td>
+                        <td><input type="number" step="0.01" value="${art.quantita || 0}" id="quantita-${index}"></td>
+                        <td><input type="number" step="0.01" value="${art.prezzo_unitario || 0}" id="prezzo-${index}"></td>
+                        <td>
+                            <div style="position: relative;">
+                                <input type="text" id="mastrino-${index}" name="articoli[${index}][mastrino]" 
+                                       placeholder="Seleziona mastrino..." style="width: 150px; border: 2px solid #ffc107;"
+                                       class="mastrino-input" required>
+                                <div id="mastrino-suggestions-${index}" class="autocomplete-suggestions" style="display: none;"></div>
+                            </div>
+                        </td>
+                        <td><button class="btn btn-small btn-danger" onclick="rimuoviRiga(${index})">×</button></td>
+                    </tr>
+                `;
+            });
+            
+            // Attiva autocompletamento mastrini per ogni campo
+            setTimeout(() => {
+                setupMastriniAutocompleteForArticoli();
+            }, 100);
+        }
+        
+        uploadedPdfData = data;
+        
+        
+        const commessaInput = document.getElementById('commessa');
+        if (commessaInput) {
+            window.AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
+        }
+        
+        // Mantieni sistemi esistenti
+        setupFornitoriAutocomplete();
+        setupMagazziniAutocomplete();
+        
+        // Scroll ai risultati
+        document.getElementById('results').scrollIntoView({behavior: 'smooth'});
+    }
+
+    function setupMastriniAutocompleteForArticoli() {
+        // Trova tutti gli input mastrini nella tabella
+        const mastriniInputs = document.querySelectorAll('.mastrino-input');
+        
+        mastriniInputs.forEach((input, idx) => {
+            const suggestionsDiv = document.getElementById(`mastrino-suggestions-${input.id.split('-')[1]}`);
+            
+            if (!suggestionsDiv) return;
+            
+            let timeout;
+            
+            input.addEventListener('input', function() {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    const query = this.value;
+                    if (query.length < 2) {
+                        suggestionsDiv.style.display = 'none';
+                        return;
+                    }
+                    
+                    fetch(`/api/mastrini/search?tipo=ACQUISTO&q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            updateMastriniSuggestions(suggestionsDiv, data, input);
+                        })
+                        .catch(error => console.error('Errore ricerca mastrini:', error));
+                }, 300);
+            });
+            
+            // Chiudi suggestions quando si clicca fuori
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    function updateMastriniSuggestions(suggestionsDiv, mastrini, inputElement) {
+        suggestionsDiv.innerHTML = '';
+        
+        if (mastrini.length === 0) {
+            suggestionsDiv.style.display = 'none';
+            return;
+        }
+        
+        mastrini.forEach(mastrino => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `<strong>${mastrino.codice}</strong> - ${mastrino.descrizione}`;
+            
+            div.addEventListener('click', () => {
+                inputElement.value = mastrino.codice;
+                suggestionsDiv.style.display = 'none';
+            });
+            
+            suggestionsDiv.appendChild(div);
+        });
+        
+        suggestionsDiv.style.display = 'block';
+    }
+
+    function creaDDTDaImport() {
+        console.log('Creating DDT with real data:', uploadedPdfData);
+        
+        if (!uploadedPdfData || !uploadedPdfData.pdf_base64) {
+            alert('❌ Errore: Dati PDF non disponibili. Ricarica il PDF.');
+            return;
+        }
+        
+        const ddtData = {
+            numero_ddt_origine: document.getElementById('numero_ddt').value,
+            data_ddt_origine: document.getElementById('data_ddt').value,
+            fornitore: document.getElementById('fornitore').value,
+            partita_iva: document.getElementById('partita_iva').value,
+            destinazione: document.getElementById('magazzino_destinazione').value,
+            commessa: document.getElementById('commessa').value,
+            articoli: [],
+            pdf_base64: uploadedPdfData.pdf_base64 // Salva PDF
+        };
+        
+        // Raccogli articoli modificati e valida mastrini
+        const rows = document.querySelectorAll('#articoliTable tbody tr');
+        let erroriValidazione = [];
+        
+        rows.forEach((row, i) => {
+            const codice = document.getElementById(`codice-${i}`);
+            const descrizione = document.getElementById(`descrizione-${i}`);
+            const quantita = document.getElementById(`quantita-${i}`);
+            const prezzo = document.getElementById(`prezzo-${i}`);
+            const mastrino = document.getElementById(`mastrino-${i}`);
+            
+            if (codice && descrizione) {
+                const mastrinoValue = mastrino ? mastrino.value.trim() : '';
+                
+                // Validazione mastrino obbligatorio
+                if (!mastrinoValue) {
+                    erroriValidazione.push(`Articolo "${descrizione.value}" non ha un mastrino assegnato`);
+                }
+                
+                ddtData.articoli.push({
+                    codice: codice.value, // Questo è il codice fornitore
+                    descrizione: descrizione.value,
+                    quantita: parseFloat(quantita.value) || 0,
+                    costo_unitario: parseFloat(prezzo.value) || 0,
+                    mastrino_riga: mastrinoValue
+                });
+            }
+        });
+        
+        // Se ci sono errori di validazione, mostra alert e interrompi
+        if (erroriValidazione.length > 0) {
+            alert('⚠️ Errori di validazione:\n\n' + erroriValidazione.join('\n') + '\n\nCompila tutti i campi mastrino obbligatori prima di creare il DDT.');
+            return;
+        }
+        
+        fetch('/ddt-import/create-from-import', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(ddtData)
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                alert(`✅ DDT creato con successo! Importati ${result.articoli_importati} articoli`);
+                window.location.href = `/ddt-in/${result.id}`;
+            } else {
+                alert('❌ Errore: ' + result.error);
+            }
+        });
+    }
+
+    function resetForm() {
+        document.getElementById('upload-area').style.display = 'block';
+        document.getElementById('loading-ai').style.display = 'none';
+        document.getElementById('main-layout').style.display = 'none';
+        document.getElementById('ai-indicator').style.display = 'none';
+        document.getElementById('pdfFile').value = '';
+        if (pdfUrl) {
+            URL.revokeObjectURL(pdfUrl);
+            pdfUrl = null;
+        }
+        uploadedPdfData = null;
+    }
+
+    // Funzione semplificata per visualizzazione PDF
+    function tryDisplayPDF(pdfUrl, fileName) {
+        const pdfPreview = document.getElementById('pdf-preview');
+        const pdfFallback = document.getElementById('pdf-fallback');
+        const pdfDownload = document.getElementById('pdf-download-link');
+        
+        console.log('Trying to display PDF:', pdfUrl);
+        
+        // Nascondi fallback e mostra iframe
+        if (pdfFallback) pdfFallback.style.display = 'none';
+        if (pdfPreview) {
+            pdfPreview.style.display = 'block';
+            pdfPreview.src = pdfUrl;
+        }
+        
+        // Setup del link di download
+        if (pdfDownload) {
+            pdfDownload.href = pdfUrl;
+            pdfDownload.download = fileName;
+        }
+        
+        // Controllo fallback solo se necessario
+        setTimeout(() => {
+            if (pdfPreview) {
+                const rect = pdfPreview.getBoundingClientRect();
+                if (rect.height < 100) {
+                    console.log('PDF iframe too small, showing fallback');
+                    showPDFFallback();
+                }
+            }
+        }, 2000);
+        
+        function showPDFFallback() {
+            if (pdfFallback) {
+                pdfPreview.style.display = 'none';
+                pdfFallback.style.display = 'block';
+                
+                // Aggiorna il messaggio del fallback
+                const fallbackMsg = pdfFallback.querySelector('.pdf-fallback-message');
+                if (fallbackMsg) {
+                    fallbackMsg.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">📄</div>
+                            <h4>PDF Importato: ${fileName}</h4>
+                            <p style="color: #666; margin: 10px 0;">
+                                Il browser non può visualizzare il PDF inline.<br>
+                                Usa i pulsanti qui sotto per visualizzarlo o scaricarlo.
+                            </p>
+                            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+                                <a href="${pdfUrl}" target="_blank" class="btn btn-primary">
+                                    👁️ Visualizza in Nuova Finestra
+                                </a>
+                                <a href="${pdfUrl}" download="${fileName}" class="btn btn-secondary">
+                                    ⬇️ Scarica PDF
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+    }
+
+
+    // Funzione duplicata rimossa - già presente nella logica principale
+
+    // Funzioni di ridimensionamento e download rimosse per semplificare l'interfaccia
+
+    function setupMastriniAutocomplete() {
+        const mastriniInput = document.getElementById('mastrino_acquisti');
+        const suggestionsDiv = document.getElementById('mastrini-suggestions');
+        let timeout;
+        
+        mastriniInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            timeout = setTimeout(() => {
+                fetch(`/api/mastrini/search?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(mastrini => {
+                        if (mastrini.length > 0) {
+                            // Filtra solo mastrini acquisti
+                            const mastriniAcquisti = mastrini.filter(m => m.tipo === 'acquisto');
+                            if (mastriniAcquisti.length > 0) {
+                                showMastriniSuggestions(mastriniAcquisti);
+                            } else {
+                                suggestionsDiv.style.display = 'none';
+                            }
+                        } else {
+                            suggestionsDiv.style.display = 'none';
+                        }
+                    })
+                    .catch(console.error);
+            }, 300);
+        });
+
+        // Nascondi suggerimenti cliccando altrove
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.info-item')) {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+    }
+
+    function showMastriniSuggestions(mastrini) {
+        const suggestionsDiv = document.getElementById('mastrini-suggestions');
+        suggestionsDiv.innerHTML = '';
+        
+        mastrini.forEach(mastrino => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `<strong>${mastrino.codice}</strong> - ${mastrino.descrizione}`;
+            
+            div.addEventListener('click', () => {
+                document.getElementById('mastrino_acquisti').value = mastrino.codice;
+                suggestionsDiv.style.display = 'none';
+            });
+            
+            suggestionsDiv.appendChild(div);
+        });
+        
+        suggestionsDiv.style.display = 'block';
+    }
+
+    function setupFornitoriAutocomplete() {
+        const fornitoreInput = document.getElementById('fornitore');
+        const suggestionsDiv = document.getElementById('fornitori-suggestions');
+        let timeout;
+        
+        fornitoreInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            timeout = setTimeout(() => {
+                fetch(`/api/fornitori/search?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(fornitori => {
+                        if (fornitori.length > 0) {
+                            showFornitoriSuggestions(fornitori);
+                        } else {
+                            suggestionsDiv.style.display = 'none';
+                        }
+                    })
+                    .catch(console.error);
+            }, 300);
+        });
+
+        // Nascondi suggerimenti cliccando altrove
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.info-item')) {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+    }
+
+    function showFornitoriSuggestions(fornitori) {
+        const suggestionsDiv = document.getElementById('fornitori-suggestions');
+        suggestionsDiv.innerHTML = '';
+        
+        fornitori.forEach(fornitore => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `<strong>${fornitore.ragione_sociale}</strong>` + 
+                           (fornitore.partita_iva ? ` - P.IVA: ${fornitore.partita_iva}` : '');
+            
+            div.addEventListener('click', () => {
+                document.getElementById('fornitore').value = fornitore.ragione_sociale;
+                document.getElementById('partita_iva').value = fornitore.partita_iva || '';
+                suggestionsDiv.style.display = 'none';
+            });
+            
+            suggestionsDiv.appendChild(div);
+        });
+        
+        suggestionsDiv.style.display = 'block';
+    }
+
+    function setupMagazziniAutocomplete() {
+        const magazzinoInput = document.getElementById('magazzino_destinazione');
+        const suggestionsDiv = document.getElementById('magazzini-suggestions');
+        let timeout;
+        
+        magazzinoInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            timeout = setTimeout(() => {
+                fetch(`/api/magazzini/search?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(magazzini => {
+                        if (magazzini.length > 0) {
+                            showMagazziniSuggestions(magazzini);
+                        } else {
+                            suggestionsDiv.style.display = 'none';
+                        }
+                    })
+                    .catch(console.error);
+            }, 300);
+        });
+
+        // Nascondi suggerimenti cliccando altrove
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.info-item')) {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+    }
+
+    function showMagazziniSuggestions(magazzini) {
+        const suggestionsDiv = document.getElementById('magazzini-suggestions');
+        suggestionsDiv.innerHTML = '';
+        
+        magazzini.forEach(magazzino => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `<strong>${magazzino.codice}</strong> - ${magazzino.descrizione}`;
+            
+            div.addEventListener('click', () => {
+                document.getElementById('magazzino_destinazione').value = magazzino.descrizione;
+                suggestionsDiv.style.display = 'none';
+            });
+            
+            suggestionsDiv.appendChild(div);
+        });
+        
+        suggestionsDiv.style.display = 'block';
+    }
+    
+    function displayAIUsed(aiType, reason) {
+        const indicator = document.getElementById('ai-indicator');
+        const badge = indicator.querySelector('.ai-badge');
+        const icon = document.getElementById('ai-icon');
+        const text = document.getElementById('ai-text');
+        const title = document.getElementById('results-title');
+        
+        // Rimuovi classi esistenti
+        badge.className = 'ai-badge';
+        
+        // Configura in base all'AI usata
+        switch(aiType) {
+            case 'claude':
+                badge.classList.add('claude');
+                icon.textContent = '🤖';
+                text.textContent = 'Elaborato con Claude AI';
+                title.innerHTML = '✅ Dati Estratti da <strong>Claude AI</strong>';
+                badge.title = reason || 'Claude AI selezionato e completato con successo';
+                break;
+            case 'gemini':
+                badge.classList.add('gemini');
+                icon.textContent = '🧠';
+                text.textContent = 'Elaborato con Gemini AI';
+                title.innerHTML = '✅ Dati Estratti da <strong>Gemini AI</strong>';
+                badge.title = reason || 'Gemini AI selezionato e completato con successo';
+                break;
+            case 'fallback':
+                badge.classList.add('fallback');
+                icon.textContent = '⚠️';
+                text.textContent = 'Dati Template (AI non disponibile)';
+                title.innerHTML = '⚠️ Dati Template - <strong>Completare Manualmente</strong>';
+                badge.title = reason || 'Parser basico utilizzato come fallback';
+                break;
+            default:
+                badge.classList.add('fallback');
+                icon.textContent = '❓';
+                text.textContent = 'Metodo di elaborazione sconosciuto';
+                title.innerHTML = '❓ Dati Estratti';
+                badge.title = reason || 'Metodo di elaborazione non identificato';
+        }
+        
+        // Mostra il motivo se disponibile
+        const reasonElement = document.getElementById('ai-reason');
+        if (reason && reasonElement) {
+            reasonElement.textContent = reason;
+            reasonElement.style.display = 'block';
+        } else if (reasonElement) {
+            reasonElement.style.display = 'none';
+        }
+        
+        // Mostra l'indicatore
+        indicator.style.display = 'block';
+        
+        // Animazione di entrata
+        setTimeout(() => {
+            badge.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                badge.style.transform = 'scale(1)';
+            }, 200);
+        }, 100);
+    }
+    
+    // Inizializza magazzino predefinito
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if magazzino_predefinito %}
+        const magazzinoInput = document.getElementById('magazzino_destinazione');
+        if (magazzinoInput && !magazzinoInput.value) {
+            magazzinoInput.value = '{{ magazzino_predefinito.descrizione }}';
+        }
+        {% endif %}
+    });
+    </script>
+</body>
+</html>

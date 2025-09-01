@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Mastrini - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=3">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+            </ul>
+        </nav>
+
+        <div class="ddt-header">
+            <h1>📋 Gestione Mastrini ({{ mastrini|length }})</h1>
+            <div class="filters">
+                <select id="tipoFilter">
+                    <option value="">Tutti i tipi</option>
+                    <option value="acquisto">Acquisto</option>
+                    <option value="vendita">Vendita</option>
+                    <option value="ricavo">Ricavo</option>
+                    <option value="costo">Costo</option>
+                </select>
+                <button class="btn btn-success" onclick="nuovoMastrino()">+ Nuovo Mastrino</button>
+                <button class="btn btn-secondary" onclick="esportaExcel()">📊 Esporta Excel</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="mastriniTable">
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Tipo</th>
+                        <th>Stato</th>
+                        <th>Utilizzi</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mastrino in mastrini %}
+                    <tr data-tipo="{{ mastrino.tipo }}" class="{{ 'inactive' if not mastrino.attivo else '' }}">
+                        <td><strong>{{ mastrino.codice }}</strong></td>
+                        <td>{{ mastrino.descrizione }}</td>
+                        <td>
+                            <span class="badge badge-{{ mastrino.tipo }}">{{ mastrino.tipo.title() }}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge {{ 'active' if mastrino.attivo else 'inactive' }}">
+                                {{ 'Attivo' if mastrino.attivo else 'Disattivo' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="usage-count">{{ mastrino.utilizzi or 0 }}</span>
+                        </td>
+                        <td class="actions">
+                            <button class="btn btn-sm btn-primary" onclick="modificaMastrino({{ mastrino.id }})">✏️</button>
+                            <button class="btn btn-sm btn-secondary" onclick="toggleMastrino({{ mastrino.id }})">
+                                {{ '🔴' if mastrino.attivo else '🟢' }}
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">Nessun mastrino configurato</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Nuovo/Modifica Mastrino -->
+    <div id="mastrinoModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nuovo Mastrino</h3>
+                <button class="btn btn-close" onclick="chiudiModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="mastrinoForm">
+                    <div class="form-group">
+                        <label for="codice">Codice Mastrino *</label>
+                        <input type="text" id="codice" name="codice" required placeholder="es. ACQ001">
+                    </div>
+                    <div class="form-group">
+                        <label for="descrizione">Descrizione *</label>
+                        <input type="text" id="descrizione" name="descrizione" required placeholder="es. Acquisto Materiali">
+                    </div>
+                    <div class="form-group">
+                        <label for="tipo">Tipo Mastrino *</label>
+                        <select id="tipo" name="tipo" required>
+                            <option value="">Seleziona tipo</option>
+                            <option value="acquisto">Acquisto</option>
+                            <option value="vendita">Vendita</option>
+                            <option value="ricavo">Ricavo</option>
+                            <option value="costo">Costo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="attivo" name="attivo" checked>
+                            Mastrino attivo
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="chiudiModal()">Annulla</button>
+                <button class="btn btn-success" onclick="salvaMastrino()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let currentMastrinoId = null;
+
+    // Filtri
+    document.getElementById('tipoFilter').addEventListener('change', function() {
+        const tipo = this.value;
+        const rows = document.querySelectorAll('#mastriniTable tbody tr[data-tipo]');
+        
+        rows.forEach(row => {
+            if (!tipo || row.dataset.tipo === tipo) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    function nuovoMastrino() {
+        currentMastrinoId = null;
+        document.getElementById('modalTitle').textContent = 'Nuovo Mastrino';
+        document.getElementById('mastrinoForm').reset();
+        document.getElementById('attivo').checked = true;
+        document.getElementById('mastrinoModal').style.display = 'flex';
+    }
+
+    function modificaMastrino(id) {
+        currentMastrinoId = id;
+        document.getElementById('modalTitle').textContent = 'Modifica Mastrino';
+        
+        // Carica dati mastrino
+        fetch(`/api/mastrini/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('codice').value = data.mastrino.codice;
+                    document.getElementById('descrizione').value = data.mastrino.descrizione;
+                    document.getElementById('tipo').value = data.mastrino.tipo;
+                    document.getElementById('attivo').checked = data.mastrino.attivo;
+                    document.getElementById('mastrinoModal').style.display = 'flex';
+                }
+            });
+    }
+
+    function salvaMastrino() {
+        const form = document.getElementById('mastrinoForm');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        data.attivo = document.getElementById('attivo').checked;
+
+        const url = currentMastrinoId ? 
+            `/api/mastrini/${currentMastrinoId}` : 
+            '/api/mastrini';
+        
+        const method = currentMastrinoId ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                chiudiModal();
+                location.reload();
+            } else {
+                alert('Errore: ' + data.error);
+            }
+        });
+    }
+
+    function toggleMastrino(id) {
+        fetch(`/api/mastrini/${id}/toggle`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Errore: ' + data.error);
+                }
+            });
+    }
+
+    function chiudiModal() {
+        document.getElementById('mastrinoModal').style.display = 'none';
+    }
+
+    function esportaExcel() {
+        window.open('/api/mastrini/export-excel', '_blank');
+    }
+    </script>
+
+    <style>
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 8px;
+        width: 500px;
+        max-width: 90vw;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-footer {
+        padding: 20px;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .badge {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .badge-acquisto { background: #e3f2fd; color: #1976d2; }
+    .badge-vendita { background: #e8f5e8; color: #388e3c; }
+    .badge-ricavo { background: #fff3e0; color: #f57c00; }
+    .badge-costo { background: #fce4ec; color: #c2185b; }
+
+    .status-badge {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .status-badge.active {
+        background: #e8f5e8;
+        color: #388e3c;
+    }
+
+    .status-badge.inactive {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+
+    .usage-count {
+        font-weight: 500;
+        color: #666;
+    }
+
+    .actions {
+        display: flex;
+        gap: 5px;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    tr.inactive {
+        opacity: 0.6;
+    }
+    </style>
+</body>
+</html>

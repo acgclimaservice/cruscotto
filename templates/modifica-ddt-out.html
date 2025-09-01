@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifica DDT OUT - Sistema Gestione DDT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out" class="active">📤 DDT OUT</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+            </ul>
+        </nav>
+
+        <form method="POST" action="/ddt-out/{{ ddt.id }}/modifica">
+            <div class="ddt-header">
+                <h1>✏️ Modifica DDT OUT (Bozza)</h1>
+                <div class="actions-bar">
+                    <button type="submit" class="btn btn-success">💾 Salva Modifiche</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/ddt-out/{{ ddt.id }}'">❌ Annulla</button>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>Informazioni DDT</h3>
+                <div class="info-grid">
+                    <div class="form-group">
+                        <label class="form-label">Cliente *</label>
+                        <select name="cliente" required>
+                            <option value="">Seleziona cliente...</option>
+                            {% if clienti %}
+                                {% for cliente in clienti %}
+                                <option value="{{ cliente.ragione_sociale }}" {% if ddt.destinazione == cliente.ragione_sociale %}selected{% endif %}>
+                                    {{ cliente.ragione_sociale }}
+                                </option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Riferimento</label>
+                        <input type="text" name="riferimento" value="{{ ddt.riferimento or '' }}" placeholder="N° ordine, bolla, ecc.">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Magazzino Partenza *</label>
+                        <select name="magazzino_partenza" required>
+                            <option value="">Seleziona magazzino...</option>
+                            {% if magazzini %}
+                                {% for magazzino in magazzini %}
+                                <option value="{{ magazzino.descrizione }}" {% if ddt.magazzino_partenza == magazzino.descrizione %}selected{% endif %}>
+                                    {{ magazzino.descrizione }}
+                                </option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="Magazzino Centrale" {% if ddt.magazzino_partenza == 'Magazzino Centrale' %}selected{% endif %}>Magazzino Centrale</option>
+                                <option value="Deposito Nord" {% if ddt.magazzino_partenza == 'Deposito Nord' %}selected{% endif %}>Deposito Nord</option>
+                                <option value="Deposito Sud" {% if ddt.magazzino_partenza == 'Deposito Sud' %}selected{% endif %}>Deposito Sud</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Commessa</label>
+                        <input type="text" name="commessa" value="{{ ddt.commessa or '' }}" placeholder="Codice commessa">
+                    </div>
+                </div>
+            </div>
+
+            <div class="articles-section">
+                <div class="section-title">
+                    <span>Articoli</span>
+                    <button type="button" class="btn btn-small" onclick="aggiungiRigaArticolo()">+ Aggiungi Articolo</button>
+                </div>
+                <table id="tabella-articoli">
+                    <thead>
+                        <tr>
+                            <th>Codice Interno</th>
+                            <th>Descrizione</th>
+                            <th>Quantità</th>
+                            <th>Prezzo Unit.</th>
+                            <th>Mastrino</th>
+                            <th>Totale</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if articoli %}
+                            {% for articolo in articoli %}
+                            <tr class="riga-articolo">
+                                <td><input type="text" name="articoli[{{ loop.index0 }}][codice]" value="{{ articolo.codice_interno or '' }}"></td>
+                                <td><input type="text" name="articoli[{{ loop.index0 }}][descrizione]" value="{{ articolo.descrizione }}" required></td>
+                                <td><input type="number" step="0.01" name="articoli[{{ loop.index0 }}][quantita]" value="{{ articolo.quantita }}" onchange="calcolaTotale(this)" required></td>
+                                <td><input type="number" step="0.01" name="articoli[{{ loop.index0 }}][prezzo]" value="{{ articolo.prezzo_unitario or 0 }}" onchange="calcolaTotale(this)"></td>
+                                <td>
+                                    <input type="text" name="articoli[{{ loop.index0 }}][mastrino]" value="{{ articolo.mastrino_riga or '' }}" class="mastrino-input" placeholder="Inserisci mastrino...">
+                                </td>
+                                <td class="totale-riga">€ {{ "%.2f"|format((articolo.quantita * (articolo.prezzo_unitario or 0))) }}</td>
+                                <td><button type="button" class="btn btn-small btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="riga-articolo">
+                                <td><input type="text" name="articoli[0][codice]"></td>
+                                <td><input type="text" name="articoli[0][descrizione]" required></td>
+                                <td><input type="number" step="0.01" name="articoli[0][quantita]" value="1" onchange="calcolaTotale(this)" required></td>
+                                <td><input type="number" step="0.01" name="articoli[0][prezzo]" value="0" onchange="calcolaTotale(this)"></td>
+                                <td>
+                                    <input type="text" name="articoli[0][mastrino]" class="mastrino-input" placeholder="Inserisci mastrino...">
+                                </td>
+                                <td class="totale-riga">€ 0.00</td>
+                                <td><button type="button" class="btn btn-small btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                
+                <div class="totals">
+                    <div class="total-row">
+                        <span>Totale Articoli: <span id="count-articoli">{{ articoli|length if articoli else 1 }}</span></span>
+                        <span>Quantità Totale: <span id="quantita-totale">0</span></span>
+                        <span><strong>Totale Valore: € <span id="valore-totale">0.00</span></strong></span>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    let rigaCount = {{ articoli|length if articoli else 1 }};
+    
+    function aggiungiRigaArticolo() {
+        const tbody = document.querySelector('#tabella-articoli tbody');
+        const newRow = document.createElement('tr');
+        newRow.className = 'riga-articolo';
+        newRow.innerHTML = `
+            <td><input type="text" name="articoli[${rigaCount}][codice]"></td>
+            <td><input type="text" name="articoli[${rigaCount}][descrizione]" required></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][quantita]" value="1" onchange="calcolaTotale(this)" required></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][prezzo]" value="0" onchange="calcolaTotale(this)"></td>
+            <td>
+                <input type="text" name="articoli[${rigaCount}][mastrino]" class="mastrino-input" placeholder="Inserisci mastrino...">
+            </td>
+            <td class="totale-riga">€ 0.00</td>
+            <td><button type="button" class="btn btn-small btn-danger" onclick="rimuoviRiga(this)">×</button></td>
+        `;
+        tbody.appendChild(newRow);
+        rigaCount++;
+        aggiornaTotali();
+        initializeMastriniForNewRow();
+    }
+    
+    function rimuoviRiga(button) {
+        const row = button.closest('tr');
+        if (document.querySelectorAll('.riga-articolo').length > 1) {
+            row.remove();
+            aggiornaTotali();
+        } else {
+            alert('Deve esserci almeno un articolo');
+        }
+    }
+    
+    function calcolaTotale(input) {
+        const row = input.closest('tr');
+        const prezzo = parseFloat(row.querySelector('[name*="[prezzo]"]').value) || 0;
+        const quantita = parseFloat(row.querySelector('[name*="[quantita]"]').value) || 0;
+        const totale = prezzo * quantita;
+        row.querySelector('.totale-riga').textContent = '€ ' + totale.toFixed(2);
+        aggiornaTotali();
+    }
+    
+    function aggiornaTotali() {
+        const righe = document.querySelectorAll('.riga-articolo');
+        let totaleValore = 0;
+        let totaleQuantita = 0;
+        
+        righe.forEach(row => {
+            const prezzo = parseFloat(row.querySelector('[name*="[prezzo]"]').value) || 0;
+            const quantita = parseFloat(row.querySelector('[name*="[quantita]"]').value) || 0;
+            totaleValore += prezzo * quantita;
+            totaleQuantita += quantita;
+        });
+        
+        document.getElementById('count-articoli').textContent = righe.length;
+        document.getElementById('quantita-totale').textContent = totaleQuantita.toFixed(2);
+        document.getElementById('valore-totale').textContent = totaleValore.toFixed(2);
+    }
+    
+    // Autocompletamento mastrini per articoli
+    function setupMastriniAutocompleteForArticoli() {
+        const mastriniInputs = document.querySelectorAll('.mastrino-input');
+        
+        mastriniInputs.forEach((input, idx) => {
+            setupSingleMastrinoAutocomplete(input, `mastrini-suggestions-${idx}`);
+        });
+    }
+
+    function setupSingleMastrinoAutocomplete(input, suggestionId) {
+        if (!input) return;
+        
+        let timeout;
+        
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const query = this.value.trim();
+            
+            if (query.length < 1) {
+                hideMastriniSuggestions(suggestionId);
+                return;
+            }
+            
+            timeout = setTimeout(() => {
+                fetch(`/api/mastrini/search?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(mastrini => showMastriniSuggestions(mastrini, input, suggestionId))
+                    .catch(console.error);
+            }, 300);
+        });
+    }
+
+    function showMastriniSuggestions(mastrini, inputElement, suggestionId) {
+        let suggestionsDiv = document.getElementById(suggestionId);
+        
+        if (!suggestionsDiv) {
+            suggestionsDiv = document.createElement('div');
+            suggestionsDiv.id = suggestionId;
+            suggestionsDiv.style.cssText = `
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                max-height: 200px;
+                overflow-y: auto;
+                z-index: 1000;
+                display: none;
+            `;
+            
+            inputElement.parentElement.style.position = 'relative';
+            inputElement.parentElement.appendChild(suggestionsDiv);
+        }
+        
+        suggestionsDiv.innerHTML = '';
+        
+        mastrini.forEach(mastrino => {
+            const div = document.createElement('div');
+            div.style.cssText = 'padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;';
+            div.innerHTML = `<strong>${mastrino.codice}</strong> - ${mastrino.descrizione}`;
+            
+            div.addEventListener('click', () => {
+                inputElement.value = mastrino.codice;
+                hideMastriniSuggestions(suggestionId);
+            });
+            
+            div.addEventListener('mouseenter', () => div.style.backgroundColor = '#f0f0f0');
+            div.addEventListener('mouseleave', () => div.style.backgroundColor = 'white');
+            
+            suggestionsDiv.appendChild(div);
+        });
+        
+        suggestionsDiv.style.display = mastrini.length > 0 ? 'block' : 'none';
+    }
+
+    function hideMastriniSuggestions(suggestionId) {
+        const suggestionsDiv = document.getElementById(suggestionId);
+        if (suggestionsDiv) {
+            suggestionsDiv.style.display = 'none';
+        }
+    }
+
+    // Funzione per inizializzare autocomplete anche per righe aggiunte dinamicamente
+    function initializeMastriniForNewRow() {
+        const inputs = document.querySelectorAll('.mastrino-input');
+        const lastInput = inputs[inputs.length - 1];
+        if (lastInput) {
+            setupSingleMastrinoAutocomplete(lastInput, `mastrini-suggestions-${inputs.length - 1}`);
+        }
+    }
+
+    // Gestione submit form con reindirizzamento automatico
+    function setupFormSubmit() {
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                
+                submitBtn.disabled = true;
+                submitBtn.textContent = '💾 Salvando...';
+                
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Mostra messaggio di successo brevemente
+                        submitBtn.textContent = '✅ Salvato!';
+                        submitBtn.style.backgroundColor = '#10b981';
+                        
+                        // Reindirizza dopo 500ms
+                        setTimeout(() => {
+                            if (data.reindirizzamento || data.redirect) {
+                                window.location.href = data.reindirizzamento || data.redirect;
+                            } else {
+                                // Fallback al dettaglio DDT
+                                window.location.href = `/ddt-out/{{ ddt.id }}`;
+                            }
+                        }, 500);
+                    } else {
+                        alert(`Errore durante il salvataggio: ${data.error || data.message}`);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Errore durante il salvataggio');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                });
+            });
+        }
+    }
+
+    // Calcola totali al caricamento e inizializza autocomplete
+    window.addEventListener('DOMContentLoaded', function() {
+        aggiornaTotali();
+        setupMastriniAutocompleteForArticoli();
+        setupFormSubmit();
+    });
+
+    // Nascondi suggerimenti cliccando altrove
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('[id^="mastrini-suggestions-"]') && !e.target.matches('.mastrino-input')) {
+            // Nascondi tutti i suggerimenti mastrini
+            document.querySelectorAll('[id^="mastrini-suggestions-"]').forEach(div => {
+                div.style.display = 'none';
+            });
+        }
+    });
+    </script>
+</body>
+</html>
