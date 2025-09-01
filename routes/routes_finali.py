@@ -387,24 +387,26 @@ def modifica_preventivo(id):
                 # Validazione sicura per prezzo_unitario
                 try:
                     prezzo_value = request.form.get(f'dettagli[{i}][prezzo_unitario]', '0').strip()
-                    prezzo_unitario = float(prezzo_value) if prezzo_value else 0.0
+                    prezzo_unitario = round(float(prezzo_value), 2) if prezzo_value else 0.0
                 except (ValueError, TypeError):
                     prezzo_unitario = 0.0
                 
                 # Validazione sicura per sconto
                 try:
                     sconto_value = request.form.get(f'dettagli[{i}][sconto]', '0').strip()
-                    sconto = float(sconto_value) if sconto_value else 0.0
+                    sconto = round(float(sconto_value), 2) if sconto_value else 0.0
                 except (ValueError, TypeError):
                     sconto = 0.0
                 
                 # Validazione sicura per costo
                 try:
                     costo_value = request.form.get(f'dettagli[{i}][costo]', '0').strip()
-                    costo_unitario = float(costo_value) if costo_value else 0.0
+                    costo_unitario = round(float(costo_value), 2) if costo_value else 0.0
                 except (ValueError, TypeError):
                     costo_unitario = 0.0
                 
+                # Arrotonda quantità e calcola totale riga con arrotondamento
+                quantita = round(quantita, 2)
                 totale_riga = round(quantita * prezzo_unitario * (1 - sconto/100), 2)
                 
                 dettaglio = DettaglioPreventivo(
@@ -413,8 +415,8 @@ def modifica_preventivo(id):
                     descrizione=request.form.get(f'dettagli[{i}][descrizione]'),
                     quantita=quantita,
                     unita_misura=request.form.get(f'dettagli[{i}][unita]', 'PZ'),
-                    prezzo_unitario=round(prezzo_unitario, 2),
-                    costo_unitario=round(costo_unitario, 2),
+                    prezzo_unitario=prezzo_unitario,
+                    costo_unitario=costo_unitario,
                     sconto_percentuale=sconto,
                     totale_riga=totale_riga
                 )
