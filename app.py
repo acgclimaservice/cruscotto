@@ -3603,19 +3603,17 @@ def report_mastrini():
         
         # Aggiungi totali per ogni collegamento
         for collegamento in collegamenti_dettagli:
-            # Trova il totale spese per il mastrino acquisto
+            # Calcola il totale spese per il mastrino acquisto (somma tutti i match)
             collegamento['totale_spese'] = 0
             for spesa in spese_mastrini:
                 if spesa['mastrino'] == collegamento['codice_acquisto']:
-                    collegamento['totale_spese'] = spesa['totale'] or 0
-                    break
+                    collegamento['totale_spese'] += spesa['totale'] or 0
             
-            # Trova il totale ricavi per il mastrino ricavo
+            # Calcola il totale ricavi per il mastrino ricavo (somma tutti i match)
             collegamento['totale_ricavi'] = 0
             for ricavo in ricavi_mastrini:
                 if ricavo['mastrino'] == collegamento['codice_ricavo']:
-                    collegamento['totale_ricavi'] = ricavo['totale'] or 0
-                    break
+                    collegamento['totale_ricavi'] += ricavo['totale'] or 0
         
         analisi_collegamenti = {
             'spese_per_tipo': spese_per_tipo,
