@@ -1917,7 +1917,7 @@ def conferma_ddt_in(id):
                     # Articolo non esiste completamente: crea nuovo
                     catalogo_art = CatalogoArticolo(
                         codice_interno=codice_articolo,
-                        codice_fornitore=getattr(art, 'codice_fornitore', None),
+                        codice_fornitore=codice_fornitore_originale,
                         descrizione=art.descrizione or 'Descrizione non disponibile',
                         fornitore_principale=getattr(art, 'fornitore', None) or ddt.fornitore,
                         costo_ultimo=art.costo_unitario or 0,

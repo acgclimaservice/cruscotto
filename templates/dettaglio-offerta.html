@@ -588,48 +588,27 @@
             const emailFornitore = document.getElementById('email-fornitore').value;
             const messaggio = document.getElementById('messaggio-personalizzato').value;
             const includiAllegati = document.getElementById('includi-allegati').checked;
-            const submitBtn = document.querySelector('#form-invio-email button[type="submit"]');
             
             if (!emailFornitore.trim()) {
                 alert('Inserisci un indirizzo email valido');
                 return;
             }
             
-            // Disabilita pulsante durante invio
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = '📧 Invio in corso...';
-            submitBtn.disabled = true;
+            // Crea oggetto e corpo email per Outlook
+            const oggetto = `Richiesta Offerta ${document.querySelector('h1').textContent.trim()}`;
+            const corpoEmail = `Gentile Fornitore,\n\nVi inviamo in allegato la richiesta di offerta.\n\n${messaggio.trim() ? messaggio + '\n\n' : ''}Rimaniamo in attesa di un vostro riscontro.\n\nCordiali saluti,\nACG Clima Service S.r.l.`;
             
-            fetch(`/offerte/${offertaId}/invia-email`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: emailFornitore,
-                    messaggio: messaggio,
-                    includi_allegati: includiAllegati
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(`✅ ${data.message}\n\nDettagli:\n- Destinatario: ${data.dettagli.destinatario}\n- Allegati inviati: ${data.allegati_inviati}\n- Data invio: ${new Date(data.dettagli.data_invio).toLocaleString()}`);
-                    chiudiModalEmail();
-                    location.reload(); // Ricarica per mostrare note aggiornate
-                } else {
-                    alert(`❌ Errore: ${data.error}`);
-                }
-            })
-            .catch(error => {
-                console.error('Errore invio email:', error);
-                alert('❌ Errore durante invio email. Controlla la console per dettagli.');
-            })
-            .finally(() => {
-                // Riabilita pulsante
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            });
+            // Crea link mailto per aprire Outlook
+            const mailtoLink = `mailto:${encodeURIComponent(emailFornitore)}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpoEmail)}`;
+            
+            // Apri Outlook con email precompilata
+            window.location.href = mailtoLink;
+            
+            // Mostra messaggio di conferma
+            setTimeout(() => {
+                alert(`📧 Email preparata per Outlook!\n\n- Destinatario: ${emailFornitore}\n- Oggetto: ${oggetto}\n\n${includiAllegati ? '⚠️ Ricorda di allegare manualmente i file dell\'offerta' : ''}`);
+                chiudiModalEmail();
+            }, 500);
         }
         
         // Chiudi modal cliccando fuori

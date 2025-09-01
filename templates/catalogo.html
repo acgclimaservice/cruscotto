@@ -348,14 +348,16 @@
         // Genera QR code
         fetch(`/catalogo/qr/${articoloId}`)
             .then(response => {
+                console.log('Status response QR:', response.status, response.statusText);
                 // Controlla se la risposta è JSON valida
                 const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("application/json") !== -1) {
+                if (response.ok && contentType && contentType.indexOf("application/json") !== -1) {
                     return response.json();
                 } else {
-                    // Se non è JSON, leggi come testo per debug
+                    // Se non è JSON o c'è un errore, leggi come testo per debug
                     return response.text().then(text => {
-                        throw new Error(`Risposta non JSON ricevuta: ${text.substring(0, 200)}...`);
+                        console.error('Risposta server QR:', text);
+                        throw new Error(`Errore server QR (${response.status}): ${text.substring(0, 100)}...`);
                     });
                 }
             })
