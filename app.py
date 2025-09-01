@@ -1895,13 +1895,18 @@ def conferma_ddt_in(id):
                 # Cerca il fornitore per ottenere il prefisso
                 fornitore = None
                 if ddt.fornitore:
-                    fornitore = Fornitore.query.filter_by(denominazione=ddt.fornitore).first()
+                    fornitore = Fornitore.query.filter_by(ragione_sociale=ddt.fornitore).first()
                 
-                # Genera codice interno con prefisso fornitore
-                if fornitore and fornitore.prefisso_codice and art.codice_fornitore:
-                    codice_interno_generato = f"{fornitore.prefisso_codice}{art.codice_fornitore}"
-                elif art.codice_fornitore:
-                    codice_interno_generato = f"ART{art.codice_fornitore}"
+                # Genera codice interno: prime 4 lettere fornitore + codice fornitore
+                if art.codice_fornitore:
+                    # Estrai prime 4 lettere dal nome fornitore
+                    prefisso_fornitore = "ART"  # Fallback
+                    if ddt.fornitore:
+                        # Rimuovi caratteri speciali e prendi prime 4 lettere
+                        nome_pulito = ''.join(c for c in ddt.fornitore.upper() if c.isalpha())
+                        prefisso_fornitore = nome_pulito[:4]
+                    
+                    codice_interno_generato = f"{prefisso_fornitore}{art.codice_fornitore}"
                 else:
                     codice_interno_generato = f"ART{datetime.now().strftime('%Y%m%d%H%M%S')}"
                 
@@ -3059,6 +3064,7 @@ def stampa_ddt_out(id):
         return str(e), 500
 
 # ========== ALTRE PAGINE PRINCIPALI ==========
+
 
 @app.route('/catalogo')
 def catalogo_page():
