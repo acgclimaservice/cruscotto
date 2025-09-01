@@ -162,9 +162,11 @@
         
         table th, table td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 10px;
             text-align: left;
-            font-size: 11px;
+            font-size: 12px;
+            vertical-align: top;
+            word-wrap: break-word;
         }
         
         table th {
@@ -302,11 +304,11 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 100px;">Codice</th>
-                    <th>Descrizione</th>
-                    <th style="width: 80px;">Quantità</th>
-                    <th style="width: 100px;">Costo Unit.</th>
-                    <th style="width: 100px;">Totale</th>
+                    <th style="width: 120px; min-width: 120px;">Codice</th>
+                    <th style="width: 40%; min-width: 200px;">Descrizione</th>
+                    <th style="width: 80px; min-width: 80px; text-align: center;">Q.tà</th>
+                    <th style="width: 100px; min-width: 100px; text-align: center;">Costo Unit.</th>
+                    <th style="width: 100px; min-width: 100px; text-align: center;">Totale</th>
                 </tr>
             </thead>
             <tbody>
@@ -315,11 +317,11 @@
                 {% set totale_riga = (articolo.quantita or 0) * (articolo.costo_unitario or 0) %}
                 {% set totale_generale = totale_generale + totale_riga %}
                 <tr>
-                    <td><strong>{{ articolo.codice_interno or '-' }}</strong></td>
-                    <td>{{ articolo.descrizione }}</td>
-                    <td style="text-align: right;">{{ "{:.2f}".format(articolo.quantita or 0) }}</td>
-                    <td style="text-align: right;">€ {{ "{:.2f}".format(articolo.costo_unitario or 0) }}</td>
-                    <td style="text-align: right;"><strong>€ {{ "{:.2f}".format(totale_riga) }}</strong></td>
+                    <td style="width: 120px; min-width: 120px; word-break: break-all;"><strong>{{ articolo.codice_interno or '-' }}</strong></td>
+                    <td style="width: 40%; min-width: 200px; word-wrap: break-word;">{{ articolo.descrizione }}</td>
+                    <td style="width: 80px; min-width: 80px; text-align: center;">{{ "{:.2f}".format(articolo.quantita or 0) }}</td>
+                    <td style="width: 100px; min-width: 100px; text-align: center;">€ {{ "{:.2f}".format(articolo.costo_unitario or 0) }}</td>
+                    <td style="width: 100px; min-width: 100px; text-align: center;"><strong>€ {{ "{:.2f}".format(totale_riga) }}</strong></td>
                 </tr>
                 {% endfor %}
             </tbody>
