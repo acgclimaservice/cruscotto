@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 import os
 import sys
 import traceback
+import logging
+import json as json_lib
 import base64
 import io
 from email.mime.multipart import MIMEMultipart
@@ -23,6 +25,63 @@ import ssl
 load_dotenv()
 
 app = Flask(__name__)
+
+# Setup detailed logging system
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('flask_debug.log', mode='w')  # Overwrite each time
+    ]
+)
+
+# Create logger for our app
+logger = logging.getLogger('CRUSCOTTO_DEBUG')
+logger.setLevel(logging.DEBUG)
+
+# Middleware to log ALL requests and responses
+@app.before_request
+def log_request_info():
+    logger.info(f"🔍 REQUEST: {request.method} {request.url}")
+    logger.info(f"   Headers: {dict(request.headers)}")
+    if request.method in ['POST', 'PUT', 'PATCH']:
+        logger.info(f"   Content-Type: {request.content_type}")
+        if request.content_type and 'application/json' in request.content_type:
+            try:
+                logger.info(f"   JSON Body: {request.get_json()}")
+            except:
+                logger.info(f"   JSON Body: <could not parse>")
+        elif request.form:
+            logger.info(f"   Form Data: {dict(request.form)}")
+
+@app.after_request  
+def log_response_info(response):
+    logger.info(f"🔍 RESPONSE: {response.status_code} for {request.method} {request.url}")
+    logger.info(f"   Content-Type: {response.content_type}")
+    
+    # Log response body for JSON responses
+    if response.content_type and 'application/json' in response.content_type:
+        try:
+            response_data = response.get_data(as_text=True)
+            # Try to parse JSON to validate it
+            json_lib.loads(response_data)
+            logger.info(f"   JSON Response: {response_data}")
+        except json_lib.JSONDecodeError as e:
+            logger.error(f"   ❌ INVALID JSON RESPONSE: {e}")
+            logger.error(f"   ❌ Raw Response: {response_data}")
+        except Exception as e:
+            logger.error(f"   ❌ Error reading response: {e}")
+    
+    # Check for JavaScript errors in HTML responses
+    if response.content_type and 'text/html' in response.content_type:
+        response_text = response.get_data(as_text=True)
+        if 'expected token' in response_text.lower():
+            logger.error(f"   ❌ Found 'expected token' in HTML response!")
+            logger.error(f"   ❌ Response snippet: {response_text[:500]}...")
+    
+    return response
+
 # Database URI - si adatta automaticamente all'ambiente
 db_path = os.environ.get('DATABASE_URL') or 'sqlite:///ddt_database.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_path
@@ -8486,6 +8545,26 @@ def export_report(report_type):
     except Exception as e:
         return f"Errore export: {str(e)}", 500
 
+# Route per ricevere errori JavaScript
+@app.route('/api/log-error', methods=['POST'])
+def log_javascript_error():
+    """Riceve errori JavaScript dal frontend"""
+    try:
+        error_data = request.get_json()
+        logger.error(f"🚨 JAVASCRIPT ERROR: {error_data.get('type', 'UNKNOWN')}")
+        logger.error(f"   Error Data: {error_data}")
+        
+        if error_data.get('type') == 'FETCH_JSON_PARSE_ERROR':
+            logger.error(f"   🔍 This is likely the JSON parsing error we're hunting!")
+            logger.error(f"   🔍 URL: {error_data.get('data', {}).get('url')}")
+            logger.error(f"   🔍 Status: {error_data.get('data', {}).get('status')}")
+            logger.error(f"   🔍 Response Text: {error_data.get('data', {}).get('responseText')}")
+        
+        return jsonify({'status': 'logged'})
+    except Exception as e:
+        logger.error(f"Error logging JavaScript error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
@@ -8530,5 +8609,8 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Email Monitor: Errore - {e}")
     
+    logger.info("🚀 Starting Flask server with detailed logging...")
+    logger.info("📁 Logs will be written to: flask_debug.log") 
+    logger.info("🔍 All requests and responses will be logged")
     app.version = "2.42"
     app.run(debug=True, host='0.0.0.0', port=8080)
