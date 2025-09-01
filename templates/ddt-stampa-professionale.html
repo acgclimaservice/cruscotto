@@ -439,7 +439,7 @@
                             {% set totale_riga = (articolo.quantita * (articolo.costo_unitario or 0)) %}
                             {% set totale_generale = totale_generale + totale_riga %}
                             <tr>
-                                <td><code>{{ articolo.codice_interno if articolo.codice_interno else '-' }}</code></td>
+                                <td><strong>{{ articolo.codice_interno if articolo.codice_interno else '-' }}</strong></td>
                                 <td>{{ articolo.descrizione }}</td>
                                 <td class="quantity-cell">{{ articolo.quantita }}</td>
                                 <td class="quantity-cell">{{ articolo.unita_misura or 'PZ' }}</td>

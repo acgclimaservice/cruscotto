@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuova Offerta - Sistema DDT</title>
+    <title>Nuova Richiesta Offerta a Fornitore - Sistema DDT</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
     <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
     <script src="{{ url_for('static', filename='autocompletamento.js') }}"></script>
@@ -22,8 +22,8 @@
         </nav>
 
         <div class="ddt-header">
-            <h1>💰 Nuova Offerta</h1>
-            <p style="color: #8492a6; margin-top: 8px;">Registra una nuova offerta ricevuta da un fornitore</p>
+            <h1>💰 Nuova Richiesta Offerta a Fornitore</h1>
+            <p style="color: #8492a6; margin-top: 8px;">Registra una nuova richiesta di offerta da inviare a un fornitore</p>
         </div>
 
         <form method="POST" class="form-container">
@@ -44,8 +44,8 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="data_offerta">Data Offerta</label>
-                        <input type="date" id="data_offerta" name="data_offerta">
+                        <label for="data_offerta">Data Richiesta Offerta</label>
+                        <input type="date" id="data_offerta" name="data_offerta" value="{{ today|default('') }}">
                     </div>
                     
                     <div class="form-group">
@@ -111,8 +111,8 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Prezzo Unit. *</label>
-                                <input type="number" name="dettagli[0][prezzo_unitario]" min="0" step="0.01" required
+                                <label>Prezzo Unit.</label>
+                                <input type="number" name="dettagli[0][prezzo_unitario]" min="0" step="0.01"
                                        placeholder="0.00" onchange="calcolaTotaleRiga(0)">
                             </div>
                             <div class="form-group">
@@ -251,8 +251,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Prezzo Unit. *</label>
-                        <input type="number" name="dettagli[${dettaglioIndex}][prezzo_unitario]" min="0" step="0.01" required
+                        <label>Prezzo Unit.</label>
+                        <input type="number" name="dettagli[${dettaglioIndex}][prezzo_unitario]" min="0" step="0.01"
                                placeholder="0.00" onchange="calcolaTotaleRiga(${dettaglioIndex})">
                     </div>
                     <div class="form-group">

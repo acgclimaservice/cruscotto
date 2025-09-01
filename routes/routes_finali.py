@@ -453,8 +453,10 @@ def offerte_list():
 def nuova_offerta():
     """Crea nuova offerta fornitore"""
     if request.method == 'GET':
+        from datetime import date
         fornitori = Fornitore.query.filter_by(attivo=True).all()
-        return render_template('nuova-offerta.html', fornitori=fornitori)
+        today = date.today().strftime('%Y-%m-%d')
+        return render_template('nuova-offerta.html', fornitori=fornitori, today=today)
     
     if request.method == 'POST':
         data = request.json

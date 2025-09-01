@@ -347,20 +347,32 @@
 
         // Genera QR code
         fetch(`/catalogo/qr/${articoloId}`)
-            .then(response => response.json())
+            .then(response => {
+                // Controlla se la risposta è JSON valida
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json();
+                } else {
+                    // Se non è JSON, leggi come testo per debug
+                    return response.text().then(text => {
+                        throw new Error(`Risposta non JSON ricevuta: ${text.substring(0, 200)}...`);
+                    });
+                }
+            })
             .then(data => {
                 if (data.success) {
                     document.getElementById('qr-content').innerHTML = `
                         <p><strong>Codice:</strong> ${data.codice_interno}</p>
                         <img src="${data.qr_code}" alt="QR Code" style="max-width: 200px; margin: 10px;">
-                        <p><small>Scansiona con il telefono per i movimenti interni</small></p>
+                        <p><small>Scansiona con il telefone per i movimenti interni</small></p>
                     `;
                 } else {
-                    document.getElementById('qr-content').innerHTML = `<p>Errore: ${data.error}</p>`;
+                    document.getElementById('qr-content').innerHTML = `<p>❌ Errore: ${data.error}</p>`;
                 }
             })
             .catch(error => {
-                document.getElementById('qr-content').innerHTML = `<p>Errore di connessione: ${error}</p>`;
+                console.error('Errore QR:', error);
+                document.getElementById('qr-content').innerHTML = `<p>❌ Errore di connessione: ${error.message}</p>`;
             });
     }
     </script>

@@ -204,7 +204,7 @@
             {% if articoli %}
                 {% for articolo in articoli %}
                 <tr>
-                    <td>{{ articolo.codice_interno if articolo.codice_interno else '-' }}</td>
+                    <td><strong>{{ articolo.codice_interno if articolo.codice_interno else '-' }}</strong></td>
                     <td>{{ articolo.descrizione }}</td>
                     <td>{{ articolo.quantita }}</td>
                     <td>€ {{ "{:.2f}".format(articolo.costo_unitario or 0) }}</td>

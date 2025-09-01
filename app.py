@@ -35,6 +35,16 @@ def get_app_version():
 
 APP_VERSION = get_app_version()
 RELEASE_NOTES = {
+    "4.20": [
+        "✅ MASTRINI: Risolto calcolo totali nella sezione collegamenti mastrini",
+        "🔒 DDT: Prevenuta modifica involontaria codice fornitore durante conferma",
+        "📱 QR CODE: Migliorata gestione errori e diagnostica per catalogo articoli",
+        "💰 OFFERTE: Aggiornati testi da 'Nuova Offerta' a 'Nuova Richiesta Offerta a Fornitore'",
+        "📝 OFFERTE: Impostata data odierna come default per richieste offerta",
+        "🏭 MOVIMENTI: Corretti nomi magazzini estesi nei movimenti interni",
+        "🔍 DDT: Migliorata leggibilità codici prodotto nelle stampe PDF",
+        "⚡ SISTEMA: Ottimizzazioni generali e correzioni bug minori"
+    ],
     "4.17": [
         "✅ COLLEGAMENTI: Risolto definitivamente problema totali non visibili nella tabella collegamenti", 
         "📄 EXPORT PDF: Aggiunta esportazione PDF completa del report mastrini",
@@ -1840,6 +1850,10 @@ def conferma_ddt_in(id):
         # Aggiorna catalogo articoli
         articoli = ArticoloIn.query.filter_by(ddt_id=id).all()
         for art in articoli:
+            # PROTEZIONE: Non modificare il codice fornitore se già esistente
+            # Salva il codice fornitore originale prima della conferma
+            codice_fornitore_originale = art.codice_fornitore
+            
             # Se il codice interno è vuoto, genera uno temporaneo
             codice_articolo = art.codice_interno or f'ART-{art.id}'
             
@@ -1914,6 +1928,10 @@ def conferma_ddt_in(id):
                     causale=f'Carico da DDT IN {ddt.numero_ddt}'
                 )
                 db.session.add(movimento)
+                
+            # PROTEZIONE: Ripristina il codice fornitore originale per prevenire modifiche involontarie
+            if codice_fornitore_originale and art.codice_fornitore != codice_fornitore_originale:
+                art.codice_fornitore = codice_fornitore_originale
         
         db.session.commit()
         
@@ -3072,7 +3090,16 @@ def elimina_articolo(articolo_id):
 def genera_qr_articolo(articolo_id):
     """Genera QR code per un articolo del catalogo"""
     try:
-        import qrcode
+        # Test import prima di procedere
+        try:
+            import qrcode
+        except ImportError as e:
+            print(f"QR Code library not available: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Libreria QR Code non installata. Installare con: pip install qrcode[pil]'
+            }), 500
+            
         from io import BytesIO
         import base64
         
@@ -3121,12 +3148,15 @@ def genera_qr_articolo(articolo_id):
         })
         
     except ImportError:
+        print(f"ImportError in QR generation")
         return jsonify({
             'success': False,
             'error': 'Libreria QR Code non installata. Installare con: pip install qrcode[pil]'
         }), 500
     except Exception as e:
+        import traceback
         print(f"Errore generazione QR code: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': f'Errore nella generazione del QR code: {str(e)}'
@@ -3735,17 +3765,19 @@ def report_mastrini():
         
         # Aggiungi totali per ogni collegamento
         for collegamento in collegamenti_dettagli:
-            # Calcola il totale spese per il mastrino acquisto (somma tutti i match)
+            # Calcola il totale spese per il mastrino acquisto (prendi il primo match - i totali sono già aggregati per mastrino)
             collegamento['totale_spese'] = 0
             for spesa in spese_mastrini:
                 if spesa['mastrino'] == collegamento['codice_acquisto']:
-                    collegamento['totale_spese'] += spesa['totale'] or 0
+                    collegamento['totale_spese'] = spesa['totale'] or 0
+                    break  # Prendi solo il primo match poiché i totali sono già aggregati per mastrino
             
-            # Calcola il totale ricavi per il mastrino ricavo (somma tutti i match)
+            # Calcola il totale ricavi per il mastrino ricavo (prendi il primo match - i totali sono già aggregati per mastrino)
             collegamento['totale_ricavi'] = 0
             for ricavo in ricavi_mastrini:
                 if ricavo['mastrino'] == collegamento['codice_ricavo']:
-                    collegamento['totale_ricavi'] += ricavo['totale'] or 0
+                    collegamento['totale_ricavi'] = ricavo['totale'] or 0
+                    break  # Prendi solo il primo match poiché i totali sono già aggregati per mastrino
         
         analisi_collegamenti = {
             'spese_per_tipo': spese_per_tipo,
@@ -5839,11 +5871,15 @@ def nuova_offerta():
     """Crea nuova offerta fornitore"""
     if request.method == 'GET':
         try:
+            from datetime import date
             fornitori = Fornitore.query.filter_by(attivo=True).all()
-            return render_template('nuova-offerta.html', fornitori=fornitori)
+            today = date.today().strftime('%Y-%m-%d')
+            return render_template('nuova-offerta.html', fornitori=fornitori, today=today)
         except Exception as e:
             print(f"Errore GET nuova offerta: {e}")
-            return render_template('nuova-offerta.html', fornitori=[])
+            from datetime import date
+            today = date.today().strftime('%Y-%m-%d')
+            return render_template('nuova-offerta.html', fornitori=[], today=today)
     
     if request.method == 'POST':
         try:
