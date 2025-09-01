@@ -264,11 +264,17 @@
                     'Content-Type': 'application/json',
                 }
             })
-            .then(response => {
-                if (response.ok) {
-                    location.reload();
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Offerta accettata con successo!');
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        location.reload();
+                    }
                 } else {
-                    alert('Errore nell\'accettazione dell\'offerta');
+                    alert('Errore: ' + (data.errore || 'Errore sconosciuto'));
                 }
             })
             .catch(error => {

@@ -6089,6 +6089,7 @@ def valuta_offerta(id):
 @app.route('/offerte/<int:id>/accetta', methods=['POST'])
 def accetta_offerta(id):
     """Accetta un'offerta"""
+    from werkzeug.exceptions import NotFound
     try:
         offerta = OffertaFornitore.query.get_or_404(id)
         
@@ -6096,15 +6097,23 @@ def accetta_offerta(id):
         offerta.data_accettazione = datetime.now().date()
         
         db.session.commit()
-        return redirect(f'/offerte/{id}')
+        return jsonify({
+            'success': True,
+            'message': 'Offerta accettata con successo',
+            'redirect_url': f'/offerte/{id}'
+        })
         
+    except NotFound:
+        return jsonify({'errore': 'Offerta non trovata'}), 404
     except Exception as e:
+        print(f"Errore accettazione offerta {id}: {e}")
         db.session.rollback()
         return jsonify({'errore': str(e)}), 500
 
 @app.route('/offerte/<int:id>/rifiuta', methods=['POST'])
 def rifiuta_offerta(id):
     """Rifiuta un'offerta"""
+    from werkzeug.exceptions import NotFound
     try:
         offerta = OffertaFornitore.query.get_or_404(id)
         motivo = request.form.get('motivo', '')
@@ -6115,9 +6124,16 @@ def rifiuta_offerta(id):
             offerta.data_valutazione = datetime.now().date()
         
         db.session.commit()
-        return redirect(f'/offerte/{id}')
+        return jsonify({
+            'success': True,
+            'message': 'Offerta rifiutata con successo',
+            'redirect_url': f'/offerte/{id}'
+        })
         
+    except NotFound:
+        return jsonify({'errore': 'Offerta non trovata'}), 404
     except Exception as e:
+        print(f"Errore rifiuto offerta {id}: {e}")
         db.session.rollback()
         return jsonify({'errore': str(e)}), 500
 
@@ -6481,7 +6497,7 @@ def crea_ddt_da_offerta(id):
     except NotFound:
         return jsonify({'errore': 'Offerta non trovata'}), 404
     except Exception as e:
-        print(f"Errore creazione DDT da offerta: {e}")
+        print(f"Errore creazione DDT da offerta {id}: {e}")
         db.session.rollback()
         return jsonify({'errore': str(e)}), 500
 
@@ -6515,7 +6531,7 @@ def elimina_offerta(id):
     except NotFound:
         return jsonify({'error': 'Offerta non trovata'}), 404
     except Exception as e:
-        print(f"Errore eliminazione offerta: {e}")
+        print(f"Errore eliminazione offerta {id}: {e}")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
