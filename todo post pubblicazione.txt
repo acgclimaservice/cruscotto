@@ -46,6 +46,6 @@ CLER5555	CLER5555	tubo giallo 1	CLERICI SPA A SOCIO UNICO	-	€ 10.00	PZ	10.00	0
 🗑️
 42 qui https://acgclimaservice.pythonanywhere.com/offerte/1 mi da 1:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) FATTO - CONTROLLATO OK
 43 quando confermo un ddt in importato o creato manualmente il Codice Interno (auto) deve essere generato in automatico mentre il Codice Fornitore non deve essere modificato. per intenderci deve rimanere quello importato dal pdf o quello inserito manualmente. FATTO - CONTROLLATO OK
-44 Errore nel caricamento dell'offerta: expected token ':', got '}'
+44 Errore nel caricamento dell'offerta: expected token ':', got '}' FATTO - CONTROLLATO OK
 
 

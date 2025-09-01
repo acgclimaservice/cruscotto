@@ -6376,7 +6376,10 @@ def scarica_allegato_offerta(offerta_id, allegato_index):
         if not offerta.allegati:
             return "Nessun allegato trovato", 404
             
-        allegati_list = json.loads(offerta.allegati)
+        try:
+            allegati_list = json.loads(offerta.allegati)
+        except json.JSONDecodeError:
+            return "Allegati corrotti", 400
         
         if allegato_index >= len(allegati_list):
             return "Allegato non trovato", 404
