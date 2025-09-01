@@ -1,0 +1,21 @@
+1. quando genero un ddt out dal ddt in e cancello una riga non mi mostra più le successive.FATTO - CONTROLLATO OK
+2. quando creo un preventivo dal ddt in arrotondami gli importi a 2 decimali.FATTO - CONTROLLATO OK
+3. quando confermo un preventivo modificato mi esce questo errore:Not Found
+The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again. e nella console questo: modifica:1  POST https://acgclimaservice.pythonanywhere.com/preventivi/1/modifica 404 (NOT FOUND)FATTO - CONTROLLATO OK
+4. elimina la sezione offerte ANNULLATO - SEZIONE MANTENUTA
+5
+6. quando faccio un movimento interno mi viene sostituito il magazzino per tutta la giacenza e non solo per la quantità spostata. inoltre i movimenti generati dal movimento interno  nell'inventario riportano come ubicazione mag001 o mag002 invece che il nome del magazzino per esteso. FATTO - CONTROLLATO OK 
+7. nei ddt in quando scarico il pdf unificato la tabella del ddt generato dal sistema non si legge perché la descrizione e il codice si accavallano. FATTO - CONTROLLATO OK 
+8. nei report mastrini nella parte dei mastrini collegati non mi calcola il totale degli acquisti.
+9. quando confermo un ddt in in stato di bozza mi modifica anche il codice fornitore. 
+10. non funziona più il qr code nel catalogo articoli. esce questo errore: QR Code per Articolo
+Errore di connessione: SyntaxError: Unexpected token '<', "
+11. nella sezione preventivi elimina gli 🛠️ Strumenti Preventivazione FATTO - CONTROLLATO OK
+12. nei ddt out non funziona la barra dei filtri. se seleziono una data o uno stato non mi si aggiornano i dati. FATTO - CONTROLLATO OK 
+13. nei ddt in aggiungi la barra dei filtri.
+14 nella sezione ordini non deve essere possibile eliminare un ordine confermato
+15 nella sezione ordini ci deve essere la possibilità di annullare un ordine confermato in modo di mantenerlo visibile e visualizzabile anche nei dettagli ma evidentemente annullato
+16 nella sezione parsing pdf ordini cambia assolutamente l'animazione
+17 riprendi i punti 2 e 6  perché non sono stati ancora corretti, nel dettaglio il punto 2 torna sull'errore dei decimali dopo la modifca
+18 riprendi il punto 7 perché dopo la modifica il campo descrizione copre la quantità
+19 

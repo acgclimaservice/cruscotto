@@ -1329,8 +1329,41 @@ def create_ddt_from_import():
 def ddt_in_page():
     """Lista DDT IN con filtri e paginazione"""
     try:
+        # Prepara query base
+        query = DDTIn.query
+        
+        # Applica filtri se presenti
+        data_da = request.args.get('data_da')
+        data_a = request.args.get('data_a')
+        fornitore = request.args.get('fornitore')
+        numero_ddt = request.args.get('numero_ddt')
+        stato = request.args.get('stato')
+        
+        if data_da:
+            try:
+                data_da_obj = datetime.strptime(data_da, '%Y-%m-%d').date()
+                query = query.filter(DDTIn.data_ddt >= data_da_obj)
+            except:
+                pass
+                
+        if data_a:
+            try:
+                data_a_obj = datetime.strptime(data_a, '%Y-%m-%d').date()
+                query = query.filter(DDTIn.data_ddt <= data_a_obj)
+            except:
+                pass
+                
+        if fornitore:
+            query = query.filter(DDTIn.fornitore.ilike(f'%{fornitore}%'))
+            
+        if numero_ddt:
+            query = query.filter(DDTIn.numero_ddt.ilike(f'%{numero_ddt}%'))
+            
+        if stato and stato != 'tutti':
+            query = query.filter(DDTIn.stato == stato)
+        
         # Ordina: prima bozze, poi confermati, infine annullati
-        ddts = DDTIn.query.order_by(
+        ddts = query.order_by(
             db.case(
                 (DDTIn.stato == 'bozza', 1),
                 (DDTIn.stato == 'confermato', 2),

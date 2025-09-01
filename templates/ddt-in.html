@@ -41,6 +41,20 @@
 
         <div class="ddt-header">
             <h1>📥 DDT in Entrata</h1>
+            <form method="GET" action="/ddt-in" class="filters">
+                <input type="date" name="data_da" value="{{ request.args.get('data_da', '') }}" placeholder="Data da">
+                <input type="date" name="data_a" value="{{ request.args.get('data_a', '') }}" placeholder="Data a">
+                <input type="text" name="fornitore" value="{{ request.args.get('fornitore', '') }}" placeholder="Cerca fornitore...">
+                <input type="text" name="numero_ddt" value="{{ request.args.get('numero_ddt', '') }}" placeholder="N° DDT...">
+                <select name="stato">
+                    <option value="tutti" {{ 'selected' if request.args.get('stato') == 'tutti' or not request.args.get('stato') else '' }}>Tutti gli stati</option>
+                    <option value="bozza" {{ 'selected' if request.args.get('stato') == 'bozza' else '' }}>Bozza</option>
+                    <option value="confermato" {{ 'selected' if request.args.get('stato') == 'confermato' else '' }}>Confermato</option>
+                    <option value="annullato" {{ 'selected' if request.args.get('stato') == 'annullato' else '' }}>Annullato</option>
+                </select>
+                <button type="submit" class="btn">Filtra</button>
+                <button type="button" class="btn btn-secondary" onclick="location.href='/ddt-in'">Reset</button>
+            </form>
             <div class="actions-bar">
                 <button class="btn" onclick="window.location.href='/ddt-in/nuovo'">
                     ✏️ Inserimento Manuale
