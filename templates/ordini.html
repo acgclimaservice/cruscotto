@@ -97,8 +97,10 @@
                     </thead>
                     <tbody>
                         {% for ordine in ordini %}
-                        <tr>
-                            <td><strong>{{ ordine.numero_ordine or ('BOZZA-' + ordine.id|string) }}</strong></td>
+                        <tr class="{{ 'order-cancelled' if ordine.stato == 'annullato' else '' }}">
+                            <td><strong>{{ ordine.numero_ordine or ('BOZZA-' + ordine.id|string) }}</strong>
+                                {% if ordine.stato == 'annullato' %}<span class="cancelled-badge">ANNULLATO</span>{% endif %}
+                            </td>
                             <td>{{ ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine }}</td>
                             <td>{{ ordine.fornitore_nome }}</td>
                             <td>{{ ordine.oggetto }}</td>
@@ -109,6 +111,7 @@
                                     {% elif ordine.stato == 'confermato' %}✅ Confermato
                                     {% elif ordine.stato == 'ricevuto' %}📦 Ricevuto
                                     {% elif ordine.stato == 'completato' %}🏁 Completato
+                                    {% elif ordine.stato == 'annullato' %}⛔ Annullato
                                     {% else %}{{ ordine.stato }}
                                     {% endif %}
                                 </span>
@@ -142,8 +145,13 @@
                                         <button class="btn btn-sm btn-warning" onclick="confermaOrdine({{ ordine.id }})">✅ Conferma Ricevimento</button>
                                     {% elif ordine.stato == 'confermato' %}
                                         <button class="btn btn-sm btn-primary" onclick="convertiInDDTIn({{ ordine.id }}, '{{ ordine.numero_ordine }}')">📥 Converti in DDT IN</button>
+                                        <button class="btn btn-sm btn-warning" onclick="annullaOrdine({{ ordine.id }}, '{{ ordine.numero_ordine }}')">❌ Annulla</button>
                                     {% endif %}
-                                    <button class="btn btn-sm btn-danger" onclick="eliminaOrdine({{ ordine.id }}, '{{ ordine.numero_ordine or ('BOZZA-' + ordine.id|string) }}')">🗑️ Elimina</button>
+                                    {% if ordine.stato in ['bozza', 'inviato'] %}
+                                        <button class="btn btn-sm btn-danger" onclick="eliminaOrdine({{ ordine.id }}, '{{ ordine.numero_ordine or ('BOZZA-' + ordine.id|string) }}')">🗑️ Elimina</button>
+                                    {% else %}
+                                        <span class="btn btn-sm btn-secondary" style="opacity: 0.5; cursor: not-allowed;" title="Non è possibile eliminare ordini confermati">🗑️ Elimina</span>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
@@ -276,6 +284,36 @@ function eliminaOrdine(ordineId, numeroOrdine) {
         })
         .catch(error => {
             alert(`Errore durante l'eliminazione: ${error}`);
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+    }
+}
+
+function annullaOrdine(ordineId, numeroOrdine) {
+    if (confirm(`Sei sicuro di voler ANNULLARE l'ordine ${numeroOrdine}?\\n\\nQuesta operazione:\\n- Manterrà l'ordine visibile come "ANNULLATO"\\n- Impedirà ulteriori operazioni sull'ordine\\n- NON PUÒ essere annullata!\\n\\nContinuare?`)) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "Annullando...";
+        btn.disabled = true;
+        
+        fetch(`/ordini/${ordineId}/annulla`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Ordine annullato con successo!\\n\\n${data.message}`);
+                location.reload();
+            } else {
+                alert(`Errore durante l'annullamento: ${data.error}`);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(`Errore durante l'annullamento: ${error}`);
             btn.textContent = originalText;
             btn.disabled = false;
         });
@@ -432,6 +470,35 @@ function confermaOrdineConfronto(ordineId) {
 
 .close-btn:hover {
     color: #ef4444;
+}
+
+/* Stili per ordini annullati */
+.order-cancelled {
+    background-color: #fee !important;
+    opacity: 0.7;
+    text-decoration: line-through;
+}
+
+.cancelled-badge {
+    background: #dc3545;
+    color: white;
+    font-size: 0.7em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+.status-annullato {
+    background: #dc3545 !important;
+    color: white !important;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
 }
 </style>
 </body>

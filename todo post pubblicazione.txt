@@ -12,10 +12,10 @@ The requested URL was not found on the server. If you entered the URL manually p
 Errore di connessione: SyntaxError: Unexpected token '<', "
 11. nella sezione preventivi elimina gli 🛠️ Strumenti Preventivazione FATTO - CONTROLLATO OK
 12. nei ddt out non funziona la barra dei filtri. se seleziono una data o uno stato non mi si aggiornano i dati. FATTO - CONTROLLATO OK 
-13. nei ddt in aggiungi la barra dei filtri.
+13. nei ddt in aggiungi la barra dei filtri. FATTO - CONTROLLATO OK
 14 nella sezione ordini non deve essere possibile eliminare un ordine confermato
 15 nella sezione ordini ci deve essere la possibilità di annullare un ordine confermato in modo di mantenerlo visibile e visualizzabile anche nei dettagli ma evidentemente annullato
 16 nella sezione parsing pdf ordini cambia assolutamente l'animazione
-17 riprendi i punti 2 e 6  perché non sono stati ancora corretti, nel dettaglio il punto 2 torna sull'errore dei decimali dopo la modifca
-18 riprendi il punto 7 perché dopo la modifica il campo descrizione copre la quantità
+17 riprendi i punti 2 e 6  perché non sono stati ancora corretti, nel dettaglio il punto 2 torna sull'errore dei decimali dopo la modifca FATTO - CONTROLLATO OK
+18 riprendi il punto 7 perché dopo la modifica il campo descrizione copre la quantità FATTO - CONTROLLATO OK
 19 

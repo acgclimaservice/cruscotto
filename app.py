@@ -5341,6 +5341,38 @@ def elimina_ordine(id):
         print(f"Errore eliminazione ordine: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/ordini/<int:id>/annulla', methods=['POST'])
+def annulla_ordine(id):
+    """Annulla ordine confermato mantenendolo visibile"""
+    try:
+        ordine = OrdineFornitore.query.get_or_404(id)
+        
+        # Controlla se l'ordine può essere annullato
+        if ordine.stato != 'confermato':
+            return jsonify({
+                'success': False,
+                'error': f'Non è possibile annullare un ordine in stato "{ordine.stato}". Solo gli ordini confermati possono essere annullati.'
+            }), 400
+        
+        # Salva numero ordine per messaggio
+        numero_ordine = ordine.numero_ordine or f'ORDINE-{ordine.id}'
+        
+        # Cambia lo stato in annullato
+        ordine.stato = 'annullato'
+        ordine.note_annullamento = f'Ordine annullato il {datetime.now().strftime("%d/%m/%Y alle %H:%M")}'
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Ordine {numero_ordine} annullato con successo. Rimane visibile per consultazione.'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore annullamento ordine: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/ordini/<int:id>/confronta-data')
 def confronta_data_ordine(id):
     """Restituisce dati ordine per confronto con PDF"""
