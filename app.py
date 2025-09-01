@@ -5924,9 +5924,13 @@ def lista_offerte():
 @app.route('/offerte/<int:id>')
 def dettaglio_offerta(id):
     """Dettaglio offerta"""
+    from werkzeug.exceptions import NotFound
     try:
         offerta = OffertaFornitore.query.get_or_404(id)
         return render_template('dettaglio-offerta.html', offerta=offerta)
+    except NotFound:
+        # Let Flask handle 404 properly
+        raise
     except Exception as e:
         import traceback
         print(f"Errore dettaglio offerta {id}: {e}")

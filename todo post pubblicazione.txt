@@ -44,6 +44,6 @@ Errore di connessione: SyntaxError: Unexpected token '<', "
 CLER5555	CLER5555	tubo giallo 1	CLERICI SPA A SOCIO UNICO	-	€ 10.00	PZ	10.00	0.00	📱 QR	
 ✏️
 🗑️
-42 qui https://acgclimaservice.pythonanywhere.com/offerte/1 mi da 1:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
+42 qui https://acgclimaservice.pythonanywhere.com/offerte/1 mi da 1:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) FATTO - CONTROLLATO OK
 
 
