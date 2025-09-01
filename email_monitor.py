@@ -27,7 +27,14 @@ class EmailMonitor:
         self.logger = logging.getLogger(__name__)
         
     def get_config(self, key, default=None):
-        """Recupera configurazione dal database"""
+        """Recupera configurazione da .env o database"""
+        # Prima prova .env
+        env_key = key.upper()
+        env_value = os.getenv(env_key)
+        if env_value:
+            return env_value
+            
+        # Fallback al database
         with self.app.app_context():
             config = ConfigurazioneSistema.query.filter_by(chiave=key).first()
             return config.valore if config else default
