@@ -6742,6 +6742,13 @@ def conferma_movimento_interno(id):
         movimento.numero_documento = f'MI/{numero:04d}/{anno}'
         movimento.stato = 'confermato'
         
+        # Ottieni descrizioni complete dei magazzini
+        mag_partenza = Magazzino.query.filter_by(codice=movimento.magazzino_partenza).first()
+        mag_destinazione = Magazzino.query.filter_by(codice=movimento.magazzino_destinazione).first()
+        
+        nome_mag_partenza = mag_partenza.descrizione if mag_partenza else movimento.magazzino_partenza
+        nome_mag_destinazione = mag_destinazione.descrizione if mag_destinazione else movimento.magazzino_destinazione
+        
         # Genera movimenti per ogni articolo
         articoli = ArticoloMovimentoInterno.query.filter_by(movimento_id=movimento.id).all()
         
@@ -6757,8 +6764,8 @@ def conferma_movimento_interno(id):
                 quantita=articolo.quantita,
                 valore_unitario=0,
                 valore_totale=0,
-                magazzino=movimento.magazzino_partenza,
-                causale=f'Trasferimento a {movimento.magazzino_destinazione} - {movimento.causale}'
+                magazzino=nome_mag_partenza,
+                causale=f'Trasferimento a {nome_mag_destinazione} - {movimento.causale}'
             )
             db.session.add(movimento_uscita)
             
@@ -6773,21 +6780,50 @@ def conferma_movimento_interno(id):
                 quantita=articolo.quantita,
                 valore_unitario=0,
                 valore_totale=0,
-                magazzino=movimento.magazzino_destinazione,
-                causale=f'Trasferimento da {movimento.magazzino_partenza} - {movimento.causale}'
+                magazzino=nome_mag_destinazione,
+                causale=f'Trasferimento da {nome_mag_partenza} - {movimento.causale}'
             )
             db.session.add(movimento_entrata)
             
-            # Aggiorna giacenze se l'articolo esiste nel catalogo
+            # Aggiorna giacenze per magazzino separatamente
             if articolo.codice_articolo:
-                cat_articolo = CatalogoArticolo.query.filter_by(
-                    codice_interno=articolo.codice_articolo
+                # Riduci giacenza nel magazzino di partenza
+                cat_articolo_partenza = CatalogoArticolo.query.filter_by(
+                    codice_interno=articolo.codice_articolo,
+                    ubicazione=movimento.magazzino_partenza
                 ).first()
                 
-                if cat_articolo:
-                    # Non modifichiamo la giacenza totale nei movimenti interni
-                    # solo spostiamo tra magazzini - aggiorniamo l'ubicazione
-                    cat_articolo.ubicazione = movimento.magazzino_destinazione
+                if cat_articolo_partenza:
+                    cat_articolo_partenza.giacenza_attuale = (cat_articolo_partenza.giacenza_attuale or 0) - articolo.quantita
+                
+                # Aumenta giacenza nel magazzino di destinazione (crea record se non esiste)
+                cat_articolo_destinazione = CatalogoArticolo.query.filter_by(
+                    codice_interno=articolo.codice_articolo,
+                    ubicazione=movimento.magazzino_destinazione
+                ).first()
+                
+                if cat_articolo_destinazione:
+                    # Articolo già presente nel magazzino di destinazione
+                    cat_articolo_destinazione.giacenza_attuale = (cat_articolo_destinazione.giacenza_attuale or 0) + articolo.quantita
+                else:
+                    # Articolo non presente nel magazzino di destinazione, crea nuovo record
+                    if cat_articolo_partenza:
+                        nuovo_articolo_dest = CatalogoArticolo(
+                            codice_interno=articolo.codice_articolo,
+                            codice_fornitore=cat_articolo_partenza.codice_fornitore,
+                            descrizione=articolo.descrizione_articolo,
+                            fornitore_principale=cat_articolo_partenza.fornitore_principale,
+                            codice_produttore=cat_articolo_partenza.codice_produttore,
+                            costo_ultimo=cat_articolo_partenza.costo_ultimo,
+                            costo_medio=cat_articolo_partenza.costo_medio,
+                            prezzo_vendita=cat_articolo_partenza.prezzo_vendita,
+                            unita_misura=cat_articolo_partenza.unita_misura,
+                            giacenza_attuale=articolo.quantita,
+                            scorta_minima=cat_articolo_partenza.scorta_minima,
+                            ubicazione=movimento.magazzino_destinazione,
+                            attivo=True
+                        )
+                        db.session.add(nuovo_articolo_dest)
         
         db.session.commit()
         
