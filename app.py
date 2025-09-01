@@ -4294,8 +4294,8 @@ def aggiorna_inventario():
         for art in articoli_ddt_in:
             # Usa direttamente il codice interno esistente dall'ArticoloIn
             codice_interno = art.codice_interno or f'ART-{art.id}'
-            # Estrai codice fornitore dal codice interno
-            codice_fornitore = art.codice_interno.strip() if art.codice_interno else None
+            # Usa il codice fornitore originale
+            codice_fornitore = art.codice_fornitore.strip() if art.codice_fornitore else None
             
             chiave = f"{codice_interno}|{art.descrizione}|{art.magazzino or 'Magazzino Principale'}"
             
@@ -4326,8 +4326,10 @@ def aggiorna_inventario():
         
         # Elabora DDT OUT (uscite) 
         for art in articoli_ddt_out:
-            # Estrai codice fornitore (quello presente nel DDT)
-            codice_fornitore = art.codice_interno.strip() if art.codice_interno else None
+            # Per i DDT OUT, il codice fornitore non è sempre disponibile, usa codice interno come fallback
+            codice_fornitore = getattr(art, 'codice_fornitore', None)
+            if not codice_fornitore and art.codice_interno:
+                codice_fornitore = art.codice_interno.strip()
             
             # Crea codice interno: prime 4 lettere fornitore + codice fornitore
             if codice_fornitore and art.fornitore:
