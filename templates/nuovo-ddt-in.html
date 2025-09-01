@@ -573,6 +573,25 @@
         const row = button.closest('tr');
         if (document.querySelectorAll('#tabella-articoli tbody tr').length > 1) {
             row.remove();
+            
+            // Reindexing: aggiorna tutti i nomi dei campi per mantenere indici sequenziali
+            const righeRimanenti = document.querySelectorAll('#tabella-articoli tbody tr');
+            righeRimanenti.forEach((riga, nuovoIndex) => {
+                // Aggiorna tutti gli input della riga con il nuovo indice
+                const inputs = riga.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (input.name && input.name.includes('articoli[')) {
+                        const nomeBase = input.name.replace(/articoli\[\d+\]/, `articoli[${nuovoIndex}]`);
+                        input.name = nomeBase;
+                    }
+                });
+                
+                // Aggiorna il pulsante rimuovi se ha onclick con parametri
+                const btnRimuovi = riga.querySelector('button[onclick*="rimuoviRiga"]');
+                if (btnRimuovi) {
+                    btnRimuovi.setAttribute('onclick', `rimuoviRiga(this)`);
+                }
+            });
         }
     }
     

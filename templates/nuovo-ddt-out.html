@@ -358,6 +358,45 @@
         const righe = document.querySelectorAll('.riga-articolo');
         if (righe.length > 1) {
             document.querySelector(`[name="articoli[${index}][codice_interno]"]`).closest('tr').remove();
+            
+            // Reindexing: aggiorna tutti i nomi dei campi per mantenere indici sequenziali
+            const righeRimanenti = document.querySelectorAll('.riga-articolo');
+            righeRimanenti.forEach((riga, nuovoIndex) => {
+                // Aggiorna tutti gli input della riga con il nuovo indice
+                const inputs = riga.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (input.name && input.name.includes('articoli[')) {
+                        const nomeBase = input.name.replace(/articoli\[\d+\]/, `articoli[${nuovoIndex}]`);
+                        input.name = nomeBase;
+                    }
+                });
+                
+                // Aggiorna gli ID degli elementi correlati
+                const elementiConId = riga.querySelectorAll('[id*="suggestions-"], [id*="desc-suggestions-"], [id*="giacenza-"], [id*="totale-"], [id*="mastrino-"]');
+                elementiConId.forEach(elemento => {
+                    if (elemento.id) {
+                        elemento.id = elemento.id.replace(/\d+$/, nuovoIndex);
+                    }
+                });
+                
+                // Aggiorna gli attributi onkeyup e onchange con i nuovi indici
+                const inputsConFunzioni = riga.querySelectorAll('[onkeyup*="cercaArticolo"], [onkeyup*="cercaDescrizione"], [onchange*="calcolaTotale"]');
+                inputsConFunzioni.forEach(input => {
+                    if (input.getAttribute('onkeyup')) {
+                        input.setAttribute('onkeyup', input.getAttribute('onkeyup').replace(/\d+/g, nuovoIndex));
+                    }
+                    if (input.getAttribute('onchange')) {
+                        input.setAttribute('onchange', input.getAttribute('onchange').replace(/\d+/g, nuovoIndex));
+                    }
+                });
+                
+                // Aggiorna il pulsante rimuovi
+                const btnRimuovi = riga.querySelector('button[onclick*="rimuoviArticolo"]');
+                if (btnRimuovi) {
+                    btnRimuovi.setAttribute('onclick', `rimuoviArticolo(${nuovoIndex})`);
+                }
+            });
+            
             calcolaTotaleGenerale();
         }
     }
