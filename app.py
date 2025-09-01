@@ -6413,6 +6413,7 @@ def scarica_allegato_offerta(offerta_id, allegato_index):
 @app.route('/offerte/<int:id>/crea-ddt', methods=['POST'])
 def crea_ddt_da_offerta(id):
     """Crea DDT IN dall'offerta accettata"""
+    from werkzeug.exceptions import NotFound
     try:
         offerta = OffertaFornitore.query.get_or_404(id)
         
@@ -6477,6 +6478,8 @@ def crea_ddt_da_offerta(id):
             'redirect_url': f'/ddt-in/{nuovo_ddt.id}'
         })
         
+    except NotFound:
+        return jsonify({'errore': 'Offerta non trovata'}), 404
     except Exception as e:
         print(f"Errore creazione DDT da offerta: {e}")
         db.session.rollback()
@@ -6485,6 +6488,7 @@ def crea_ddt_da_offerta(id):
 @app.route('/offerte/<int:id>/elimina', methods=['POST'])
 def elimina_offerta(id):
     """Elimina un'offerta e tutti i suoi dettagli"""
+    from werkzeug.exceptions import NotFound
     try:
         offerta = OffertaFornitore.query.get_or_404(id)
         
@@ -6508,6 +6512,8 @@ def elimina_offerta(id):
             'dettagli_rimossi': dettagli_rimossi
         })
         
+    except NotFound:
+        return jsonify({'error': 'Offerta non trovata'}), 404
     except Exception as e:
         print(f"Errore eliminazione offerta: {e}")
         db.session.rollback()
