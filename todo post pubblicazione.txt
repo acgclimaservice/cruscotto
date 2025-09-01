@@ -32,3 +32,5 @@ Errore di connessione: SyntaxError: Unexpected token '<', "
 30 nella sezione offerta, in informazioni generali, il testo Numero Offerta deve essere cambiato in Numero Richiesta
 31 nella sezione offerta, devi cambiare Dettagli Offerta in Dettagli richiesta
 32 nella sezione offerta nascondi il riepilogo totali e tutti i costi ed i prezzi
+33 in questo file segna come FATTO i punti che pensi di aver sistemato, anche tra i punti precedenti e per i punti futuri
+34 rifai il punto 16 perché non è andato a buon fine

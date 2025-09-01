@@ -6463,24 +6463,27 @@ def invia_richiesta_offerta_email(id):
     try:
         offerta = OffertaFornitore.query.get_or_404(id)
         
-        # Validazioni
-        if not offerta.fornitore:
-            return jsonify({'error': 'Fornitore non associato alla richiesta'}), 400
-            
-        if not offerta.fornitore.email:
-            return jsonify({'error': 'Email fornitore non configurata'}), 400
-        
-        # Ottieni email di invio dal form
+        # Ottieni email di invio dal form prima delle validazioni
         data = request.get_json()
         if not data:
             return jsonify({'error': 'Dati richiesta mancanti'}), 400
-            
-        email_fornitore = data.get('email', offerta.fornitore.email).strip()
+        
+        # Determina email fornitore - priorità: form, relazione fornitore, fallback vuoto
+        email_fornitore_default = ''
+        if offerta.fornitore and offerta.fornitore.email:
+            email_fornitore_default = offerta.fornitore.email
+        
+        email_fornitore = data.get('email', email_fornitore_default).strip()
+        
+        # Validazioni
+        if not email_fornitore:
+            return jsonify({'error': 'Email destinatario richiesta. Inserire email del fornitore nel form.'}), 400
+        
+        if not offerta.fornitore_nome:
+            return jsonify({'error': 'Nome fornitore mancante nella richiesta'}), 400
+        
         messaggio_personalizzato = data.get('messaggio', '').strip()
         includi_allegati = data.get('includi_allegati', True)
-        
-        if not email_fornitore:
-            return jsonify({'error': 'Email destinatario richiesta'}), 400
         
         # Ottieni configurazione email dal sistema esistente
         email_monitor = EmailMonitor(app)
