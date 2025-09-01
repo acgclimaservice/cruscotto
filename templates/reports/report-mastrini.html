@@ -347,6 +347,16 @@
                             </tr>
                             {% endfor %}
                         </tbody>
+                        <tfoot>
+                            <tr class="table-total">
+                                <td><strong>TOTALE</strong></td>
+                                <td class="text-danger"><strong>€ {{ "{:,.2f}".format(analisi_collegamenti.collegamenti_dettagli | sum(attribute='totale_spese')) }}</strong></td>
+                                <td><strong>TOTALE</strong></td>
+                                <td class="text-success"><strong>€ {{ "{:,.2f}".format(analisi_collegamenti.collegamenti_dettagli | sum(attribute='totale_ricavi')) }}</strong></td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
                 

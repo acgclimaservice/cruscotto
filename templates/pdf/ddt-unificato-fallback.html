@@ -319,7 +319,7 @@
                 {% set totale_riga = (articolo.quantita or 0) * (articolo.costo_unitario or 0) %}
                 {% set totale_generale = totale_generale + totale_riga %}
                 <tr>
-                    <td style="width: 15%; min-width: 100px; max-width: 120px; word-break: break-all; overflow: hidden; text-overflow: ellipsis;"><strong>{{ articolo.codice_interno or '-' }}</strong></td>
+                    <td style="width: 15%; min-width: 100px; max-width: 150px; word-break: normal; font-size: 11px; padding: 4px;"><strong>{{ articolo.codice_interno or '-' }}</strong></td>
                     <td style="width: 45%; min-width: 180px; max-width: 300px; word-wrap: break-word; overflow: hidden; hyphens: auto;">{{ articolo.descrizione }}</td>
                     <td style="width: 10%; min-width: 60px; max-width: 80px; text-align: center; white-space: nowrap;">{{ "{:.2f}".format(articolo.quantita or 0) }}</td>
                     <td style="width: 15%; min-width: 80px; max-width: 100px; text-align: center; white-space: nowrap;">€ {{ "{:.2f}".format(articolo.costo_unitario or 0) }}</td>

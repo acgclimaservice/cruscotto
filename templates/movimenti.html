@@ -179,12 +179,12 @@
                                     {{ movimento.provenienza or 'Esterno' }}
                                 {% endif %}
                             {% else %}
-                                {{ movimento.magazzino or 'Magazzino' }}
+                                {{ magazzini.get(movimento.magazzino, movimento.magazzino) or 'Magazzino' }}
                             {% endif %}
                         </td>
                         <td>
                             {% if movimento.tipo == 'entrata' %}
-                                {{ movimento.magazzino or 'Magazzino' }}
+                                {{ magazzini.get(movimento.magazzino, movimento.magazzino) or 'Magazzino' }}
                             {% else %}
                                 {% if movimento.documento_tipo == 'ddt_out' %}
                                     {% set ddt = movimento.documento_numero %}

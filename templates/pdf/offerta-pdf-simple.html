@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offerta {{ offerta.numero_offerta or offerta.id }}</title>
+    <title>Richiesta Offerta {{ offerta.numero_offerta or offerta.id }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -217,7 +217,7 @@
         <div class="header-content">
             <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="company-logo">
             <div class="header-text" style="flex: 1; text-align: center;">
-                <h1>OFFERTA FORNITORE</h1>
+                <h1>RICHIESTA OFFERTA AL FORNITORE</h1>
                 <h2>{{ offerta.numero_offerta or ('BOZZA #' + offerta.id|string) }}</h2>
             </div>
         </div>

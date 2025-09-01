@@ -27,3 +27,8 @@ Errore di connessione: SyntaxError: Unexpected token '<', "
 25 nella sezione offerta dammi la possibilità di inviare via mail la richiesta offerta al fornitore, compresi eventuali allegati
 26 nella sezione offerta, cambia il testo Gestione Offerte in Gestione Richieste offerte al fornitore
 27 nella sezione offerta, cambia il testo del tasto "salva offerta" in "salva richiesta"
+28 nella sezione offerta, cambia questo testo "Gestione Richieste offerte al fornitore" in "Richieste di offerta al fornitore"
+29 i testi di questo tipo Offerta OFF-2025-0001 devono cambiare in Richiesta Offerta OFF-2025-0001
+30 nella sezione offerta, in informazioni generali, il testo Numero Offerta deve essere cambiato in Numero Richiesta
+31 nella sezione offerta, devi cambiare Dettagli Offerta in Dettagli richiesta
+32 nella sezione offerta nascondi il riepilogo totali e tutti i costi ed i prezzi

@@ -1895,7 +1895,7 @@ def conferma_ddt_in(id):
                         # Utilizza i dati dell'articolo esistente per mantenere coerenza
                         catalogo_art = CatalogoArticolo(
                             codice_interno=codice_articolo,
-                            codice_fornitore=catalogo_art_esistente.codice_fornitore,  # Mantieni codice fornitore esistente
+                            codice_fornitore=codice_fornitore_originale,  # Mantieni codice fornitore dal DDT corrente
                             descrizione=catalogo_art_esistente.descrizione,  # Mantieni descrizione esistente
                             fornitore_principale=catalogo_art_esistente.fornitore_principale,  # Mantieni fornitore esistente
                             costo_ultimo=art.costo_unitario or 0,
@@ -3177,10 +3177,15 @@ def genera_qr_articolo(articolo_id):
         import traceback
         print(f"Errore generazione QR code: {e}")
         print(f"Traceback: {traceback.format_exc()}")
-        return jsonify({
-            'success': False,
-            'error': f'Errore nella generazione del QR code: {str(e)}'
-        }), 500
+        # Assicurati sempre di ritornare JSON anche in caso di errore
+        try:
+            return jsonify({
+                'success': False,
+                'error': f'Errore nella generazione del QR code: {str(e)}'
+            }), 500
+        except:
+            # Fallback se anche jsonify fallisce
+            return '{"success": false, "error": "Errore interno del server"}', 500, {'Content-Type': 'application/json'}
 
 @app.route('/catalogo/export-excel')
 def export_catalogo_excel():
@@ -3355,10 +3360,22 @@ def movimenti_page():
         
         movimenti = query.order_by(Movimento.data_movimento.desc()).limit(100).all()
         
-        return render_template('movimenti.html', movimenti=movimenti)
+        # Ottieni i magazzini per convertire codici in descrizioni
+        magazzini = {}
+        for mag in Magazzino.query.filter_by(attivo=True).all():
+            magazzini[mag.codice] = mag.descrizione
+        
+        return render_template('movimenti.html', movimenti=movimenti, magazzini=magazzini)
     except Exception as e:
         print(f"Errore movimenti: {e}")
-        return render_template('movimenti.html', movimenti=[])
+        # Anche in caso di errore, passa i magazzini per la conversione
+        magazzini = {}
+        try:
+            for mag in Magazzino.query.filter_by(attivo=True).all():
+                magazzini[mag.codice] = mag.descrizione
+        except:
+            pass
+        return render_template('movimenti.html', movimenti=[], magazzini=magazzini)
 
 @app.route('/movimenti/export-excel')
 def export_movimenti_excel():

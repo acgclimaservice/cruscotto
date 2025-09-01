@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offerta {{ offerta.numero_offerta }} - Sistema DDT</title>
+    <title>Richiesta Offerta {{ offerta.numero_offerta }} - Sistema DDT</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
     <script src="{{ url_for('static', filename='autocompletamento.js') }}"></script>
 </head>
@@ -21,9 +21,9 @@
         </nav>
 
         <div class="ddt-header">
-            <h1>💰 Offerta {{ offerta.numero_offerta }}</h1>
+            <h1>💰 Richiesta Offerta {{ offerta.numero_offerta }}</h1>
             <p style="color: #8492a6; margin-top: 8px;">
-                Dettaglio offerta creata il {{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta }}
+                Dettagli richiesta creata il {{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta }}
             </p>
         </div>
 
@@ -53,7 +53,7 @@
             
             <div class="info-grid">
                 <div class="info-item">
-                    <label>Numero Offerta</label>
+                    <label>Numero Richiesta</label>
                     <span><strong>{{ offerta.numero_offerta }}</strong></span>
                 </div>
                 <div class="info-item">
@@ -121,7 +121,7 @@
 
         <!-- Dettagli offerta -->
         <div class="card">
-            <h3>📦 Dettagli Offerta</h3>
+            <h3>📦 Dettagli richiesta</h3>
             
             {% if offerta.dettagli %}
                 <table class="data-table">
@@ -132,9 +132,9 @@
                             <th>Descrizione</th>
                             <th>Quantità</th>
                             <th>U.M.</th>
-                            <th>Prezzo Unit.</th>
+                            <!-- <th>Prezzo Unit.</th>
                             <th>Sconto %</th>
-                            <th>Totale</th>
+                            <th>Totale</th> -->
                             <th>Disponibilità</th>
                             <th>Consegna</th>
                         </tr>
@@ -147,9 +147,9 @@
                             <td>{{ dettaglio.descrizione }}</td>
                             <td>{{ dettaglio.quantita }}</td>
                             <td>{{ dettaglio.unita_misura }}</td>
-                            <td>€ {{ "%.2f"|format(dettaglio.prezzo_unitario or 0) }}</td>
+                            <!-- <td>€ {{ "%.2f"|format(dettaglio.prezzo_unitario or 0) }}</td>
                             <td>{{ dettaglio.sconto_percentuale or 0 }}%</td>
-                            <td><strong>€ {{ "%.2f"|format(dettaglio.totale_riga or 0) }}</strong></td>
+                            <td><strong>€ {{ "%.2f"|format(dettaglio.totale_riga or 0) }}</strong></td> -->
                             <td>
                                 {% if dettaglio.disponibilita %}
                                     <span class="availability-badge">{{ dettaglio.disponibilita }}</span>
@@ -201,7 +201,8 @@
         {% endif %}
         {% endif %}
 
-        <!-- Riepilogo totali -->
+        <!-- Riepilogo totali nascosto come richiesto -->
+        <!--
         <div class="card">
             <h3>💰 Riepilogo Totali</h3>
             <div class="totali-summary">
@@ -219,6 +220,7 @@
                 </div>
             </div>
         </div>
+        -->
 
         <!-- Pulsanti azione -->
         <div class="form-actions">
