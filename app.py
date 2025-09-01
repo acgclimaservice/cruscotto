@@ -7350,6 +7350,15 @@ with app.app_context():
             db.session.commit()
             print("✅ Migration: Added data_scadenza column to commessa table")
         
+        # Migration: Add allegati to offerta_fornitore table if not exists
+        try:
+            db.session.execute(text("SELECT allegati FROM offerta_fornitore LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN allegati TEXT"))
+            db.session.commit()
+            print("✅ Migration: Added allegati column to offerta_fornitore table")
+        
         # Inizializzazione dati base se database vuoto
         if not Magazzino.query.first():
             # Magazzini default
@@ -8122,6 +8131,15 @@ if __name__ == '__main__':
             db.session.execute(text("ALTER TABLE commessa ADD COLUMN data_scadenza DATE"))
             db.session.commit()
             print("✅ Migration: Added data_scadenza column to commessa table")
+        
+        # Migration: Add allegati to offerta_fornitore table if not exists
+        try:
+            db.session.execute(text("SELECT allegati FROM offerta_fornitore LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN allegati TEXT"))
+            db.session.commit()
+            print("✅ Migration: Added allegati column to offerta_fornitore table")
     
     print("=" * 50)
     print(f"SISTEMA GESTIONE DDT - VERSIONE {APP_VERSION}")
