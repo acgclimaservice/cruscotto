@@ -12,6 +12,12 @@ import sys
 import traceback
 import base64
 import io
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText  
+from email.mime.base import MIMEBase
+from email import encoders
+import smtplib
+import ssl
 
 # Carica variabili d'ambiente
 load_dotenv()
@@ -6450,6 +6456,138 @@ def elimina_offerta(id):
         print(f"Errore eliminazione offerta: {e}")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@app.route('/offerte/<int:id>/invia-email', methods=['POST'])
+def invia_richiesta_offerta_email(id):
+    """Invia richiesta offerta via email al fornitore"""
+    try:
+        offerta = OffertaFornitore.query.get_or_404(id)
+        
+        # Validazioni
+        if not offerta.fornitore:
+            return jsonify({'error': 'Fornitore non associato alla richiesta'}), 400
+            
+        if not offerta.fornitore.email:
+            return jsonify({'error': 'Email fornitore non configurata'}), 400
+        
+        # Ottieni email di invio dal form
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Dati richiesta mancanti'}), 400
+            
+        email_fornitore = data.get('email', offerta.fornitore.email).strip()
+        messaggio_personalizzato = data.get('messaggio', '').strip()
+        includi_allegati = data.get('includi_allegati', True)
+        
+        if not email_fornitore:
+            return jsonify({'error': 'Email destinatario richiesta'}), 400
+        
+        # Ottieni configurazione email dal sistema esistente
+        email_monitor = EmailMonitor(app)
+        
+        # Controlla configurazione SMTP
+        smtp_server = email_monitor.get_config('email_smtp_server')
+        smtp_port = email_monitor.get_config('email_smtp_port', '587')
+        email_mittente = email_monitor.get_config('email_address')
+        email_password = email_monitor.get_config('email_password')
+        
+        if not all([smtp_server, email_mittente, email_password]):
+            return jsonify({'error': 'Configurazione email non completa nelle impostazioni sistema'}), 400
+        
+        # Crea l'email
+        msg = MIMEMultipart()
+        msg['From'] = email_mittente
+        msg['To'] = email_fornitore
+        msg['Subject'] = f"Richiesta Offerta {offerta.numero_offerta} - ACG Clima Service"
+        
+        # Corpo email
+        corpo_base = f"""Gentile Fornitore {offerta.fornitore_nome},
+
+Vi inviamo richiesta di offerta per i seguenti articoli:
+
+Numero Richiesta: {offerta.numero_offerta}
+Data Richiesta: {offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta else 'N/D'}
+Oggetto: {offerta.oggetto or 'Non specificato'}
+Priorità: {offerta.priorita or 'Media'}
+
+{f"Note aggiuntive: {messaggio_personalizzato}" if messaggio_personalizzato else ""}
+
+Vi preghiamo di inviarci la vostra migliore offerta con tempi di consegna e condizioni commerciali.
+
+Distinti Saluti,
+ACG Clima Service S.r.l.
+Tel: 0383/640606
+Email: info@acgclimaservice.com
+
+---
+Messaggio generato automaticamente dal Sistema Gestione Richieste Offerte v{app.config.get('VERSION', '4.23')}
+"""
+        
+        msg.attach(MIMEText(corpo_base, 'plain', 'utf-8'))
+        
+        # Aggiungi allegati se richiesti
+        allegati_aggiunti = []
+        if includi_allegati and offerta.allegati:
+            try:
+                import json
+                allegati_lista = json.loads(offerta.allegati) if isinstance(offerta.allegati, str) else offerta.allegati
+                
+                if isinstance(allegati_lista, list):
+                    for nome_file in allegati_lista:
+                        percorso_file = os.path.join(app.root_path, 'uploads', 'offerte', nome_file)
+                        
+                        if os.path.exists(percorso_file):
+                            with open(percorso_file, 'rb') as f:
+                                parte_allegato = MIMEBase('application', 'octet-stream')
+                                parte_allegato.set_payload(f.read())
+                                
+                            encoders.encode_base64(parte_allegato)
+                            parte_allegato.add_header(
+                                'Content-Disposition',
+                                f'attachment; filename= {nome_file}'
+                            )
+                            msg.attach(parte_allegato)
+                            allegati_aggiunti.append(nome_file)
+                        else:
+                            print(f"Allegato non trovato: {percorso_file}")
+                            
+            except Exception as e:
+                print(f"Errore gestione allegati: {e}")
+        
+        # Invia email
+        import smtplib
+        import ssl
+        
+        context = ssl.create_default_context()
+        
+        with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
+            server.starttls(context=context)
+            server.login(email_mittente, email_password)
+            server.send_message(msg)
+        
+        # Registra l'invio nell'offerta
+        offerta.note = f"{offerta.note or ''}\n\n[{datetime.now().strftime('%d/%m/%Y %H:%M')}] Email inviata a: {email_fornitore}"
+        if allegati_aggiunti:
+            offerta.note += f"\nAllegati inviati: {', '.join(allegati_aggiunti)}"
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Richiesta offerta inviata con successo a {email_fornitore}',
+            'allegati_inviati': len(allegati_aggiunti),
+            'dettagli': {
+                'destinatario': email_fornitore,
+                'allegati': allegati_aggiunti,
+                'data_invio': datetime.now().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Errore invio email richiesta offerta: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Errore invio email: {str(e)}'}), 500
 
 @app.route('/preventivi/<int:id>/invia', methods=['POST'])
 def invia_preventivo(id):

@@ -243,6 +243,10 @@
             <a href="/offerte/confronta" class="btn btn-secondary">📋 Confronta Offerte</a>
             <a href="/offerte/{{ offerta.id }}/pdf" class="btn btn-secondary" target="_blank">📄 Stampa PDF</a>
             
+            {% if offerta.stato in ['creata', 'valutata'] %}
+                <button class="btn btn-info" onclick="mostraModalInvioEmail({{ offerta.id }})">📧 Invia Email</button>
+            {% endif %}
+            
             {% if offerta.stato == 'accettata' %}
                 <button class="btn btn-primary" onclick="creaDDTDaOfferta({{ offerta.id }})">🔄 Crea DDT IN</button>
             {% endif %}
@@ -414,6 +418,232 @@
             padding: 4px 8px;
             font-size: 0.8rem;
         }
+        
+        /* Stili modal invio email */
+        .modal-invio-email {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-invio-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: none;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .modal-invio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .close-email {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close-email:hover {
+            color: #000;
+        }
+        
+        .form-group-email {
+            margin-bottom: 15px;
+        }
+        
+        .form-group-email label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group-email input,
+        .form-group-email textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group-email textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .email-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #e9ecef;
+        }
+        
+        .email-preview h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
     </style>
+
+    <!-- Modal Invio Email -->
+    <div id="modal-invio-email" class="modal-invio-email">
+        <div class="modal-invio-content">
+            <div class="modal-invio-header">
+                <h2>📧 Invia Richiesta Offerta via Email</h2>
+                <span class="close-email">&times;</span>
+            </div>
+            
+            <form id="form-invio-email">
+                <div class="form-group-email">
+                    <label for="email-fornitore">Email Fornitore:</label>
+                    <input type="email" id="email-fornitore" required>
+                </div>
+                
+                <div class="form-group-email">
+                    <label for="messaggio-personalizzato">Messaggio aggiuntivo (opzionale):</label>
+                    <textarea id="messaggio-personalizzato" placeholder="Inserisci eventuali note aggiuntive da includere nell'email..."></textarea>
+                </div>
+                
+                <div class="form-group-email">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="includi-allegati" checked>
+                        <label for="includi-allegati">Includi allegati disponibili</label>
+                    </div>
+                </div>
+                
+                <div class="email-preview">
+                    <h4>📋 Anteprima Email</h4>
+                    <p><strong>A:</strong> <span id="preview-email">-</span></p>
+                    <p><strong>Oggetto:</strong> Richiesta Offerta {{ offerta.numero_offerta }} - ACG Clima Service</p>
+                    <p><strong>Allegati:</strong> <span id="preview-allegati">
+                        {% if offerta.allegati %}
+                            {% set allegati_lista = offerta.allegati|from_json if offerta.allegati else [] %}
+                            {{ allegati_lista|length }} file
+                        {% else %}
+                            Nessuno
+                        {% endif %}
+                    </span></p>
+                </div>
+                
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="chiudiModalEmail()">❌ Annulla</button>
+                    <button type="submit" class="btn btn-success">📧 Invia Email</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function mostraModalInvioEmail(offertaId) {
+            const modal = document.getElementById('modal-invio-email');
+            const emailInput = document.getElementById('email-fornitore');
+            const previewEmail = document.getElementById('preview-email');
+            
+            // Imposta email fornitore se disponibile
+            {% if offerta.fornitore and offerta.fornitore.email %}
+                emailInput.value = '{{ offerta.fornitore.email }}';
+                previewEmail.textContent = '{{ offerta.fornitore.email }}';
+            {% endif %}
+            
+            modal.style.display = 'block';
+            
+            // Aggiorna preview quando cambia email
+            emailInput.addEventListener('input', function() {
+                previewEmail.textContent = this.value || '-';
+            });
+            
+            // Gestisce invio form
+            document.getElementById('form-invio-email').onsubmit = function(e) {
+                e.preventDefault();
+                inviaEmailOfferta(offertaId);
+            };
+        }
+        
+        function chiudiModalEmail() {
+            document.getElementById('modal-invio-email').style.display = 'none';
+        }
+        
+        function inviaEmailOfferta(offertaId) {
+            const emailFornitore = document.getElementById('email-fornitore').value;
+            const messaggio = document.getElementById('messaggio-personalizzato').value;
+            const includiAllegati = document.getElementById('includi-allegati').checked;
+            const submitBtn = document.querySelector('#form-invio-email button[type="submit"]');
+            
+            if (!emailFornitore.trim()) {
+                alert('Inserisci un indirizzo email valido');
+                return;
+            }
+            
+            // Disabilita pulsante durante invio
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = '📧 Invio in corso...';
+            submitBtn.disabled = true;
+            
+            fetch(`/offerte/${offertaId}/invia-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: emailFornitore,
+                    messaggio: messaggio,
+                    includi_allegati: includiAllegati
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ ${data.message}\n\nDettagli:\n- Destinatario: ${data.dettagli.destinatario}\n- Allegati inviati: ${data.allegati_inviati}\n- Data invio: ${new Date(data.dettagli.data_invio).toLocaleString()}`);
+                    chiudiModalEmail();
+                    location.reload(); // Ricarica per mostrare note aggiornate
+                } else {
+                    alert(`❌ Errore: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Errore invio email:', error);
+                alert('❌ Errore durante invio email. Controlla la console per dettagli.');
+            })
+            .finally(() => {
+                // Riabilita pulsante
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+        
+        // Chiudi modal cliccando fuori
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-invio-email');
+            if (event.target == modal) {
+                chiudiModalEmail();
+            }
+        }
+        
+        // Chiudi modal con X
+        document.querySelector('.close-email').onclick = function() {
+            chiudiModalEmail();
+        }
+    </script>
 </body>
 </html>
