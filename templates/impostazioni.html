@@ -257,6 +257,10 @@
                             style="background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
                         📧 Verifica Ora
                     </button>
+                    <button type="button" onclick="riavviaEmailMonitor()" 
+                            style="background: #fd7e14; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-left: 5px;">
+                        🔄 Riavvia Monitor
+                    </button>
                     <span id="email-status" style="margin-left: 10px; font-weight: bold;"></span>
                 </div>
                 
@@ -810,6 +814,50 @@
             messageDiv.style.color = '#721c24';
             messageDiv.style.border = '1px solid #f5c6cb';
             messageDiv.textContent = '❌ Errore di connessione durante la verifica';
+        });
+    }
+    
+    function riavviaEmailMonitor() {
+        const statusSpan = document.getElementById('email-status');
+        const messageDiv = document.getElementById('email-config-message');
+        
+        statusSpan.style.color = '#ffc107';
+        statusSpan.textContent = '🔄 Riavviando...';
+        
+        fetch('/impostazioni/email/restart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            messageDiv.style.display = 'block';
+            if (data.success) {
+                statusSpan.style.color = '#28a745';
+                statusSpan.textContent = '✅ Riavviato';
+                messageDiv.style.background = '#d4edda';
+                messageDiv.style.color = '#155724';
+                messageDiv.style.border = '1px solid #c3e6cb';
+                messageDiv.textContent = `🔄 ${data.message}`;
+            } else {
+                statusSpan.style.color = '#dc3545';
+                statusSpan.textContent = '❌ Errore';
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.style.border = '1px solid #f5c6cb';
+                messageDiv.textContent = '❌ ' + (data.error || 'Errore durante il riavvio');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusSpan.style.color = '#dc3545';
+            statusSpan.textContent = '❌ Errore';
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = '#f8d7da';
+            messageDiv.style.color = '#721c24';
+            messageDiv.style.border = '1px solid #f5c6cb';
+            messageDiv.textContent = '❌ Errore di connessione durante il riavvio';
         });
     }
 

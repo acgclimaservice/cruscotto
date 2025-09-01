@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, current_app
 from models import db, Mastrino, Magazzino, ConfigurazioneSistema
 from datetime import datetime
+import time
 
 impostazioni_bp = Blueprint('impostazioni', __name__)
 
@@ -276,6 +277,43 @@ def email_monitor_status():
     except Exception as e:
         current_app.logger.error(f"Errore status email monitor: {e}")
         return jsonify({'active': False, 'error': str(e)})
+
+@impostazioni_bp.route('/email/restart', methods=['POST'])
+def restart_email_monitor():
+    """Riavvia il monitor email"""
+    try:
+        email_monitor = getattr(current_app, 'email_monitor', None)
+        
+        if not email_monitor:
+            return jsonify({'success': False, 'error': 'Monitor non configurato'}), 400
+        
+        # Ferma se è attivo
+        if email_monitor.running:
+            email_monitor.stop_monitoring()
+            time.sleep(2)  # Aspetta che si fermi
+        
+        # Riavvia se è configurato come attivo
+        if email_monitor.is_active():
+            success = email_monitor.start_monitoring()
+            if success:
+                return jsonify({
+                    'success': True, 
+                    'message': 'Monitor email riavviato con successo'
+                })
+            else:
+                return jsonify({
+                    'success': False, 
+                    'error': 'Impossibile avviare il monitor (probabilmente già attivo)'
+                })
+        else:
+            return jsonify({
+                'success': False, 
+                'error': 'Monitor non configurato come attivo nelle impostazioni'
+            })
+        
+    except Exception as e:
+        current_app.logger.error(f"Errore restart email monitor: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @impostazioni_bp.route('/mastrini/aggiorna-codici', methods=['POST'])
 def aggiorna_codici_mastrini():
