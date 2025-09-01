@@ -1825,22 +1825,23 @@ def conferma_ddt_in(id):
                     
                     if not catalogo_art:
                         # Stesso articolo ma ubicazione diversa: crea nuova riga inventario
+                        # Utilizza i dati dell'articolo esistente per mantenere coerenza
                         catalogo_art = CatalogoArticolo(
                             codice_interno=codice_articolo,
-                            codice_fornitore=getattr(art, 'codice_fornitore', None),
-                            descrizione=art.descrizione or 'Descrizione non disponibile',
-                            fornitore_principale=getattr(art, 'fornitore', None) or ddt.fornitore,
+                            codice_fornitore=catalogo_art_esistente.codice_fornitore,  # Mantieni codice fornitore esistente
+                            descrizione=catalogo_art_esistente.descrizione,  # Mantieni descrizione esistente
+                            fornitore_principale=catalogo_art_esistente.fornitore_principale,  # Mantieni fornitore esistente
                             costo_ultimo=art.costo_unitario or 0,
-                            costo_medio=art.costo_unitario or 0,
-                            unita_misura=getattr(art, 'unita_misura', 'PZ') or 'PZ',
+                            costo_medio=catalogo_art_esistente.costo_medio or (art.costo_unitario or 0),
+                            unita_misura=catalogo_art_esistente.unita_misura or 'PZ',
                             giacenza_attuale=0,
-                            scorta_minima=0,
+                            scorta_minima=catalogo_art_esistente.scorta_minima or 0,
                             ubicazione=ddt.destinazione or 'Magazzino principale',
                             attivo=True
                         )
                         db.session.add(catalogo_art)
                 else:
-                    # Articolo non esiste: crea nuovo
+                    # Articolo non esiste completamente: crea nuovo
                     catalogo_art = CatalogoArticolo(
                         codice_interno=codice_articolo,
                         codice_fornitore=getattr(art, 'codice_fornitore', None),
