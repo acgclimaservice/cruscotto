@@ -1890,8 +1890,25 @@ def conferma_ddt_in(id):
             # Salva il codice fornitore originale prima della conferma
             codice_fornitore_originale = art.codice_fornitore
             
-            # Se il codice interno è vuoto, genera uno temporaneo
-            codice_articolo = art.codice_interno or f'ART-{art.id}'
+            # GENERAZIONE AUTOMATICA CODICE INTERNO se vuoto
+            if not art.codice_interno or art.codice_interno.strip() == '':
+                # Cerca il fornitore per ottenere il prefisso
+                fornitore = None
+                if ddt.fornitore:
+                    fornitore = Fornitore.query.filter_by(denominazione=ddt.fornitore).first()
+                
+                # Genera codice interno con prefisso fornitore
+                if fornitore and fornitore.prefisso_codice and art.codice_fornitore:
+                    codice_interno_generato = f"{fornitore.prefisso_codice}{art.codice_fornitore}"
+                elif art.codice_fornitore:
+                    codice_interno_generato = f"ART{art.codice_fornitore}"
+                else:
+                    codice_interno_generato = f"ART{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                
+                # Assegna il codice interno generato all'articolo
+                art.codice_interno = codice_interno_generato
+            
+            codice_articolo = art.codice_interno
             
             if True:  # Processa sempre tutti gli articoli
                 # Cerca articolo esistente per codice interno (PRIMA ricerca senza ubicazione)
