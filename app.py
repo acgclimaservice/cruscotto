@@ -1579,10 +1579,40 @@ def pdf_unificato_ddt(id):
         # Se non c'è PDF allegato, reindirizza alla stampa normale
         return redirect(url_for('stampa_ddt_completa', id=id))
     
-    # Genera HTML del DDT del sistema
-    html_ddt = render_template('pdf/ddt-in-pdf-simple.html', 
-                             ddt=ddt, 
-                             articoli=articoli)
+    # Usa il template v2 professionale invece del vecchio
+    from document_templates import DDTInTemplate
+    
+    # Prepara dati per il template v2
+    ddt_data = {
+        'numero_ddt': ddt.numero_ddt or f'DDT-{ddt.id}',
+        'data_ddt': ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-',
+        'data_ddt_origine': ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '-',
+        'numero_ddt_origine': ddt.numero_ddt_origine or '-',
+        'fornitore': ddt.fornitore or '-',
+        'destinazione': ddt.destinazione or '-',
+        'riferimento': ddt.riferimento or '-',
+        'commessa': ddt.commessa or '-',
+        'stato': ddt.stato or 'bozza',
+        'mastrino_ddt': ddt.mastrino_ddt or '-',
+        'totale_costo': ddt.totale_costo or 0,
+        'articoli': []
+    }
+    
+    # Aggiungi articoli
+    for articolo in articoli:
+        ddt_data['articoli'].append({
+            'codice_interno': articolo.codice_interno or '-',
+            'codice_fornitore': articolo.codice_fornitore or '-',
+            'descrizione': articolo.descrizione or '-',
+            'quantita': articolo.quantita or 0,
+            'unita_misura': articolo.unita_misura or 'PZ',
+            'costo_unitario': articolo.costo_unitario or 0,
+            'totale': (articolo.quantita or 0) * (articolo.costo_unitario or 0),
+            'ubicazione': articolo.ubicazione or '-'
+        })
+    
+    # Genera HTML del DDT con template v2
+    html_ddt = DDTInTemplate.generate_html(ddt_data)
     
     try:
         # Usa reportlab per generare PDF del DDT (funziona su Windows senza GTK)
