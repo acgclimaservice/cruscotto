@@ -6129,13 +6129,16 @@ def nuova_offerta():
             offerta = OffertaFornitore(
                 numero_offerta=numero_offerta,
                 data_offerta=datetime.strptime(data['data_offerta'], '%Y-%m-%d').date() if data.get('data_offerta') else datetime.now().date(),
-                fornitore_nome=data.get('fornitore', ''),
+                fornitore_nome=data.get('fornitore_nome', ''),
+                fornitore_id=int(data.get('fornitore_id')) if data.get('fornitore_id') else None,
+                cliente_nome=data.get('cliente_nome', ''),
+                cliente_id=int(data.get('cliente_id')) if data.get('cliente_id') else None,
+                commessa=data.get('commessa', ''),
                 oggetto=data.get('oggetto', ''),
                 note=data.get('note', ''),
                 stato='creata',
-                totale_netto=float(data.get('totale_netto', 0)),
+                priorita=data.get('priorita', 'media'),
                 iva=float(data.get('iva', 22)),
-                totale_lordo=float(data.get('totale_lordo', 0)),
                 allegati=json.dumps(allegati_salvati) if allegati_salvati else None
             )
             
@@ -6152,9 +6155,11 @@ def nuova_offerta():
                         descrizione=art_data.get('descrizione', ''),
                         quantita=float(art_data.get('quantita', 0)),
                         unita_misura=art_data.get('unita_misura', 'PZ'),
-                        prezzo_unitario=float(art_data.get('prezzo_unitario', 0)),
-                        sconto_percentuale=float(art_data.get('sconto_percentuale', 0)),
-                        totale_riga=float(art_data.get('totale_riga', 0)),
+                        prezzo_unitario=float(art_data.get('prezzo_unitario', 0)) if art_data.get('prezzo_unitario') else None,
+                        sconto_percentuale=float(art_data.get('sconto_percentuale', 0)) if art_data.get('sconto_percentuale') else 0,
+                        totale_riga=float(art_data.get('totale_riga', 0)) if art_data.get('totale_riga') else None,
+                        disponibilita=art_data.get('disponibilita', ''),
+                        tempo_consegna=art_data.get('tempo_consegna', ''),
                         note=art_data.get('note', '')
                     )
                     db.session.add(articolo)
@@ -8968,6 +8973,23 @@ def force_migration():
             db.session.commit()
             migrations_applied.append("Added tempo_consegna column to dettaglio_offerta table")
         
+        # Migration: Add cliente_nome and cliente_id to offerta_fornitore table if not exists
+        try:
+            db.session.execute(text("SELECT cliente_nome FROM offerta_fornitore LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN cliente_nome VARCHAR(200)"))
+            db.session.commit()
+            migrations_applied.append("Added cliente_nome column to offerta_fornitore table")
+            
+        try:
+            db.session.execute(text("SELECT cliente_id FROM offerta_fornitore LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN cliente_id INTEGER"))
+            db.session.commit()
+            migrations_applied.append("Added cliente_id column to offerta_fornitore table")
+        
         if migrations_applied:
             return jsonify({
                 'success': True,
@@ -9022,6 +9044,23 @@ if __name__ == '__main__':
             db.session.execute(text("ALTER TABLE dettaglio_offerta ADD COLUMN tempo_consegna VARCHAR(50)"))
             db.session.commit()
             print("✅ Migration: Added tempo_consegna column to dettaglio_offerta table")
+        
+        # Migration: Add cliente_nome and cliente_id to offerta_fornitore table if not exists
+        try:
+            db.session.execute(text("SELECT cliente_nome FROM offerta_fornitore LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN cliente_nome VARCHAR(200)"))
+            db.session.commit()
+            print("✅ Migration: Added cliente_nome column to offerta_fornitore table")
+            
+        try:
+            db.session.execute(text("SELECT cliente_id FROM offerta_fornitore LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN cliente_id INTEGER"))
+            db.session.commit()
+            print("✅ Migration: Added cliente_id column to offerta_fornitore table")
     
     print("=" * 50)
     print(f"SISTEMA GESTIONE DDT - VERSIONE {APP_VERSION}")

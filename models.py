@@ -326,10 +326,13 @@ class OffertaFornitore(db.Model):
     data_accettazione = db.Column(db.Date)
     note = db.Column(db.Text)
     commessa = db.Column(db.String(50))
+    cliente_nome = db.Column(db.String(200))
+    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'))
     allegati = db.Column(db.Text)  # JSON array dei nomi file allegati
     
     # Relazioni
     fornitore = db.relationship('Fornitore', backref='offerte')
+    cliente = db.relationship('Cliente', backref='offerte_richieste')
     
     def to_dict(self):
         return {

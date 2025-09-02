@@ -39,6 +39,19 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="cliente_nome">Cliente</label>
+                        <input type="text" id="cliente_nome" name="cliente_nome" placeholder="Digita per cercare cliente..."
+                               value="{{ offerta.cliente_nome if modalita == 'modifica' else '' }}">
+                        <input type="hidden" id="cliente_id" name="cliente_id" value="{{ offerta.cliente_id if modalita == 'modifica' else '' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="commessa">Riferimento Commessa</label>
+                        <input type="text" id="commessa" name="commessa" placeholder="Digita numero o descrizione commessa..."
+                               value="{{ offerta.commessa if modalita == 'modifica' else '' }}">
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="oggetto">Oggetto *</label>
                         <input type="text" id="oggetto" name="oggetto" required
                                placeholder="Descrizione offerta" value="{{ offerta.oggetto if modalita == 'modifica' else '' }}">
@@ -641,11 +654,11 @@
 
     // Inizializza autocompletamento al caricamento
     document.addEventListener('DOMContentLoaded', function() {
+        // Autocompletamento fornitore
         const fornitoreInput = document.getElementById('fornitore_nome');
         if (fornitoreInput && window.AutocompleteHelpers) {
             console.log('Valore fornitore al caricamento:', fornitoreInput.value);
             
-            // Inizializza sempre l'autocompletamento
             const autocomplete = window.AutocompleteHelpers.setupFornitoriAutocomplete(fornitoreInput, {
                 onSelect: function(item) {
                     document.getElementById('fornitore_id').value = item.id;
@@ -654,6 +667,23 @@
             });
             
             console.log('Valore fornitore dopo autocompletamento:', fornitoreInput.value);
+        }
+        
+        // Autocompletamento cliente
+        const clienteInput = document.getElementById('cliente_nome');
+        if (clienteInput && window.AutocompleteHelpers) {
+            window.AutocompleteHelpers.setupClientiAutocomplete(clienteInput, {
+                onSelect: function(item) {
+                    document.getElementById('cliente_id').value = item.id;
+                    document.getElementById('cliente_nome').value = item.ragione_sociale;
+                }
+            });
+        }
+        
+        // Autocompletamento commessa
+        const commessaInput = document.getElementById('commessa');
+        if (commessaInput && window.AutocompleteHelpers) {
+            window.AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
         }
     });
         // Modal rifiuto offerta

@@ -106,6 +106,12 @@ onclick @ nuovo:130
 71 nel punto 70 per adesso mi ricarica solo l'oggetto FATTO - CONTROLLATO OK
 72  dovresti inserire alla richiesta offerta il campo riferimento commessa con il solito autocompletamento
 73 nella richiesta offerta dovresti inserirmi il campo cliente con il solito autocompletamento
-74
+74 su nuova richiesta offerta mi da nuova:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
+75 questo tasto + Nuova Richiesta Offerta è ripetuto due volte in questa pagina https://acgclimaservice.pythonanywhere.com/offerte
+76 nascondi tutta questa sezione 💰
+Nessuna offerta presente
+Inizia registrando la tua prima offerta
++ Registra Prima Offerta dalla pagina https://acgclimaservice.pythonanywhere.com/offerte
+77 
 
 
