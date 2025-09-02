@@ -314,6 +314,70 @@
             </div>
         </div>
 
+        <!-- Configurazione Microsoft Graph API per Outlook -->
+        <div class="info-section" style="margin-top: 20px;">
+            <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>🔗 Integrazione Microsoft Graph API</h3>
+                <p style="color: #6c757d; margin-bottom: 15px;">Configura l'integrazione con Microsoft Graph per allegati automatici in Outlook</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+                    <div>
+                        <label><strong>Client ID:</strong></label>
+                        <input type="text" id="outlook-client-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" 
+                               value="{{ configurazioni.outlook_client_id or '' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small style="color: #6c757d;">Client ID dall'app registrata in Azure AD</small>
+                    </div>
+                    <div>
+                        <label><strong>Client Secret:</strong></label>
+                        <input type="password" id="outlook-client-secret" placeholder="Client secret" 
+                               value="{{ configurazioni.outlook_client_secret or '' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small style="color: #6c757d;">Client secret dall'app Azure AD</small>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label><strong>Tenant ID:</strong></label>
+                    <input type="text" id="outlook-tenant-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" 
+                           value="{{ configurazioni.outlook_tenant_id or '' }}"
+                           style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    <small style="color: #6c757d;">Tenant ID dell'organizzazione Microsoft 365</small>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="outlook-auto-attach-enabled" 
+                               {{ 'checked' if configurazioni.outlook_auto_attach_enabled == 'true' else '' }}>
+                        <strong>Abilita allegati automatici PDF</strong>
+                    </label>
+                    <small style="color: #6c757d; margin-left: 25px;">Se disabilitato, userà il metodo tradizionale (download + allegato manuale)</small>
+                </div>
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button type="button" onclick="salvaConfigurazioneOutlook()" 
+                            style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        💾 Salva Configurazione Graph API
+                    </button>
+                    <button type="button" onclick="testConnessioneGraph()" 
+                            style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        🔗 Test Connessione
+                    </button>
+                    <span id="graph-status" style="margin-left: 10px; font-weight: bold;"></span>
+                </div>
+                
+                <div id="graph-config-message" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none;"></div>
+                
+                <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; font-size: 0.9em;">
+                    <strong>ℹ️ Configurazione Azure AD:</strong><br>
+                    1. Registra un'app in <a href="https://portal.azure.com" target="_blank">Azure Portal</a><br>
+                    2. Aggiungi permessi: <code>Mail.Send</code>, <code>Mail.ReadWrite</code><br>
+                    3. Configura redirect URI: <code>https://acgclimaservice.pythonanywhere.com/auth/outlook/callback</code><br>
+                    4. Genera un client secret e inserisci qui i dati
+                </div>
+            </div>
+        </div>
+
         <!-- Magazzini -->
         <div class="info-section" style="margin-top: 20px;">
             <h2>🏭 Magazzini</h2>
@@ -999,6 +1063,111 @@
             messageDiv.style.color = '#721c24';
             messageDiv.style.border = '1px solid #f5c6cb';
             messageDiv.textContent = '❌ Errore di connessione durante il test';
+        });
+    }
+
+    // Funzioni per configurazione Microsoft Graph
+    function salvaConfigurazioneOutlook() {
+        const messageDiv = document.getElementById('graph-config-message');
+        const statusSpan = document.getElementById('graph-status');
+        
+        const configurazione = {
+            outlook_client_id: document.getElementById('outlook-client-id').value,
+            outlook_client_secret: document.getElementById('outlook-client-secret').value,
+            outlook_tenant_id: document.getElementById('outlook-tenant-id').value,
+            outlook_auto_attach_enabled: document.getElementById('outlook-auto-attach-enabled').checked.toString()
+        };
+        
+        statusSpan.style.color = '#ffc107';
+        statusSpan.textContent = '💾 Salvando...';
+        
+        fetch('/impostazioni/configurazione/salva', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(configurazione)
+        })
+        .then(response => response.json())
+        .then(data => {
+            messageDiv.style.display = 'block';
+            if (data.success) {
+                messageDiv.style.background = '#d4edda';
+                messageDiv.style.color = '#155724';
+                messageDiv.style.border = '1px solid #c3e6cb';
+                messageDiv.textContent = `✅ Configurazione Graph API salvata! (${data.aggiornate} impostazioni)`;
+                statusSpan.style.color = '#28a745';
+                statusSpan.textContent = 'Configurato';
+            } else {
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.style.border = '1px solid #f5c6cb';
+                messageDiv.textContent = '❌ ' + (data.error || 'Errore durante il salvataggio');
+                statusSpan.style.color = '#dc3545';
+                statusSpan.textContent = '❌ Errore';
+            }
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        })
+        .catch(error => {
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = '#f8d7da';
+            messageDiv.style.color = '#721c24';
+            messageDiv.style.border = '1px solid #f5c6cb';
+            messageDiv.textContent = '❌ Errore di connessione durante il salvataggio';
+            statusSpan.style.color = '#dc3545';
+            statusSpan.textContent = '❌ Errore';
+            console.error('Errore nella richiesta:', error);
+        });
+    }
+
+    function testConnessioneGraph() {
+        const statusSpan = document.getElementById('graph-status');
+        const messageDiv = document.getElementById('graph-config-message');
+        
+        statusSpan.style.color = '#ffc107';
+        statusSpan.textContent = '🔗 Testando connessione...';
+        
+        fetch('/impostazioni/graph/test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            messageDiv.style.display = 'block';
+            if (data.success) {
+                statusSpan.style.color = '#28a745';
+                statusSpan.textContent = '✅ Connessione OK';
+                messageDiv.style.background = '#d4edda';
+                messageDiv.style.color = '#155724';
+                messageDiv.style.border = '1px solid #c3e6cb';
+                messageDiv.textContent = `✅ Test connessione Microsoft Graph riuscito! ${data.message || ''}`;
+            } else {
+                statusSpan.style.color = '#dc3545';
+                statusSpan.textContent = '❌ Test fallito';
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.style.border = '1px solid #f5c6cb';
+                messageDiv.textContent = '❌ ' + (data.error || 'Errore durante il test connessione');
+            }
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 7000);
+        })
+        .catch(error => {
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = '#f8d7da';
+            messageDiv.style.color = '#721c24';
+            messageDiv.style.border = '1px solid #f5c6cb';
+            messageDiv.textContent = '❌ Errore di rete durante il test';
+            statusSpan.style.color = '#dc3545';
+            statusSpan.textContent = '❌ Errore';
+            console.error('Errore nella richiesta:', error);
         });
     }
 

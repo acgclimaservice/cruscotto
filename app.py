@@ -7477,6 +7477,108 @@ def test_smtp_invio():
             'error': f'Test SMTP fallito: {str(e)}'
         }), 500
 
+@app.route('/impostazioni/graph/test', methods=['POST'])
+def test_graph_connection():
+    """Test configurazione Microsoft Graph API"""
+    try:
+        from email_monitor import EmailMonitor
+        email_monitor = EmailMonitor(app)
+        
+        # Ottieni configurazioni Graph API
+        client_id = email_monitor.get_config('outlook_client_id')
+        client_secret = email_monitor.get_config('outlook_client_secret')
+        tenant_id = email_monitor.get_config('outlook_tenant_id')
+        
+        # Valida configurazioni
+        if not all([client_id, client_secret, tenant_id]):
+            return jsonify({
+                'success': False,
+                'error': 'Configurazioni Microsoft Graph incomplete. Verifica Client ID, Client Secret e Tenant ID.'
+            }), 400
+        
+        # Test autenticazione con Microsoft Graph
+        import requests
+        
+        # Endpoint per ottenere token di accesso
+        token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+        
+        token_data = {
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'scope': 'https://graph.microsoft.com/.default',
+            'grant_type': 'client_credentials'
+        }
+        
+        # Richiedi token
+        token_response = requests.post(token_url, data=token_data, timeout=10)
+        
+        if token_response.status_code != 200:
+            error_data = token_response.json()
+            return jsonify({
+                'success': False,
+                'error': f"Errore autenticazione Microsoft Graph: {error_data.get('error_description', 'Credenziali non valide')}"
+            }), 400
+        
+        token_info = token_response.json()
+        access_token = token_info.get('access_token')
+        
+        if not access_token:
+            return jsonify({
+                'success': False,
+                'error': 'Token di accesso Microsoft Graph non ricevuto'
+            }), 400
+        
+        # Test chiamata API Graph (verifica connessione)
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+        
+        # Chiamata di test: ottieni informazioni organizzazione
+        test_response = requests.get(
+            'https://graph.microsoft.com/v1.0/organization',
+            headers=headers,
+            timeout=10
+        )
+        
+        if test_response.status_code != 200:
+            return jsonify({
+                'success': False,
+                'error': f'Test API Graph fallito (HTTP {test_response.status_code})'
+            }), 400
+        
+        org_data = test_response.json()
+        org_name = org_data.get('value', [{}])[0].get('displayName', 'Organizzazione')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Connessione Microsoft Graph riuscita! Organizzazione: {org_name}',
+            'dettagli': {
+                'tenant_id': tenant_id,
+                'client_id': client_id[:8] + '...',  # Mostra solo i primi caratteri per sicurezza
+                'organizzazione': org_name
+            }
+        })
+        
+    except requests.exceptions.Timeout:
+        return jsonify({
+            'success': False,
+            'error': 'Timeout durante la connessione a Microsoft Graph'
+        }), 500
+    except requests.exceptions.ConnectionError:
+        return jsonify({
+            'success': False,
+            'error': 'Errore di connessione a Microsoft Graph. Verifica la connessione internet.'
+        }), 500
+    except Exception as e:
+        import traceback
+        print(f"Errore test Microsoft Graph: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': f'Test Microsoft Graph fallito: {str(e)}'
+        }), 500
+
 # ========== API AUTOCOMPLETE ==========
 
 @app.route('/api/articoli/disponibili')

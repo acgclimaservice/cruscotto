@@ -1,0 +1,10 @@
+1. la stampa del ddt in generato dal sistema e del ddt out non riportano il logo dell'azienza.
+2. nei ddt in importati manualmente il PDF Unificato riporta ancora il vecchio formato del ddt in generato dal sistema. 
+3. quando importo un ordine da pdf, mi cambi l'animazione del caricamento del parsing? mettimi un'animazione con una barra che fa vedere l'avanzamento del caricamento. 
+4. quando importo un ordine da pdf il parsing non mi legge la data dell' offerta presente nel pdf
+5. quando confermo un preventivo mi esce questo errore: {"errore":"could not convert string to float: ''"}
+6. non funziona la stampa del preventivo mi esce questo errore: Errore PDF: 'Preventivo' object has no attribute 'numero' e nella console esce questo: pdf:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
+7. nella sezione inventario se provo a filtrare per data non si vedono gli articoli disponibile a quella data esatta.  
+8. nei movimenti interni se cambio il magazzino di partenza mi da il codice magazzino invece che la descrizione magazzino e se seleziono un articolo mi dice sempre giacenza 0 anche se in quel magazzino quell'articolo e' disponibile. questo non succede se come magazzino di partenza e' selezionato il magazzino principale  che invece funziona tutto perfettamente. 
+9. nella sezione report, nei report movimenti non funziona il tasto export excel. 
+10. nella sezione impostazioni nella parte relativa all'importazione automatica DDT via Mail ho impostato come Intervallo controllo (minuti): 1, ma noto che non fa il processo automatico devo cliccare su verifica ora. riusciamo a controllare il monitoraggio automatico della mail e testare se funziona tutto. 
