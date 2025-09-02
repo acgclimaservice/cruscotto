@@ -1596,248 +1596,248 @@ def pdf_unificato_ddt(id):
         ddt = DDTIn.query.get_or_404(id)
         articoli = ArticoloIn.query.filter_by(ddt_id=id).all()
         print(f"[PDF_UNIFICATO] DDT trovato: {ddt.numero_ddt}, Articoli: {len(articoli)}")
-    
-    if not ddt.pdf_allegato:
-        # Se non c'è PDF allegato, reindirizza alla stampa normale
-        return redirect(url_for('stampa_ddt_completa', id=id))
-    
-    # Usa il template v2 professionale invece del vecchio
-    from document_templates import DDTInTemplate
-    
-    # Prepara dati per il template v2
-    ddt_data = {
-        'numero_ddt': ddt.numero_ddt or f'DDT-{ddt.id}',
-        'data_ddt': ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-',
-        'data_ddt_origine': ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '-',
-        'numero_ddt_origine': ddt.riferimento or '-',
-        'fornitore': ddt.fornitore or '-',
-        'destinazione': ddt.destinazione or '-',
-        'riferimento': ddt.riferimento or '-',
-        'commessa': ddt.commessa or '-',
-        'stato': ddt.stato or 'bozza',
-        'mastrino_ddt': ddt.mastrino_ddt or '-',
-        'totale_costo': ddt.totale_costo or 0,
-        'articoli': []
-    }
-    
-    # Aggiungi articoli
-    for articolo in articoli:
-        ddt_data['articoli'].append({
-            'codice_interno': articolo.codice_interno or '-',
-            'codice_fornitore': articolo.codice_fornitore or '-',
-            'descrizione': articolo.descrizione or '-',
-            'quantita': articolo.quantita or 0,
-            'unita_misura': articolo.unita_misura or 'PZ',
-            'costo_unitario': articolo.costo_unitario or 0,
-            'totale': (articolo.quantita or 0) * (articolo.costo_unitario or 0),
-            'ubicazione': articolo.ubicazione or '-'
-        })
-    
-    # Genera HTML del DDT con template v2
-    print(f"[PDF_UNIFICATO] Generando HTML con DDTInTemplate...")
-    html_ddt = DDTInTemplate.generate_html(ddt_data)
-    print(f"[PDF_UNIFICATO] HTML generato con successo, lunghezza: {len(html_ddt)}")
-    
-    try:
-        # Usa reportlab per generare PDF del DDT (funziona su Windows senza GTK)
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import cm
-        from reportlab.lib import colors
-        import io
-        import base64
-        from datetime import datetime
-        import os
         
-        # Crea PDF del DDT sistema usando reportlab
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=2*cm)
-        styles = getSampleStyleSheet()
+        if not ddt.pdf_allegato:
+            # Se non c'è PDF allegato, reindirizza alla stampa normale
+            return redirect(url_for('stampa_ddt_completa', id=id))
         
-        # Crea stili personalizzati
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Title'],
-            fontSize=18,
-            spaceAfter=0.5*cm,
-            textColor=colors.HexColor('#2c5282')
-        )
+        # Usa il template v2 professionale invece del vecchio
+        from document_templates import DDTInTemplate
+    
+        # Prepara dati per il template v2
+        ddt_data = {
+            'numero_ddt': ddt.numero_ddt or f'DDT-{ddt.id}',
+            'data_ddt': ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-',
+            'data_ddt_origine': ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '-',
+            'numero_ddt_origine': ddt.riferimento or '-',
+            'fornitore': ddt.fornitore or '-',
+            'destinazione': ddt.destinazione or '-',
+            'riferimento': ddt.riferimento or '-',
+            'commessa': ddt.commessa or '-',
+            'stato': ddt.stato or 'bozza',
+            'mastrino_ddt': ddt.mastrino_ddt or '-',
+            'totale_costo': ddt.totale_costo or 0,
+            'articoli': []
+        }
         
-        header_style = ParagraphStyle(
-            'CustomHeader',
-            parent=styles['Heading2'],
-            fontSize=12,
-            spaceAfter=0.3*cm,
-            textColor=colors.HexColor('#2c5282')
-        )
+        # Aggiungi articoli
+        for articolo in articoli:
+            ddt_data['articoli'].append({
+                'codice_interno': articolo.codice_interno or '-',
+                'codice_fornitore': articolo.codice_fornitore or '-',
+                'descrizione': articolo.descrizione or '-',
+                'quantita': articolo.quantita or 0,
+                'unita_misura': articolo.unita_misura or 'PZ',
+                'costo_unitario': articolo.costo_unitario or 0,
+                'totale': (articolo.quantita or 0) * (articolo.costo_unitario or 0),
+                'ubicazione': articolo.ubicazione or '-'
+            })
         
-        # Contenuto del PDF
-        content = []
+        # Genera HTML del DDT con template v2
+        print(f"[PDF_UNIFICATO] Generando HTML con DDTInTemplate...")
+        html_ddt = DDTInTemplate.generate_html(ddt_data)
+        print(f"[PDF_UNIFICATO] HTML generato con successo, lunghezza: {len(html_ddt)}")
         
-        # Header con logo e titolo
         try:
-            # Percorso del logo
-            logo_path = os.path.join(os.path.dirname(__file__), 'static', 'logo-acg.png')
-            if os.path.exists(logo_path):
-                # Crea tabella per header con logo e titolo
-                logo_img = Image(logo_path, width=3*cm, height=1.5*cm)
-                
-                # Tabella header: logo a sinistra, titolo al centro
-                header_data = [[logo_img, Paragraph("DOCUMENTO DI TRASPORTO IN", title_style)]]
-                header_table = Table(header_data, colWidths=[4*cm, 12*cm])
-                header_table.setStyle(TableStyle([
-                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                    ('ALIGN', (0, 0), (0, 0), 'LEFT'),    # Logo a sinistra
-                    ('ALIGN', (1, 0), (1, 0), 'CENTER'),  # Titolo al centro
-                ]))
-                content.append(header_table)
-            else:
-                # Fallback senza logo
+            # Usa reportlab per generare PDF del DDT (funziona su Windows senza GTK)
+            from reportlab.lib.pagesizes import A4
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import cm
+            from reportlab.lib import colors
+            import io
+            import base64
+            from datetime import datetime
+            import os
+            
+            # Crea PDF del DDT sistema usando reportlab
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=2*cm)
+            styles = getSampleStyleSheet()
+            
+            # Crea stili personalizzati
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Title'],
+                fontSize=18,
+                spaceAfter=0.5*cm,
+                textColor=colors.HexColor('#2c5282')
+            )
+            
+            header_style = ParagraphStyle(
+                'CustomHeader',
+                parent=styles['Heading2'],
+                fontSize=12,
+                spaceAfter=0.3*cm,
+                textColor=colors.HexColor('#2c5282')
+            )
+            
+            # Contenuto del PDF
+            content = []
+            
+            # Header con logo e titolo
+            try:
+                # Percorso del logo
+                logo_path = os.path.join(os.path.dirname(__file__), 'static', 'logo-acg.png')
+                if os.path.exists(logo_path):
+                    # Crea tabella per header con logo e titolo
+                    logo_img = Image(logo_path, width=3*cm, height=1.5*cm)
+                    
+                    # Tabella header: logo a sinistra, titolo al centro
+                    header_data = [[logo_img, Paragraph("DOCUMENTO DI TRASPORTO IN", title_style)]]
+                    header_table = Table(header_data, colWidths=[4*cm, 12*cm])
+                    header_table.setStyle(TableStyle([
+                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                        ('ALIGN', (0, 0), (0, 0), 'LEFT'),    # Logo a sinistra
+                        ('ALIGN', (1, 0), (1, 0), 'CENTER'),  # Titolo al centro
+                    ]))
+                    content.append(header_table)
+                else:
+                    # Fallback senza logo
+                    content.append(Paragraph("DOCUMENTO DI TRASPORTO IN", title_style))
+            except Exception as e:
+                # Fallback senza logo in caso di errore
                 content.append(Paragraph("DOCUMENTO DI TRASPORTO IN", title_style))
-        except Exception as e:
-            # Fallback senza logo in caso di errore
-            content.append(Paragraph("DOCUMENTO DI TRASPORTO IN", title_style))
-        
-        content.append(Paragraph(f"<b>{ddt.numero_ddt or ('BOZZA #' + str(ddt.id))}</b>", styles['Normal']))
-        content.append(Spacer(1, 0.5*cm))
-        
-        # Informazioni azienda
-        content.append(Paragraph("<b>ACG CLIMA SERVICE S.R.L.</b><br/>Sede Legale: Via Duccio Galimberti 47 - 15121 Alessandria (AL)<br/>Sede Operativa: Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)<br/>Tel: 0383/640606 - Email: info@acgclimaservice.com<br/>P.IVA: 02735970069 - C.F: 02735970069", styles['Normal']))
-        content.append(Spacer(1, 0.5*cm))
-        
-        # Informazioni DDT
-        info_data = [
-            ['Data DDT:', ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-'],
-            ['Fornitore:', ddt.fornitore or '-'],
-            ['Destinazione:', ddt.destinazione or '-'],
-            ['Stato:', ddt.stato.upper() if ddt.stato else 'BOZZA'],
-        ]
-        
-        if ddt.commessa:
-            info_data.append(['Commessa:', ddt.commessa])
-        
-        info_table = Table(info_data, colWidths=[4*cm, 12*cm])
-        info_table.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ]))
-        content.append(info_table)
-        content.append(Spacer(1, 0.5*cm))
-        
-        # Tabella articoli
-        if articoli:
-            content.append(Paragraph("ARTICOLI", header_style))
             
-            table_data = [['Codice', 'Descrizione', 'Quantità', 'Costo Unit.', 'Totale']]
-            totale_generale = 0
+            content.append(Paragraph(f"<b>{ddt.numero_ddt or ('BOZZA #' + str(ddt.id))}</b>", styles['Normal']))
+            content.append(Spacer(1, 0.5*cm))
             
-            for articolo in articoli:
-                totale_riga = (articolo.quantita or 0) * (articolo.costo_unitario or 0)
-                totale_generale += totale_riga
-                
-                table_data.append([
-                    articolo.codice_interno or '-',
-                    articolo.descrizione[:40] + '...' if len(articolo.descrizione or '') > 40 else (articolo.descrizione or '-'),
-                    f"{articolo.quantita:.2f}" if articolo.quantita else '0.00',
-                    f"€ {articolo.costo_unitario:.2f}" if articolo.costo_unitario else '€ 0.00',
-                    f"€ {totale_riga:.2f}"
-                ])
+            # Informazioni azienda
+            content.append(Paragraph("<b>ACG CLIMA SERVICE S.R.L.</b><br/>Sede Legale: Via Duccio Galimberti 47 - 15121 Alessandria (AL)<br/>Sede Operativa: Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)<br/>Tel: 0383/640606 - Email: info@acgclimaservice.com<br/>P.IVA: 02735970069 - C.F: 02735970069", styles['Normal']))
+            content.append(Spacer(1, 0.5*cm))
             
-            # Riga totale
-            table_data.append(['', '', '', 'TOTALE:', f"€ {totale_generale:.2f}"])
+            # Informazioni DDT
+            info_data = [
+                ['Data DDT:', ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-'],
+                ['Fornitore:', ddt.fornitore or '-'],
+                ['Destinazione:', ddt.destinazione or '-'],
+                ['Stato:', ddt.stato.upper() if ddt.stato else 'BOZZA'],
+            ]
             
-            table = Table(table_data, colWidths=[3*cm, 6*cm, 2*cm, 3*cm, 3*cm])
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8f9fa')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
+            if ddt.commessa:
+                info_data.append(['Commessa:', ddt.commessa])
+            
+            info_table = Table(info_data, colWidths=[4*cm, 12*cm])
+            info_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-                ('BACKGROUND', (0, 1), (-1, -2), colors.white),
-                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#e8f4f8')),
-                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black)
             ]))
-            content.append(table)
-        
-        # Genera il PDF
-        doc.build(content)
-        ddt_pdf_bytes = buffer.getvalue()
-        buffer.close()
-        
-        # Decodifica PDF allegato
-        pdf_allegato_bytes = base64.b64decode(ddt.pdf_allegato)
-        
-        # Unisce i due PDF usando PyPDF2
-        from PyPDF2 import PdfMerger
-        
-        merger = PdfMerger()
-        
-        # Aggiungi DDT sistema
-        ddt_stream = io.BytesIO(ddt_pdf_bytes)
-        merger.append(ddt_stream)
-        
-        # Aggiungi PDF originale
-        pdf_stream = io.BytesIO(pdf_allegato_bytes)
-        merger.append(pdf_stream)
-        
-        # Crea output finale
-        output_stream = io.BytesIO()
-        merger.write(output_stream)
-        merger.close()
-        
-        # Restituisce il PDF unificato per download
-        output_stream.seek(0)
-        response = make_response(output_stream.read())
-        response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'attachment; filename="DDT_Unificato_{ddt.numero_ddt or ddt.id}.pdf"'
-        
-        return response
-        
-    except (ImportError, Exception) as e:
-        # Se WeasyPrint non è disponibile o mancano le librerie GTK,
-        # crea un template HTML unificato che contiene sia DDT che PDF
-        import base64
-        
-        try:
-            # Decodifica PDF allegato per includerlo nell'HTML
+            content.append(info_table)
+            content.append(Spacer(1, 0.5*cm))
+            
+            # Tabella articoli
+            if articoli:
+                content.append(Paragraph("ARTICOLI", header_style))
+                
+                table_data = [['Codice', 'Descrizione', 'Quantità', 'Costo Unit.', 'Totale']]
+                totale_generale = 0
+                
+                for articolo in articoli:
+                    totale_riga = (articolo.quantita or 0) * (articolo.costo_unitario or 0)
+                    totale_generale += totale_riga
+                    
+                    table_data.append([
+                        articolo.codice_interno or '-',
+                        articolo.descrizione[:40] + '...' if len(articolo.descrizione or '') > 40 else (articolo.descrizione or '-'),
+                        f"{articolo.quantita:.2f}" if articolo.quantita else '0.00',
+                        f"€ {articolo.costo_unitario:.2f}" if articolo.costo_unitario else '€ 0.00',
+                        f"€ {totale_riga:.2f}"
+                    ])
+                
+                # Riga totale
+                table_data.append(['', '', '', 'TOTALE:', f"€ {totale_generale:.2f}"])
+                
+                table = Table(table_data, colWidths=[3*cm, 6*cm, 2*cm, 3*cm, 3*cm])
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8f9fa')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                    ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                    ('BACKGROUND', (0, 1), (-1, -2), colors.white),
+                    ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#e8f4f8')),
+                    ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                content.append(table)
+            
+            # Genera il PDF
+            doc.build(content)
+            ddt_pdf_bytes = buffer.getvalue()
+            buffer.close()
+            
+            # Decodifica PDF allegato
             pdf_allegato_bytes = base64.b64decode(ddt.pdf_allegato)
-            pdf_base64 = base64.b64encode(pdf_allegato_bytes).decode('utf-8')
             
-            # Crea template unificato con PDF embedded
-            html_unificato = render_template('pdf/ddt-unificato-fallback.html', 
-                                           ddt=ddt, 
-                                           articoli=articoli,
-                                           pdf_base64=pdf_base64,
-                                           pdf_filename=ddt.pdf_filename or 'documento_fornitore.pdf')
+            # Unisce i due PDF usando PyPDF2
+            from PyPDF2 import PdfMerger
             
-            response = make_response(html_unificato)
-            response.headers['Content-Type'] = 'text/html'
-            response.headers['Content-Disposition'] = f'attachment; filename="DDT_Unificato_{ddt.numero_ddt or ddt.id}.html"'
+            merger = PdfMerger()
+            
+            # Aggiungi DDT sistema
+            ddt_stream = io.BytesIO(ddt_pdf_bytes)
+            merger.append(ddt_stream)
+            
+            # Aggiungi PDF originale
+            pdf_stream = io.BytesIO(pdf_allegato_bytes)
+            merger.append(pdf_stream)
+            
+            # Crea output finale
+            output_stream = io.BytesIO()
+            merger.write(output_stream)
+            merger.close()
+            
+            # Restituisce il PDF unificato per download
+            output_stream.seek(0)
+            response = make_response(output_stream.read())
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'attachment; filename="DDT_Unificato_{ddt.numero_ddt or ddt.id}.pdf"'
             
             return response
             
-        except Exception:
-            # Ultimo fallback: restituisce solo PDF originale
+        except (ImportError, Exception) as e:
+            # Se WeasyPrint non è disponibile o mancano le librerie GTK,
+            # crea un template HTML unificato che contiene sia DDT che PDF
+            import base64
+            
             try:
+                # Decodifica PDF allegato per includerlo nell'HTML
                 pdf_allegato_bytes = base64.b64decode(ddt.pdf_allegato)
-                response = make_response(pdf_allegato_bytes)
-                response.headers['Content-Type'] = 'application/pdf' 
-                response.headers['Content-Disposition'] = f'attachment; filename="DDT_Unificato_{ddt.numero_ddt or ddt.id}_SoloPDFOriginale.pdf"'
-                return response
-            except:
-                # Fallback definitivo: HTML del DDT
-                html_semplice = render_template('pdf/ddt-in-pdf-simple.html', 
-                                              ddt=ddt, 
-                                              articoli=articoli)
-                response = make_response(html_semplice)
+                pdf_base64 = base64.b64encode(pdf_allegato_bytes).decode('utf-8')
+                
+                # Crea template unificato con PDF embedded
+                html_unificato = render_template('pdf/ddt-unificato-fallback.html', 
+                                               ddt=ddt, 
+                                               articoli=articoli,
+                                               pdf_base64=pdf_base64,
+                                               pdf_filename=ddt.pdf_filename or 'documento_fornitore.pdf')
+                
+                response = make_response(html_unificato)
                 response.headers['Content-Type'] = 'text/html'
-                response.headers['Content-Disposition'] = f'attachment; filename="DDT_{ddt.numero_ddt or ddt.id}.html"'
+                response.headers['Content-Disposition'] = f'attachment; filename="DDT_Unificato_{ddt.numero_ddt or ddt.id}.html"'
+                
                 return response
+                
+            except Exception:
+                # Ultimo fallback: restituisce solo PDF originale
+                try:
+                    pdf_allegato_bytes = base64.b64decode(ddt.pdf_allegato)
+                    response = make_response(pdf_allegato_bytes)
+                    response.headers['Content-Type'] = 'application/pdf' 
+                    response.headers['Content-Disposition'] = f'attachment; filename="DDT_Unificato_{ddt.numero_ddt or ddt.id}_SoloPDFOriginale.pdf"'
+                    return response
+                except:
+                    # Fallback definitivo: HTML del DDT
+                    html_semplice = render_template('pdf/ddt-in-pdf-simple.html', 
+                                                  ddt=ddt, 
+                                                  articoli=articoli)
+                    response = make_response(html_semplice)
+                    response.headers['Content-Type'] = 'text/html'
+                    response.headers['Content-Disposition'] = f'attachment; filename="DDT_{ddt.numero_ddt or ddt.id}.html"'
+                    return response
 
     except Exception as e:
         import traceback
@@ -9867,7 +9867,7 @@ if __name__ == '__main__':
             # Column doesn't exist, add it
             db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN cliente_nome VARCHAR(200)"))
             db.session.commit()
-            print("✅ Migration: Added cliente_nome column to offerta_fornitore table")
+            print("OK Migration: Added cliente_nome column to offerta_fornitore table")
             
         try:
             db.session.execute(text("SELECT cliente_id FROM offerta_fornitore LIMIT 1"))
@@ -9875,7 +9875,7 @@ if __name__ == '__main__':
             # Column doesn't exist, add it
             db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN cliente_id INTEGER"))
             db.session.commit()
-            print("✅ Migration: Added cliente_id column to offerta_fornitore table")
+            print("OK Migration: Added cliente_id column to offerta_fornitore table")
         
         # Migration: Add totale_costo to ddt_in table if not exists
         try:
@@ -9884,7 +9884,7 @@ if __name__ == '__main__':
             # Column doesn't exist, add it
             db.session.execute(text("ALTER TABLE ddt_in ADD COLUMN totale_costo REAL DEFAULT 0.0"))
             db.session.commit()
-            print("✅ Migration: Added totale_costo column to ddt_in table")
+            print("OK Migration: Added totale_costo column to ddt_in table")
             
         # Migration: Add totale_costo to ddt_out table if not exists
         try:
@@ -9893,7 +9893,41 @@ if __name__ == '__main__':
             # Column doesn't exist, add it
             db.session.execute(text("ALTER TABLE ddt_out ADD COLUMN totale_costo REAL DEFAULT 0.0"))
             db.session.commit()
-            print("✅ Migration: Added totale_costo column to ddt_out table")
+            print("OK Migration: Added totale_costo column to ddt_out table")
+            
+        # Migration: Add new MPLS columns if not exist
+        try:
+            db.session.execute(text("SELECT cliente_codice FROM mpls LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add new MPLS columns
+            try:
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN cliente_codice VARCHAR(100)"))
+                db.session.commit()
+                print("OK Migration: Added cliente_codice column to mpls table")
+            except Exception:
+                pass
+                
+        try:
+            db.session.execute(text("SELECT descrizione FROM mpls LIMIT 1"))
+        except Exception:
+            try:
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN descrizione TEXT"))
+                db.session.commit()
+                print("OK Migration: Added descrizione column to mpls table")
+            except Exception:
+                pass
+                
+        try:
+            db.session.execute(text("SELECT totale_costi FROM mpls LIMIT 1"))
+        except Exception:
+            try:
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN totale_costi REAL DEFAULT 0.0"))
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN totale_vendita REAL DEFAULT 0.0"))
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN totale_iva REAL DEFAULT 0.0"))
+                db.session.commit()
+                print("OK Migration: Added new totale columns to mpls table")
+            except Exception:
+                pass
     
     print("=" * 50)
     print(f"SISTEMA GESTIONE DDT - VERSIONE {APP_VERSION}")
