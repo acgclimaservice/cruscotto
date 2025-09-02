@@ -230,6 +230,12 @@
             container.appendChild(newRow);
             dettaglioIndex++;
             
+            // Setup autocompletamento per la nuova riga
+            const descrizioneInput = newRow.querySelector('input[name*="[descrizione]"]');
+            if (descrizioneInput && window.AutocompleteHelpers) {
+                window.AutocompleteHelpers.setupArticoliAutocomplete(descrizioneInput);
+            }
+            
             // Notifica che è stata aggiunta una nuova riga per autocompletamento
             const event = new CustomEvent('nuovaRigaAggiunta', {
                 detail: { riga: newRow }
@@ -300,24 +306,7 @@
             });
         });
         
-        // Setup autocompletamento per nuove righe
-        function aggiungiDettaglio() {
-            // ... existing code ...
-            container.appendChild(newRow);
-            dettaglioIndex++;
-            
-            // Setup autocompletamento per la nuova riga
-            const descrizioneInput = newRow.querySelector('input[name*="[descrizione]"]');
-            if (descrizioneInput && window.AutocompleteHelpers) {
-                window.AutocompleteHelpers.setupArticoliAutocomplete(descrizioneInput);
-            }
-            
-            // Notifica che è stata aggiunta una nuova riga per autocompletamento
-            const event = new CustomEvent('nuovaRigaAggiunta', {
-                detail: { riga: newRow }
-            });
-            document.dispatchEvent(event);
-        }
+        // Setup autocompletamento per nuove righe aggiunto automaticamente nella funzione sopra
         document.getElementById('iva').addEventListener('change', calcolaTotaliGenerali);
         
         // Pre-popola articoli dal DDT IN se disponibili
