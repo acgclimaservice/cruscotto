@@ -6554,6 +6554,77 @@ def offerte_pdf(id):
         traceback.print_exc()
         return f"Errore PDF: {e}", 500
 
+@app.route('/offerte/<int:id>/pdf-base64')
+def offerte_pdf_base64(id):
+    """Genera PDF base64 per allegato email Outlook"""
+    try:
+        import pdfkit
+        import base64
+        from document_templates import RichiestaOffertaTemplate
+        
+        offerta = OffertaFornitore.query.get_or_404(id)
+        dettagli = DettaglioOfferta.query.filter_by(offerta_id=id).all()
+        
+        # Prepara dati per il template v2
+        offerta_data = {
+            'numero_offerta': offerta.numero_offerta or f'RIC-{offerta.id}',
+            'fornitore_nome': offerta.fornitore_nome or 'N/A',
+            'data_offerta': offerta.data_offerta.strftime('%d/%m/%Y') if offerta.data_offerta else 'N/A',
+            'oggetto': offerta.oggetto or 'Richiesta preventivo',
+            'cliente_nome': offerta.cliente_nome or 'N/A',
+            'commessa': offerta.commessa or 'N/A',
+            'priorita': offerta.priorita or 'Media',
+            'note': offerta.note or '',
+            'articoli': []
+        }
+        
+        # Aggiungi articoli richiesti
+        for dettaglio in dettagli:
+            offerta_data['articoli'].append({
+                'codice_articolo': dettaglio.codice_articolo or 'N/A',
+                'descrizione': dettaglio.descrizione or 'N/A',
+                'quantita': dettaglio.quantita or 0,
+                'unita_misura': dettaglio.unita_misura or 'PZ',
+                'note': dettaglio.note or ''
+            })
+        
+        # Genera HTML
+        html_content = RichiestaOffertaTemplate.generate_html(offerta_data)
+        
+        # Opzioni per wkhtmltopdf
+        options = {
+            'page-size': 'A4',
+            'margin-top': '0.75in',
+            'margin-right': '0.75in',
+            'margin-bottom': '0.75in',
+            'margin-left': '0.75in',
+            'encoding': "UTF-8",
+            'no-outline': None,
+            'enable-local-file-access': None
+        }
+        
+        # Genera PDF binario
+        pdf_content = pdfkit.from_string(html_content, False, options=options)
+        
+        # Converti in base64
+        pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
+        
+        # Nome file
+        filename = f"richiesta_offerta_{offerta.numero_offerta or f'RIC-{offerta.id}'}.pdf"
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'content': pdf_base64,
+            'content_type': 'application/pdf'
+        })
+        
+    except Exception as e:
+        print(f"Errore PDF base64: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/offerte/confronta')
 def confronta_offerte():
     """Confronta più offerte per lo stesso oggetto/articolo"""
