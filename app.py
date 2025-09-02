@@ -7846,14 +7846,8 @@ def dettaglio_mpls(id):
     """Dettaglio singolo MPLS"""
     try:
         mpls = MPLS.query.get_or_404(id)
-        materiali = MaterialeMPLS.query.filter_by(mpls_id=id).all()
         
-        # Calcola totali aggiornati
-        _ricalcola_totali_mpls(mpls)
-        
-        return render_template('dettaglio-mpls.html', 
-                             mpls=mpls, 
-                             materiali=materiali)
+        return render_template('dettaglio-mpls.html', mpls=mpls)
     
     except Exception as e:
         print(f"Errore dettaglio MPLS: {e}")

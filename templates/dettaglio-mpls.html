@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPLS {{ mpls.numero_mpls }} - Dettaglio</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>🏢 ACG Clima</h2>
+            </div>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/ordini">🛒 Ordini</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/mpls" class="active">💰 MPLS</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/commesse">🏗️ Commesse</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <div class="header-actions">
+                <div>
+                    <h1>💰 MPLS {{ mpls.numero_mpls }}</h1>
+                    <p>Dettaglio preventivo con calcoli Enhanced</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    {% if mpls.stato == 'bozza' %}
+                    <a href="/mpls/{{ mpls.id }}/modifica" class="btn btn-warning">✏️ Modifica</a>
+                    {% endif %}
+                    <a href="/mpls" class="btn btn-secondary">← Torna alla Lista</a>
+                </div>
+            </div>
+
+            <!-- Stato del MPLS -->
+            <div class="alert alert-{% if mpls.stato == 'confermato' %}success{% else %}warning{% endif %}" style="margin-bottom: 20px;">
+                <strong>Stato:</strong> 
+                {% if mpls.stato == 'confermato' %}
+                    ✅ Confermato
+                {% else %}
+                    📝 Bozza
+                {% endif %}
+            </div>
+
+            <!-- Informazioni Generali -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>📋 Informazioni Generali</h3>
+                </div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Numero MPLS:</label>
+                            <span>{{ mpls.numero_mpls }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Data Creazione:</label>
+                            <span>{{ mpls.data_creazione.strftime('%d/%m/%Y') if mpls.data_creazione else 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Cliente:</label>
+                            <span>{{ mpls.cliente_nome }}</span>
+                        </div>
+                        {% if mpls.cliente_codice %}
+                        <div class="info-item">
+                            <label>Codice Cliente:</label>
+                            <span>{{ mpls.cliente_codice }}</span>
+                        </div>
+                        {% endif %}
+                        {% if mpls.descrizione %}
+                        <div class="info-item full-width">
+                            <label>Descrizione:</label>
+                            <span>{{ mpls.descrizione }}</span>
+                        </div>
+                        {% endif %}
+                        {% if mpls.indirizzo %}
+                        <div class="info-item full-width">
+                            <label>Indirizzo:</label>
+                            <span>{{ mpls.indirizzo }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parametri MPLS Enhanced -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>⚙️ Parametri Enhanced</h3>
+                </div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Cliente Guazzotti:</label>
+                            <span>
+                                {% if mpls.is_guazzotti %}
+                                    ✅ Sì - Ricarico 20% fisso, €25/ora
+                                {% else %}
+                                    ❌ No - Ricarico progressivo, €40/ora
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <label>Ore Manodopera:</label>
+                            <span>{{ mpls.ore_manodopera or 0 }} ore</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Sovrapprezzo:</label>
+                            <span>€{{ "%.2f"|format(mpls.sovrapprezzo or 0) }}</span>
+                        </div>
+                        {% if mpls.fonte_tipo %}
+                        <div class="info-item">
+                            <label>Fonte:</label>
+                            <span>{{ mpls.fonte_tipo }} - {{ mpls.fonte_id or 'N/A' }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Articoli -->
+            {% if mpls.articoli %}
+            <div class="card">
+                <div class="card-header">
+                    <h3>📦 Articoli</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Codice</th>
+                                    <th>Descrizione</th>
+                                    <th>Qtà</th>
+                                    <th>Prezzo Costo</th>
+                                    <th>Ricarico %</th>
+                                    <th>Prezzo Vendita</th>
+                                    <th>Totale</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for articolo in mpls.articoli %}
+                                <tr>
+                                    <td>{{ articolo.codice or '-' }}</td>
+                                    <td>{{ articolo.descrizione }}</td>
+                                    <td>{{ articolo.quantita }}</td>
+                                    <td>€{{ "%.2f"|format(articolo.prezzo_costo or 0) }}</td>
+                                    <td>{{ "%.1f"|format(articolo.ricarico_percentuale or 0) }}%</td>
+                                    <td>€{{ "%.2f"|format(articolo.prezzo_vendita or 0) }}</td>
+                                    <td>€{{ "%.2f"|format((articolo.quantita or 0) * (articolo.prezzo_vendita or 0)) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Totali Enhanced -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>💰 Totali Enhanced</h3>
+                </div>
+                <div class="card-body">
+                    <div class="totali-enhanced">
+                        <!-- Subtotali -->
+                        <div class="totale-section">
+                            <h4>Subtotali</h4>
+                            <div class="totale-item">
+                                <label>Materiali (con ricarico):</label>
+                                <span>€{{ "%.2f"|format(mpls.subtotale_materiali_vendita or 0) }}</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Manodopera:</label>
+                                <span>€{{ "%.2f"|format(mpls.subtotale_manodopera_vendita or 0) }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Costi Accessori -->
+                        <div class="totale-section">
+                            <h4>Costi Accessori</h4>
+                            <div class="totale-item">
+                                <label>Costo Gestione:</label>
+                                <span>€{{ "%.2f"|format(mpls.costo_gestione or 0) }}</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Spese Brevi:</label>
+                                <span>€{{ "%.2f"|format(mpls.spese_brevi or 0) }}</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Materiale Consumo:</label>
+                                <span>€{{ "%.2f"|format(mpls.materiale_consumo or 0) }}</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Sovrapprezzo:</label>
+                                <span>€{{ "%.2f"|format(mpls.sovrapprezzo or 0) }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Totali Finali -->
+                        <div class="totale-section final">
+                            <h4>Totali Finali</h4>
+                            <div class="totale-item">
+                                <label>Totale Vendita (IVA esclusa):</label>
+                                <span class="amount-large">€{{ "%.2f"|format(mpls.totale_vendita or 0) }}</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>IVA (22%):</label>
+                                <span>€{{ "%.2f"|format(mpls.totale_iva or 0) }}</span>
+                            </div>
+                            <div class="totale-item finale">
+                                <label>Totale IVA Inclusa:</label>
+                                <span class="amount-final">€{{ "%.2f"|format(mpls.totale_ivato or 0) }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Margini -->
+                        <div class="totale-section margin">
+                            <h4>Analisi Margini</h4>
+                            <div class="totale-item">
+                                <label>Costi Interni:</label>
+                                <span>€{{ "%.2f"|format(mpls.costo_totale_interno or 0) }}</span>
+                            </div>
+                            <div class="totale-item margin-highlight">
+                                <label>Margine:</label>
+                                <span class="margin-amount">
+                                    €{{ "%.2f"|format(mpls.margine_euro or 0) }}
+                                    ({{ "%.1f"|format(mpls.margine_percentuale or 0) }}%)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if mpls.note %}
+            <!-- Note -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>📝 Note</h3>
+                </div>
+                <div class="card-body">
+                    <p>{{ mpls.note }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <style>
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            background: #f8f9fa;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-item.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .info-item label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .info-item span {
+            color: #1f2937;
+            font-size: 16px;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .totali-enhanced {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .totale-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .totale-section h4 {
+            margin: 0 0 10px 0;
+            color: #374151;
+            font-size: 16px;
+        }
+        
+        .totale-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+        }
+        
+        .totale-item label {
+            font-weight: 600;
+            color: #4b5563;
+        }
+        
+        .totale-section.final {
+            background: #dbeafe;
+            border: 2px solid #3b82f6;
+        }
+        
+        .totale-section.margin {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+        }
+        
+        .totale-item.finale {
+            border-top: 2px solid #3b82f6;
+            padding-top: 10px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        
+        .totale-item.margin-highlight {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .amount-large {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        
+        .amount-final {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #1e40af;
+        }
+        
+        .margin-amount {
+            color: #059669;
+            font-weight: bold;
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid transparent;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+    </style>
+</body>
+</html>
