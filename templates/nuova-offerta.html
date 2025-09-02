@@ -88,65 +88,140 @@
             <div class="card">
                 <h3>📦 Dettagli Offerta</h3>
                 <div id="dettagli-container">
-                    <div class="dettaglio-row" data-index="0">
-                        <div class="form-grid dettaglio-grid">
-                            <div class="form-group">
-                                <label>Cod. Interno</label>
-                                <input type="text" name="dettagli[0][codice]" placeholder="Codice...">
-                            </div>
-                            <div class="form-group">
-                                <label>Cod. Fornitore</label>
-                                <input type="text" name="dettagli[0][codice_fornitore]" placeholder="Codice fornitore...">
-                            </div>
-                            <div class="form-group" style="position: relative;">
-                                <label>Descrizione *</label>
-                                <input type="text" name="dettagli[0][descrizione]" required placeholder="Descrizione articolo..." 
-                                       oninput="cercaArticoloOfferta(this, 0)" autocomplete="off">
-                                <div class="autocomplete-results" id="articolo-results-0"></div>
-                            </div>
-                            <div class="form-group">
-                                <label>Quantità *</label>
-                                <input type="number" name="dettagli[0][quantita]" value="1" min="0.01" step="0.01" required 
-                                       onchange="calcolaTotaleRiga(0)">
-                            </div>
-                            <div class="form-group">
-                                <label>U.M.</label>
-                                <select name="dettagli[0][unita]">
-                                    <option value="PZ">PZ</option>
-                                    <option value="KG">KG</option>
-                                    <option value="MT">MT</option>
-                                    <option value="MQ">MQ</option>
-                                    <option value="MC">MC</option>
-                                    <option value="LT">LT</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Prezzo Unit.</label>
-                                <input type="number" name="dettagli[0][prezzo_unitario]" min="0" step="0.01"
-                                       placeholder="0.00" onchange="calcolaTotaleRiga(0)">
-                            </div>
-                            <div class="form-group">
-                                <label>Sconto %</label>
-                                <input type="number" name="dettagli[0][sconto]" min="0" max="100" step="0.01" value="0"
-                                       onchange="calcolaTotaleRiga(0)">
-                            </div>
-                            <div class="form-group">
-                                <label>Disponibilità</label>
-                                <input type="text" name="dettagli[0][disponibilita]" placeholder="Es: In stock">
-                            </div>
-                            <div class="form-group">
-                                <label>Tempi Consegna</label>
-                                <input type="text" name="dettagli[0][consegna]" placeholder="Es: 15gg">
-                            </div>
-                            <div class="form-group">
-                                <label>Totale Riga</label>
-                                <input type="number" class="totale-riga" readonly placeholder="0.00">
-                            </div>
-                            <div class="form-group">
-                                <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviDettaglio(0)">🗑️</button>
+                    {% if modalita == 'modifica' and offerta.dettagli %}
+                        <!-- Carica dettagli esistenti in modalità modifica -->
+                        {% for dettaglio in offerta.dettagli %}
+                        <div class="dettaglio-row" data-index="{{ loop.index0 }}">
+                            <div class="form-grid dettaglio-grid">
+                                <div class="form-group">
+                                    <label>Cod. Interno</label>
+                                    <input type="text" name="dettagli[{{ loop.index0 }}][codice]" 
+                                           value="{{ dettaglio.codice_articolo or '' }}" placeholder="Codice...">
+                                </div>
+                                <div class="form-group">
+                                    <label>Cod. Fornitore</label>
+                                    <input type="text" name="dettagli[{{ loop.index0 }}][codice_fornitore]" 
+                                           value="{{ dettaglio.codice_fornitore or '' }}" placeholder="Codice fornitore...">
+                                </div>
+                                <div class="form-group" style="position: relative;">
+                                    <label>Descrizione *</label>
+                                    <input type="text" name="dettagli[{{ loop.index0 }}][descrizione]" required 
+                                           value="{{ dettaglio.descrizione or '' }}" placeholder="Descrizione articolo..." 
+                                           oninput="cercaArticoloOfferta(this, {{ loop.index0 }})" autocomplete="off">
+                                    <div class="autocomplete-results" id="articolo-results-{{ loop.index0 }}"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantità *</label>
+                                    <input type="number" name="dettagli[{{ loop.index0 }}][quantita]" 
+                                           value="{{ dettaglio.quantita or 1 }}" min="0.01" step="0.01" required 
+                                           onchange="calcolaTotaleRiga({{ loop.index0 }})">
+                                </div>
+                                <div class="form-group">
+                                    <label>U.M.</label>
+                                    <select name="dettagli[{{ loop.index0 }}][unita]">
+                                        <option value="PZ" {{ 'selected' if dettaglio.unita_misura == 'PZ' else '' }}>PZ</option>
+                                        <option value="KG" {{ 'selected' if dettaglio.unita_misura == 'KG' else '' }}>KG</option>
+                                        <option value="MT" {{ 'selected' if dettaglio.unita_misura == 'MT' else '' }}>MT</option>
+                                        <option value="MQ" {{ 'selected' if dettaglio.unita_misura == 'MQ' else '' }}>MQ</option>
+                                        <option value="MC" {{ 'selected' if dettaglio.unita_misura == 'MC' else '' }}>MC</option>
+                                        <option value="LT" {{ 'selected' if dettaglio.unita_misura == 'LT' else '' }}>LT</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Prezzo Unit.</label>
+                                    <input type="number" name="dettagli[{{ loop.index0 }}][prezzo_unitario]" 
+                                           value="{{ dettaglio.prezzo_unitario or '' }}" min="0" step="0.01" 
+                                           placeholder="0.00" onchange="calcolaTotaleRiga({{ loop.index0 }})">
+                                </div>
+                                <div class="form-group">
+                                    <label>Sconto %</label>
+                                    <input type="number" name="dettagli[{{ loop.index0 }}][sconto]" 
+                                           value="{{ dettaglio.sconto_percentuale or 0 }}" min="0" max="100" step="0.01"
+                                           onchange="calcolaTotaleRiga({{ loop.index0 }})">
+                                </div>
+                                <div class="form-group">
+                                    <label>Disponibilità</label>
+                                    <input type="text" name="dettagli[{{ loop.index0 }}][disponibilita]" 
+                                           value="{{ dettaglio.disponibilita or '' }}" placeholder="Es: In stock">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tempi Consegna</label>
+                                    <input type="text" name="dettagli[{{ loop.index0 }}][consegna]" 
+                                           value="{{ dettaglio.tempo_consegna or '' }}" placeholder="Es: 15gg">
+                                </div>
+                                <div class="form-group">
+                                    <label>Totale Riga</label>
+                                    <input type="number" class="totale-riga" readonly 
+                                           value="{{ '%.2f'|format(dettaglio.totale_riga or 0) }}">
+                                </div>
+                                <div class="form-group">
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviDettaglio({{ loop.index0 }})">🗑️</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Riga vuota per nuove offerte -->
+                        <div class="dettaglio-row" data-index="0">
+                            <div class="form-grid dettaglio-grid">
+                                <div class="form-group">
+                                    <label>Cod. Interno</label>
+                                    <input type="text" name="dettagli[0][codice]" placeholder="Codice...">
+                                </div>
+                                <div class="form-group">
+                                    <label>Cod. Fornitore</label>
+                                    <input type="text" name="dettagli[0][codice_fornitore]" placeholder="Codice fornitore...">
+                                </div>
+                                <div class="form-group" style="position: relative;">
+                                    <label>Descrizione *</label>
+                                    <input type="text" name="dettagli[0][descrizione]" required placeholder="Descrizione articolo..." 
+                                           oninput="cercaArticoloOfferta(this, 0)" autocomplete="off">
+                                    <div class="autocomplete-results" id="articolo-results-0"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantità *</label>
+                                    <input type="number" name="dettagli[0][quantita]" value="1" min="0.01" step="0.01" required 
+                                           onchange="calcolaTotaleRiga(0)">
+                                </div>
+                                <div class="form-group">
+                                    <label>U.M.</label>
+                                    <select name="dettagli[0][unita]">
+                                        <option value="PZ">PZ</option>
+                                        <option value="KG">KG</option>
+                                        <option value="MT">MT</option>
+                                        <option value="MQ">MQ</option>
+                                        <option value="MC">MC</option>
+                                        <option value="LT">LT</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Prezzo Unit.</label>
+                                    <input type="number" name="dettagli[0][prezzo_unitario]" min="0" step="0.01"
+                                           placeholder="0.00" onchange="calcolaTotaleRiga(0)">
+                                </div>
+                                <div class="form-group">
+                                    <label>Sconto %</label>
+                                    <input type="number" name="dettagli[0][sconto]" min="0" max="100" step="0.01" value="0"
+                                           onchange="calcolaTotaleRiga(0)">
+                                </div>
+                                <div class="form-group">
+                                    <label>Disponibilità</label>
+                                    <input type="text" name="dettagli[0][disponibilita]" placeholder="Es: In stock">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tempi Consegna</label>
+                                    <input type="text" name="dettagli[0][consegna]" placeholder="Es: 15gg">
+                                </div>
+                                <div class="form-group">
+                                    <label>Totale Riga</label>
+                                    <input type="number" class="totale-riga" readonly placeholder="0.00">
+                                </div>
+                                <div class="form-group">
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviDettaglio(0)">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
                 
                 <div style="margin-top: 15px;">
@@ -266,7 +341,7 @@
     </style>
 
     <script>
-        let dettaglioIndex = 1;
+        let dettaglioIndex = {% if modalita == 'modifica' and offerta.dettagli %}{{ offerta.dettagli|length }}{% else %}1{% endif %};
 
         function updateFornitoreNome() {
             const select = document.getElementById('fornitore_id');
