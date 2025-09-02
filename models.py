@@ -14,6 +14,7 @@ class DDTIn(db.Model):
     mastrino_ddt = db.Column(db.String(50))
     commessa = db.Column(db.String(50))
     stato = db.Column(db.String(20), default='bozza')
+    totale_costo = db.Column(db.Float, default=0.0)  # Totale costi acquisto
     pdf_allegato = db.Column(db.Text)  # Base64 encoded PDF
     pdf_filename = db.Column(db.String(255))  # Nome file originale
     
@@ -29,6 +30,7 @@ class DDTOut(db.Model):
     commessa = db.Column(db.String(50))
     magazzino_partenza = db.Column(db.String(100))
     stato = db.Column(db.String(20), default='bozza')
+    totale_costo = db.Column(db.Float, default=0.0)  # Totale costi acquisto
 
 class CatalogoArticolo(db.Model):
     __tablename__ = 'catalogo_articolo'

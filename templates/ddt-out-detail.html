@@ -81,6 +81,15 @@
                     {% endfor %}
                 </tbody>
             </table>
+            
+            {% if ddt.stato == 'confermato' and ddt.totale_costo %}
+            <div class="ddt-totale" style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px;">
+                <h4 style="margin: 0; color: #495057;">Totale DDT OUT</h4>
+                <p style="margin: 5px 0 0 0; font-size: 1.2em; font-weight: bold; color: #17a2b8;">
+                    € {{ "{:.2f}".format(ddt.totale_costo) }}
+                </p>
+            </div>
+            {% endif %}
         </div>
     </div>
 

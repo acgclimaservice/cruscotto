@@ -2059,6 +2059,9 @@ def conferma_ddt_in(id):
         
         db.session.commit()
         
+        # Calcola e salva il totale DDT IN
+        calcola_totale_ddt_in(ddt.id)
+        
         # Aggiorna inventario automaticamente
         aggiorna_inventario()
         
@@ -2931,6 +2934,9 @@ def conferma_ddt_out(id):
                     print(f"Aggiornata giacenza {articolo.codice_interno}: {vecchia_giacenza} -> {nuova_giacenza}")
         
         db.session.commit()
+        
+        # Calcola e salva il totale DDT OUT
+        calcola_totale_ddt_out(ddt.id)
         
         # Aggiorna inventario automaticamente
         aggiorna_inventario()
@@ -8930,6 +8936,59 @@ def export_report(report_type):
         return f"Errore export: {str(e)}", 500
 
 # Route per ricevere errori JavaScript
+def calcola_totale_ddt_in(ddt_id):
+    """Calcola e aggiorna il totale costi per un DDT IN"""
+    try:
+        from models import DDTIn, ArticoloIn
+        ddt = DDTIn.query.get(ddt_id)
+        if not ddt:
+            return 0.0
+            
+        articoli = ArticoloIn.query.filter_by(ddt_id=ddt_id).all()
+        totale = 0.0
+        
+        for articolo in articoli:
+            if articolo.quantita and articolo.costo_unitario:
+                totale += articolo.quantita * articolo.costo_unitario
+        
+        ddt.totale_costo = round(totale, 2)
+        db.session.commit()
+        return ddt.totale_costo
+        
+    except Exception as e:
+        print(f"Errore calcolo totale DDT IN {ddt_id}: {e}")
+        return 0.0
+
+def calcola_totale_ddt_out(ddt_id):
+    """Calcola e aggiorna il totale costi per un DDT OUT"""
+    try:
+        from models import DDTOut, ArticoloOut, CatalogoArticolo
+        ddt = DDTOut.query.get(ddt_id)
+        if not ddt:
+            return 0.0
+            
+        articoli = ArticoloOut.query.filter_by(ddt_id=ddt_id).all()
+        totale = 0.0
+        
+        for articolo in articoli:
+            if articolo.quantita:
+                # Cerca il costo nel catalogo usando il codice interno
+                costo_unitario = 0.0
+                if articolo.codice_interno:
+                    cat_articolo = CatalogoArticolo.query.filter_by(codice_interno=articolo.codice_interno).first()
+                    if cat_articolo and cat_articolo.costo_ultimo:
+                        costo_unitario = cat_articolo.costo_ultimo
+                
+                totale += articolo.quantita * costo_unitario
+        
+        ddt.totale_costo = round(totale, 2)
+        db.session.commit()
+        return ddt.totale_costo
+        
+    except Exception as e:
+        print(f"Errore calcolo totale DDT OUT {ddt_id}: {e}")
+        return 0.0
+
 @app.route('/api/log-error', methods=['POST'])
 def log_javascript_error():
     """Riceve errori JavaScript dal frontend"""
@@ -8989,6 +9048,24 @@ def force_migration():
             db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN cliente_id INTEGER"))
             db.session.commit()
             migrations_applied.append("Added cliente_id column to offerta_fornitore table")
+        
+        # Migration: Add totale_costo to ddt_in table if not exists
+        try:
+            db.session.execute(text("SELECT totale_costo FROM ddt_in LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE ddt_in ADD COLUMN totale_costo REAL DEFAULT 0.0"))
+            db.session.commit()
+            migrations_applied.append("Added totale_costo column to ddt_in table")
+            
+        # Migration: Add totale_costo to ddt_out table if not exists
+        try:
+            db.session.execute(text("SELECT totale_costo FROM ddt_out LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE ddt_out ADD COLUMN totale_costo REAL DEFAULT 0.0"))
+            db.session.commit()
+            migrations_applied.append("Added totale_costo column to ddt_out table")
         
         if migrations_applied:
             return jsonify({
@@ -9061,6 +9138,24 @@ if __name__ == '__main__':
             db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN cliente_id INTEGER"))
             db.session.commit()
             print("✅ Migration: Added cliente_id column to offerta_fornitore table")
+        
+        # Migration: Add totale_costo to ddt_in table if not exists
+        try:
+            db.session.execute(text("SELECT totale_costo FROM ddt_in LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE ddt_in ADD COLUMN totale_costo REAL DEFAULT 0.0"))
+            db.session.commit()
+            print("✅ Migration: Added totale_costo column to ddt_in table")
+            
+        # Migration: Add totale_costo to ddt_out table if not exists
+        try:
+            db.session.execute(text("SELECT totale_costo FROM ddt_out LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE ddt_out ADD COLUMN totale_costo REAL DEFAULT 0.0"))
+            db.session.commit()
+            print("✅ Migration: Added totale_costo column to ddt_out table")
     
     print("=" * 50)
     print(f"SISTEMA GESTIONE DDT - VERSIONE {APP_VERSION}")
