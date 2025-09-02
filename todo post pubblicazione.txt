@@ -104,6 +104,8 @@ onclick @ nuovo:130
 69 voglio avere la possibilità di modificare sempre lo stato di un'offerta in creata, richiesta, in valutazione, accettata, rifiutata. devo avere sempre la possibilità di passare da uno stato all'altro
 70 se modifico un'offerta mi deve ricaricare i dati dell'offerta da modificare adesso invece vedo solo campi vuoti
 71 nel punto 70 per adesso mi ricarica solo l'oggetto FATTO - CONTROLLATO OK
-72 
+72  dovresti inserire alla richiesta offerta il campo riferimento commessa con il solito autocompletamento
+73 nella richiesta offerta dovresti inserirmi il campo cliente con il solito autocompletamento
+74
 
 

@@ -80,7 +80,25 @@
                     <small style="color: #666; font-size: 0.85rem;">
                         Formati supportati: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG. Max 5MB per file.
                     </small>
-                    <div id="allegati-list" class="allegati-preview"></div>
+                    <div id="allegati-list" class="allegati-preview">
+                        {% if modalita == 'modifica' and offerta.allegati %}
+                            {% set allegati_esistenti = offerta.allegati|from_json %}
+                            {% if allegati_esistenti %}
+                                <div style="margin-top: 10px;">
+                                    <strong>Allegati esistenti:</strong>
+                                    {% for allegato in allegati_esistenti %}
+                                    <div class="allegato-esistente" style="padding: 5px; margin: 2px 0; background: #f5f5f5; border-radius: 3px;">
+                                        📎 {{ allegato }}
+                                        <button type="button" onclick="rimuoviAllegato('{{ allegato }}')" 
+                                                style="margin-left: 10px; padding: 2px 6px; font-size: 12px; background: #dc3545; color: white; border: none; border-radius: 2px;">
+                                            ✕
+                                        </button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
@@ -557,6 +575,18 @@
         document.getElementById('fornitore_nome').value = nome;
     }
     
+    // Funzione per rimuovere allegato esistente
+    function rimuoviAllegato(nomeFile) {
+        const allegatoDiv = event.target.parentElement;
+        allegatoDiv.style.display = 'none';
+        // Aggiungi campo hidden per segnalare la rimozione
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'allegati_da_rimuovere[]';
+        hiddenInput.value = nomeFile;
+        document.querySelector('form').appendChild(hiddenInput);
+    }
+    
     // Gestione allegati
     document.getElementById('allegati').addEventListener('change', function(e) {
         const files = e.target.files;
@@ -597,7 +627,20 @@
     document.addEventListener('DOMContentLoaded', function() {
         const fornitoreInput = document.getElementById('fornitore_nome');
         if (fornitoreInput && window.AutocompleteHelpers) {
-            window.AutocompleteHelpers.setupFornitoriAutocomplete(fornitoreInput);
+            // Salva il valore originale prima di inizializzare l'autocompletamento
+            const originalValue = fornitoreInput.value;
+            
+            const autocomplete = window.AutocompleteHelpers.setupFornitoriAutocomplete(fornitoreInput, {
+                onSelect: function(item) {
+                    document.getElementById('fornitore_id').value = item.id;
+                    document.getElementById('fornitore_nome').value = item.ragione_sociale;
+                }
+            });
+            
+            // Ripristina il valore originale se era presente (modalità modifica)
+            if (originalValue) {
+                fornitoreInput.value = originalValue;
+            }
         }
     });
         // Modal rifiuto offerta
