@@ -6160,8 +6160,17 @@ def nuova_offerta():
             db.session.flush()
             
             # Debug: Stampa tutti i dati ricevuti per gli articoli
-            print(f"[DEBUG] Dati ricevuti nella nuova offerta:")
-            print(f"[DEBUG] Chiavi data: {list(data.keys())}")
+            debug_msg = f"[DEBUG] Dati ricevuti nella nuova offerta:\n[DEBUG] Chiavi data: {list(data.keys())}"
+            print(debug_msg)
+            
+            # Salva debug in file temporaneo per visualizzazione
+            try:
+                with open('debug_offerte.log', 'a') as f:
+                    from datetime import datetime
+                    f.write(f"\n{datetime.now()}: {debug_msg}\n")
+                    f.write(f"Data completa: {data}\n")
+            except:
+                pass
             
             # Cerca i dati degli articoli in tutti i possibili formati
             articoli_data = []
@@ -6238,6 +6247,18 @@ def nuova_offerta():
             else:
                 flash(f'Errore nella creazione dell\'offerta: {str(e)}', 'error')
                 return redirect('/offerte')
+
+@app.route('/debug/offerte-log')
+def debug_offerte_log():
+    """Debug endpoint per visualizzare log delle offerte"""
+    try:
+        with open('debug_offerte.log', 'r') as f:
+            content = f.read()
+            return f"<pre>{content}</pre>"
+    except FileNotFoundError:
+        return "Log non trovato - nessuna offerta creata ancora"
+    except Exception as e:
+        return f"Errore: {e}"
 
 @app.route('/offerte/<int:id>/modifica')
 def modifica_offerta(id):
