@@ -5078,31 +5078,26 @@ def nuovo_preventivo():
         db.session.add(nuovo_preventivo)
         db.session.flush()  # Per ottenere l'ID
         
+        # Helper per validazione float sicura
+        def safe_float(value, default=0.0):
+            """Converte sicuramente un valore in float"""
+            if value is None or value == '' or value == 'None':
+                return default
+            try:
+                return float(str(value).strip())
+            except (ValueError, TypeError):
+                return default
+        
         # Aggiungi dettagli preventivo con validazione float
         totale = 0
         i = 0
         while f'dettagli[{i}][descrizione]' in request.form:
             if request.form.get(f'dettagli[{i}][descrizione]'):
-                # Validazione sicura per quantita
-                try:
-                    quantita_value = request.form.get(f'dettagli[{i}][quantita]', '1').strip()
-                    quantita = float(quantita_value) if quantita_value else 1.0
-                except (ValueError, TypeError):
-                    quantita = 1.0
-                
-                # Validazione sicura per prezzo_unitario
-                try:
-                    prezzo_value = request.form.get(f'dettagli[{i}][prezzo_unitario]', '0').strip()
-                    prezzo_unitario = float(prezzo_value) if prezzo_value else 0.0
-                except (ValueError, TypeError):
-                    prezzo_unitario = 0.0
-                
-                # Validazione sicura per sconto
-                try:
-                    sconto_value = request.form.get(f'dettagli[{i}][sconto]', '0').strip()
-                    sconto = float(sconto_value) if sconto_value else 0.0
-                except (ValueError, TypeError):
-                    sconto = 0.0
+                # Usa safe_float per tutti i valori numerici
+                quantita = safe_float(request.form.get(f'dettagli[{i}][quantita]'), 1.0)
+                prezzo_unitario = safe_float(request.form.get(f'dettagli[{i}][prezzo_unitario]'), 0.0)
+                sconto = safe_float(request.form.get(f'dettagli[{i}][sconto]'), 0.0)
+                costo_unitario = safe_float(request.form.get(f'dettagli[{i}][costo]'), 0.0)
                 
                 totale_riga = quantita * prezzo_unitario * (1 - sconto/100)
                 
@@ -5113,7 +5108,7 @@ def nuovo_preventivo():
                     quantita=quantita,
                     unita_misura=request.form.get(f'dettagli[{i}][unita]', 'PZ'),
                     prezzo_unitario=prezzo_unitario,
-                    costo_unitario=float(request.form.get(f'dettagli[{i}][costo]', 0)),
+                    costo_unitario=costo_unitario,
                     sconto_percentuale=sconto,
                     totale_riga=totale_riga
                 )
@@ -5183,26 +5178,11 @@ def modifica_preventivo(id):
         i = 0
         while f'dettagli[{i}][descrizione]' in request.form:
             if request.form.get(f'dettagli[{i}][descrizione]'):
-                # Validazione sicura per quantita
-                try:
-                    quantita_value = request.form.get(f'dettagli[{i}][quantita]', '1').strip()
-                    quantita = float(quantita_value) if quantita_value else 1.0
-                except (ValueError, TypeError):
-                    quantita = 1.0
-                
-                # Validazione sicura per prezzo_unitario
-                try:
-                    prezzo_value = request.form.get(f'dettagli[{i}][prezzo_unitario]', '0').strip()
-                    prezzo_unitario = float(prezzo_value) if prezzo_value else 0.0
-                except (ValueError, TypeError):
-                    prezzo_unitario = 0.0
-                
-                # Validazione sicura per sconto
-                try:
-                    sconto_value = request.form.get(f'dettagli[{i}][sconto]', '0').strip()
-                    sconto = float(sconto_value) if sconto_value else 0.0
-                except (ValueError, TypeError):
-                    sconto = 0.0
+                # Usa safe_float per tutti i valori numerici
+                quantita = safe_float(request.form.get(f'dettagli[{i}][quantita]'), 1.0)
+                prezzo_unitario = safe_float(request.form.get(f'dettagli[{i}][prezzo_unitario]'), 0.0)
+                sconto = safe_float(request.form.get(f'dettagli[{i}][sconto]'), 0.0)
+                costo_unitario = safe_float(request.form.get(f'dettagli[{i}][costo]'), 0.0)
                 
                 # Validazione sicura per costo
                 try:
@@ -7029,6 +7009,18 @@ def accetta_preventivo(id):
     try:
         preventivo = Preventivo.query.get_or_404(id)
         
+        # Validazione campi float per evitare errori di conversione
+        if preventivo.totale_netto is None or preventivo.totale_netto == '':
+            preventivo.totale_netto = 0.0
+        if preventivo.iva is None or preventivo.iva == '':
+            preventivo.iva = 22.0
+        if preventivo.totale_lordo is None or preventivo.totale_lordo == '':
+            preventivo.totale_lordo = 0.0
+        if preventivo.margine_percentuale is None or preventivo.margine_percentuale == '':
+            preventivo.margine_percentuale = 0.0
+        if preventivo.margine_valore is None or preventivo.margine_valore == '':
+            preventivo.margine_valore = 0.0
+        
         preventivo.stato = 'accettato'
         preventivo.data_accettazione = datetime.now().date()
         
@@ -7037,6 +7029,9 @@ def accetta_preventivo(id):
         
     except Exception as e:
         db.session.rollback()
+        print(f"Errore accettazione preventivo {id}: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'errore': str(e)}), 500
 
 @app.route('/preventivi/<int:id>/rifiuta', methods=['POST'])
