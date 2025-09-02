@@ -8159,6 +8159,268 @@ def update_mpls(id):
         flash(f"Errore nell'aggiornamento: {str(e)}", "error")
         return redirect(f'/mpls/{id}/modifica')
 
+# =====================================================
+# ROTTE MPLS IMPORT 
+# =====================================================
+
+@app.route('/mpls/import')
+def mpls_import():
+    """Pagina import MPLS da PDF"""
+    return render_template('mpls-import.html')
+
+@app.route('/mpls-import/parse-pdf', methods=['POST'])
+def mpls_parse_pdf():
+    """Parsing PDF per MPLS usando Multi-AI Parser"""
+    if 'pdf_file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file'}), 400
+    
+    file = request.files['pdf_file']
+    if not file.filename:
+        return jsonify({'success': False, 'error': 'No filename'}), 400
+    
+    try:
+        print(f"MPLS Import: Processing {file.filename}")
+        
+        # Usa Multi-AI Parser (stesso del DDT)
+        try:
+            from multi_ai_pdf_parser import MultiAIPDFParser
+            parser = MultiAIPDFParser()
+            
+            # Parse con AI - default Claude per MPLS
+            preferred_ai = 'claude'
+            print(f"MPLS Parser: Using {preferred_ai.upper()}")
+            
+            file.seek(0)
+            result = parser.parse_ddt_with_ai(file, preferred_ai=preferred_ai)
+            
+            if result and result.get('success'):
+                parsed_data = result.get('data', {})
+                ai_used = parsed_data.get('ai_used', 'claude')
+                
+                print(f"MPLS Parsing SUCCESS con {ai_used.upper()}")
+                
+                # Adatta i dati per MPLS (stesso formato del DDT ma per preventivi/offerte)
+                mpls_data = {
+                    'success': True,
+                    'cliente_nome': parsed_data.get('destinatario', {}).get('ragione_sociale', ''),
+                    'numero_offerta': parsed_data.get('numero_ddt', ''),
+                    'data_offerta': parsed_data.get('data_ddt', ''),
+                    'totale_offerta': parsed_data.get('totale_fattura', ''),
+                    'indirizzo': _format_indirizzo_mpls(parsed_data.get('destinatario', {})),
+                    'descrizione': _extract_descrizione_lavoro(parsed_data),
+                    'note_tecniche': _extract_note_tecniche(parsed_data),
+                    'articoli': _convert_articoli_for_mpls(parsed_data.get('articoli', [])),
+                    'ai_used': ai_used
+                }
+                
+                return jsonify(mpls_data)
+            else:
+                print(f"MPLS Multi-AI Parser fallito: {result.get('error', 'Errore sconosciuto')}")
+                
+        except ImportError as e:
+            print(f"MPLS Multi-AI Parser non disponibile: {e}")
+        except Exception as e:
+            print(f"Errore MPLS Multi-AI Parser: {e}")
+        
+        # Fallback con WorkingClaudeParser
+        try:
+            print("MPLS Fallback: provo WorkingClaudeParser...")
+            from working_claude_parser import WorkingClaudeParser
+            parser = WorkingClaudeParser()
+            result = parser.parse_pdf_with_claude(file)
+            
+            if 'error' not in result:
+                print(f"MPLS WorkingClaudeParser success")
+                
+                mpls_data = {
+                    'success': True,
+                    'cliente_nome': result.get('destinatario', {}).get('ragione_sociale', ''),
+                    'numero_offerta': result.get('numero_ddt', ''),
+                    'data_offerta': result.get('data_ddt', ''),
+                    'totale_offerta': result.get('totale_fattura', ''),
+                    'indirizzo': _format_indirizzo_mpls(result.get('destinatario', {})),
+                    'descrizione': _extract_descrizione_lavoro(result),
+                    'note_tecniche': _extract_note_tecniche(result),
+                    'articoli': _convert_articoli_for_mpls(result.get('articoli', [])),
+                    'ai_used': 'claude_fallback'
+                }
+                
+                return jsonify(mpls_data)
+            else:
+                print(f"MPLS WorkingClaudeParser fallito: {result.get('error')}")
+                
+        except Exception as e:
+            print(f"Errore MPLS WorkingClaudeParser: {e}")
+        
+        return jsonify({
+            'success': False, 
+            'error': 'Tutti i parser hanno fallito. Verifica che il PDF contenga dati strutturati di un preventivo/offerta.'
+        }), 500
+        
+    except Exception as e:
+        print(f"Errore generale MPLS parsing: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/mpls-import/create-from-import', methods=['POST'])
+def mpls_create_from_import():
+    """Crea MPLS da dati importati"""
+    try:
+        data = request.get_json()
+        
+        # Genera numero MPLS progressivo
+        ultimo_numero = db.session.query(func.max(MPLS.id)).scalar() or 0
+        numero_mpls = f"MPLS-{datetime.now().year}-{ultimo_numero + 1:04d}"
+        
+        # Crea MPLS base
+        mpls = MPLS(
+            numero_mpls=numero_mpls,
+            data_creazione=datetime.now().date(),
+            cliente_nome=data.get('cliente_nome', ''),
+            descrizione=data.get('descrizione', ''),
+            indirizzo=data.get('indirizzo', ''),
+            fonte_tipo=data.get('fonte_tipo', 'import_pdf'),
+            fonte_id=data.get('fonte_id', ''),
+            ore_manodopera=float(data.get('ore_manodopera', 0)),
+            sovrapprezzo=float(data.get('sovrapprezzo', 0)),
+            is_guazzotti=data.get('is_guazzotti', False),
+            stato='bozza'
+        )
+        
+        db.session.add(mpls)
+        db.session.flush()  # Per ottenere l'ID
+        
+        # Aggiungi articoli e calcola totali Enhanced
+        articoli_data = data.get('articoli', [])
+        totale_costo_materiali = 0
+        totale_vendita_materiali = 0
+        
+        for art_data in articoli_data:
+            if art_data.get('descrizione'):
+                quantita = float(art_data.get('quantita', 1))
+                prezzo_costo = float(art_data.get('prezzo_unitario', 0))
+                
+                # Calcola ricarico automatico Enhanced
+                prezzo_vendita, ricarico_perc = _calcola_ricarico_materiale(
+                    prezzo_costo, quantita, mpls.is_guazzotti
+                )
+                
+                articolo = MPLSArticolo(
+                    mpls_id=mpls.id,
+                    codice=art_data.get('codice', ''),
+                    descrizione=art_data.get('descrizione', ''),
+                    quantita=quantita,
+                    prezzo_costo=prezzo_costo,
+                    ricarico_percentuale=ricarico_perc * 100,
+                    prezzo_vendita=prezzo_vendita
+                )
+                
+                db.session.add(articolo)
+                
+                # Accumula totali
+                totale_costo_materiali += quantita * prezzo_costo
+                totale_vendita_materiali += quantita * prezzo_vendita
+        
+        # Calcola totali Enhanced completi
+        _calcola_totali_enhanced_mpls(mpls, totale_costo_materiali, totale_vendita_materiali)
+        
+        db.session.commit()
+        
+        print(f"MPLS {numero_mpls} creato da import con {len(articoli_data)} articoli")
+        
+        return jsonify({
+            'success': True,
+            'mpls_id': mpls.id,
+            'numero_mpls': numero_mpls
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore creazione MPLS da import: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Funzioni helper per MPLS import
+def _format_indirizzo_mpls(destinatario_data):
+    """Formatta indirizzo per MPLS"""
+    indirizzo_parts = []
+    if destinatario_data.get('indirizzo'):
+        indirizzo_parts.append(destinatario_data['indirizzo'])
+    if destinatario_data.get('cap') and destinatario_data.get('citta'):
+        indirizzo_parts.append(f"{destinatario_data['cap']} {destinatario_data['citta']}")
+    return ', '.join(indirizzo_parts)
+
+def _extract_descrizione_lavoro(parsed_data):
+    """Estrae descrizione lavoro dai dati parsati"""
+    # Cerca in vari campi possibili
+    if parsed_data.get('oggetto'):
+        return parsed_data['oggetto']
+    
+    # Cerca nella prima descrizione articolo se contiene parole chiave lavoro
+    articoli = parsed_data.get('articoli', [])
+    if articoli:
+        prima_desc = articoli[0].get('descrizione', '')
+        if any(word in prima_desc.lower() for word in ['installazione', 'manutenzione', 'riparazione', 'sostituzione']):
+            return prima_desc
+    
+    return ''
+
+def _extract_note_tecniche(parsed_data):
+    """Estrae note tecniche"""
+    note = []
+    if parsed_data.get('note'):
+        note.append(parsed_data['note'])
+    if parsed_data.get('note_finali'):
+        note.append(parsed_data['note_finali'])
+    return ' - '.join(note)
+
+def _convert_articoli_for_mpls(articoli_ddt):
+    """Converte articoli DDT per MPLS"""
+    articoli_mpls = []
+    for art in articoli_ddt:
+        articolo_mpls = {
+            'codice': art.get('codice', ''),
+            'descrizione': art.get('descrizione', ''),
+            'quantita': float(art.get('quantita', 1)),
+            'prezzo_unitario': float(art.get('prezzo_unitario', 0)),
+            'totale': float(art.get('totale', 0))
+        }
+        articoli_mpls.append(articolo_mpls)
+    return articoli_mpls
+
+def _calcola_totali_enhanced_mpls(mpls, costo_materiali, vendita_materiali):
+    """Calcola totali Enhanced per MPLS"""
+    # Manodopera
+    costo_orario_vendita = 25.0 if mpls.is_guazzotti else 40.0
+    costo_orario_interno = 22.0
+    vendita_manodopera = mpls.ore_manodopera * costo_orario_vendita
+    costo_manodopera = mpls.ore_manodopera * costo_orario_interno
+    
+    # Costi accessori
+    costo_gestione = 0 if mpls.is_guazzotti else 30.0
+    spese_brevi = (0 if mpls.is_guazzotti or mpls.ore_manodopera == 0 or mpls.ore_manodopera >= 3 else 30.0)
+    materiale_consumo = (0 if mpls.is_guazzotti or costo_materiali == 0 else max(10.0, costo_materiali * 0.03))
+    
+    # Totali
+    totale_vendita = vendita_materiali + vendita_manodopera + costo_gestione + spese_brevi + materiale_consumo + mpls.sovrapprezzo
+    totale_iva = totale_vendita * 0.22
+    totale_ivato = totale_vendita + totale_iva
+    costo_totale_interno = costo_materiali + costo_manodopera
+    margine_euro = totale_vendita - costo_totale_interno
+    margine_percentuale = (margine_euro / totale_vendita * 100) if totale_vendita > 0 else 0
+    
+    # Aggiorna MPLS
+    mpls.subtotale_materiali_vendita = vendita_materiali
+    mpls.subtotale_manodopera_vendita = vendita_manodopera
+    mpls.costo_gestione = costo_gestione
+    mpls.spese_brevi = spese_brevi
+    mpls.materiale_consumo = materiale_consumo
+    mpls.costo_totale_interno = costo_totale_interno
+    mpls.totale_costi = costo_totale_interno
+    mpls.totale_vendita = totale_vendita
+    mpls.totale_iva = totale_iva
+    mpls.totale_ivato = totale_ivato
+    mpls.margine_euro = margine_euro
+    mpls.margine_percentuale = margine_percentuale
+
 def _calcola_ricarico_materiale(prezzo_acquisto, quantita, is_guazzotti):
     """Calcola ricarico secondo logica business Enhanced"""
     costo_totale = prezzo_acquisto * quantita

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import MPLS da PDF - Sistema Gestione</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+    <style>
+        #pdf-preview {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            display: none;
+        }
+        .preview-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .info-item {
+            position: relative;
+        }
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+        .campo-corretto { 
+            background: #fef3c7 !important; 
+        }
+        .status-message {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+            display: none;
+        }
+        .status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .articoli-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .articoli-table th, .articoli-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .articoli-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .info-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .create-mpls-section {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .create-mpls-section h3 {
+            color: #0ea5e9;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>🏢 ACG Clima</h2>
+            </div>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/ordini">🛒 Ordini</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/mpls" class="active">💰 MPLS</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/commesse">🏗️ Commesse</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <div class="header-actions">
+                <div>
+                    <h1>💰 Import MPLS da PDF</h1>
+                    <p>Carica un PDF di offerta/preventivo per creare automaticamente un MPLS</p>
+                </div>
+                <div>
+                    <a href="/mpls" class="btn btn-secondary">← Torna ai MPLS</a>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="preview-section">
+                <h3>📄 Carica PDF</h3>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="pdf-file">Seleziona file PDF:</label>
+                        <input type="file" id="pdf-file" name="pdf_file" accept=".pdf" required class="form-control">
+                    </div>
+                    <button type="button" id="parse-btn" class="btn btn-primary">🔍 Analizza PDF</button>
+                </form>
+
+                <!-- Status Messages -->
+                <div id="status-message" class="status-message status-info">
+                    Elaborazione in corso...
+                </div>
+
+                <!-- PDF Preview -->
+                <div id="pdf-preview-section" style="display: none;">
+                    <h4>Preview PDF:</h4>
+                    <iframe id="pdf-preview" src=""></iframe>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-section" style="display: none;">
+                <!-- Parsed Data -->
+                <div class="info-grid">
+                    <!-- Dati Generali -->
+                    <div class="info-section">
+                        <h3>📋 Dati Generali</h3>
+                        <div class="form-group">
+                            <label for="cliente_nome">Nome Cliente:</label>
+                            <input type="text" id="cliente_nome" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="numero_offerta">Numero Offerta:</label>
+                            <input type="text" id="numero_offerta" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="data_offerta">Data Offerta:</label>
+                            <input type="date" id="data_offerta" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="totale_offerta">Totale Offerta:</label>
+                            <input type="text" id="totale_offerta" class="form-control" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Dettagli Tecnici -->
+                    <div class="info-section">
+                        <h3>🔧 Dettagli Tecnici</h3>
+                        <div class="form-group">
+                            <label for="indirizzo">Indirizzo:</label>
+                            <input type="text" id="indirizzo" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="descrizione">Descrizione Lavoro:</label>
+                            <textarea id="descrizione" class="form-control" rows="3" readonly></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="note_tecniche">Note Tecniche:</label>
+                            <textarea id="note_tecniche" class="form-control" rows="2" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Articoli Section -->
+                <div class="info-section">
+                    <h3>📦 Articoli Estratti</h3>
+                    <div id="articoli-container">
+                        <table class="articoli-table" id="articoli-table">
+                            <thead>
+                                <tr>
+                                    <th>Codice</th>
+                                    <th>Descrizione</th>
+                                    <th>Quantità</th>
+                                    <th>Prezzo Unit.</th>
+                                    <th>Totale</th>
+                                </tr>
+                            </thead>
+                            <tbody id="articoli-tbody">
+                                <!-- Articoli dinamici -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Create MPLS Section -->
+                <div class="create-mpls-section">
+                    <h3>💰 Crea MPLS da questi dati</h3>
+                    <p>I dati estratti verranno utilizzati per pre-compilare un nuovo MPLS con calcoli automatici Enhanced.</p>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="is_guazzotti_import"> 
+                            <strong>Cliente Guazzotti</strong> - Applica ricarico fisso 20% e manodopera €25/ora
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ore_manodopera_import">Ore Manodopera Stimate:</label>
+                        <input type="number" id="ore_manodopera_import" class="form-control" value="0" step="0.1" min="0">
+                    </div>
+
+                    <button type="button" id="create-mpls-btn" class="btn btn-success btn-lg">
+                        ✨ Crea MPLS Enhanced
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let parsedData = null;
+
+        // Upload e parsing PDF
+        document.getElementById('parse-btn').addEventListener('click', function() {
+            const fileInput = document.getElementById('pdf-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Seleziona un file PDF');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('pdf_file', file);
+
+            // Show status
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.style.display = 'block';
+            statusDiv.textContent = 'Elaborazione PDF in corso...';
+
+            // Upload e parsing
+            fetch('/mpls-import/parse-pdf', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                statusDiv.style.display = 'none';
+                
+                if (data.success) {
+                    parsedData = data;
+                    displayResults(data);
+                } else {
+                    alert('Errore nel parsing: ' + (data.error || 'Errore sconosciuto'));
+                }
+            })
+            .catch(error => {
+                statusDiv.style.display = 'none';
+                console.error('Errore:', error);
+                alert('Errore nella richiesta: ' + error.message);
+            });
+        });
+
+        // Converti data DD/MM/YYYY in YYYY-MM-DD
+        function convertDateToISO(dateStr) {
+            if (!dateStr) return new Date().toISOString().substr(0, 10);
+            if (dateStr.includes('-') && dateStr.length === 10) return dateStr;
+            
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                const year = parts[2];
+                return `${year}-${month}-${day}`;
+            }
+            return new Date().toISOString().substr(0, 10);
+        }
+
+        // Display risultati parsing
+        function displayResults(data) {
+            // Popola campi generali
+            document.getElementById('cliente_nome').value = data.cliente_nome || '';
+            document.getElementById('numero_offerta').value = data.numero_offerta || '';
+            document.getElementById('data_offerta').value = convertDateToISO(data.data_offerta) || '';
+            document.getElementById('totale_offerta').value = data.totale_offerta || '';
+            document.getElementById('indirizzo').value = data.indirizzo || '';
+            document.getElementById('descrizione').value = data.descrizione || '';
+            document.getElementById('note_tecniche').value = data.note_tecniche || '';
+
+            // Popola tabella articoli
+            const tbody = document.getElementById('articoli-tbody');
+            tbody.innerHTML = '';
+            
+            if (data.articoli && data.articoli.length > 0) {
+                data.articoli.forEach(articolo => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${articolo.codice || ''}</td>
+                        <td>${articolo.descrizione || ''}</td>
+                        <td>${articolo.quantita || ''}</td>
+                        <td>€${parseFloat(articolo.prezzo_unitario || 0).toFixed(2)}</td>
+                        <td>€${parseFloat(articolo.totale || 0).toFixed(2)}</td>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5">Nessun articolo estratto</td></tr>';
+            }
+
+            // Mostra sezione risultati
+            document.getElementById('results-section').style.display = 'block';
+        }
+
+        // Crea MPLS dai dati parsati
+        document.getElementById('create-mpls-btn').addEventListener('click', function() {
+            if (!parsedData) {
+                alert('Nessun dato disponibile per creare MPLS');
+                return;
+            }
+
+            const isGuazzotti = document.getElementById('is_guazzotti_import').checked;
+            const oreManodopera = parseFloat(document.getElementById('ore_manodopera_import').value) || 0;
+
+            // Prepara dati per MPLS
+            const mplsData = {
+                // Dati generali dal parsing
+                cliente_nome: parsedData.cliente_nome || '',
+                descrizione: parsedData.descrizione || '',
+                indirizzo: parsedData.indirizzo || '',
+                
+                // Parametri MPLS Enhanced
+                ore_manodopera: oreManodopera,
+                is_guazzotti: isGuazzotti,
+                sovrapprezzo: 0,
+                
+                // Fonte del parsing
+                fonte_tipo: 'import_pdf',
+                fonte_id: parsedData.numero_offerta || '',
+                
+                // Articoli
+                articoli: parsedData.articoli || []
+            };
+
+            // Invia a endpoint creazione MPLS
+            fetch('/mpls-import/create-from-import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mplsData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('MPLS creato con successo!');
+                    // Redirect al MPLS creato
+                    window.location.href = '/mpls/' + data.mpls_id;
+                } else {
+                    alert('Errore nella creazione MPLS: ' + (data.error || 'Errore sconosciuto'));
+                }
+            })
+            .catch(error => {
+                console.error('Errore:', error);
+                alert('Errore nella richiesta: ' + error.message);
+            });
+        });
+    </script>
+</body>
+</html>
