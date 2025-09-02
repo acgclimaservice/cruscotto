@@ -685,6 +685,15 @@
         if (commessaInput && window.AutocompleteHelpers) {
             window.AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
         }
+        
+        // Ricalcola i totali delle righe esistenti (per modalità modifica)
+        {% if modalita == 'modifica' and offerta and offerta.dettagli %}
+        const righeEsistenti = document.querySelectorAll('.dettaglio-row[data-index]');
+        righeEsistenti.forEach((riga, index) => {
+            calcolaTotaleRiga(index);
+        });
+        calcolaTotaliGenerali();
+        {% endif %}
     });
         // Modal rifiuto offerta
         function mostraModalRifiuto(tipo, id) {

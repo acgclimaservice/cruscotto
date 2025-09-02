@@ -116,7 +116,9 @@ Inizia registrando la tua prima offerta
 78 https://acgclimaservice.pythonanywhere.com/offerte/nuova nuova:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) FATTO - CONTROLLATO OK
 79 dovresti inserire un totale DDT IN che è la somma di tutti i costi acquisto dei singoli articoli
 80 dovresti inserire un totale DDT OUT che è la somma di tutti i costi acquisto dei singoli articoli
-81
+81 https://acgclimaservice.pythonanywhere.com/offerte/nuova mi da nuova:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
+82 quando modifico un'offerta già creata, non mi popola i campi articoli
+83
 
 
 

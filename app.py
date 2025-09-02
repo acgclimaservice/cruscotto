@@ -6198,7 +6198,14 @@ def nuova_offerta():
 @app.route('/offerte/<int:id>/modifica')
 def modifica_offerta(id):
     """Modifica offerta (permesso per tutti gli stati)"""
+    # Carica l'offerta
     offerta = OffertaFornitore.query.get_or_404(id)
+    
+    # Forza il caricamento dei dettagli
+    dettagli = offerta.dettagli
+    print(f"[DEBUG] Offerta {id} ha {len(dettagli)} dettagli")
+    for i, det in enumerate(dettagli):
+        print(f"[DEBUG] Dettaglio {i}: {det.descrizione}, quantita={det.quantita}, prezzo={det.prezzo_unitario}")
     
     # Carica fornitori per il dropdown
     fornitori = Fornitore.query.filter_by(attivo=True).order_by(Fornitore.ragione_sociale).all()
