@@ -44,7 +44,6 @@
             <div class="card">
                 <h2><span class="icon">💡</span>Azioni Rapide</h2>
                 <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-                    <a href="/offerte/nuova" class="btn btn-success">+ Nuova Richiesta Offerta</a>
                     <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">📊 Report Offerte</button>
                     <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo')">📤 Importa da Email</button>
                 </div>
@@ -122,12 +121,7 @@
                     </tbody>
                 </table>
             {% else %}
-                <div style="text-align: center; padding: 60px 20px; color: #a0aec0;">
-                    <div style="font-size: 48px; margin-bottom: 16px;">💰</div>
-                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Nessuna offerta presente</div>
-                    <div style="font-size: 14px; margin-bottom: 20px;">Inizia registrando la tua prima offerta</div>
-                    <a href="/offerte/nuova" class="btn btn-success">+ Registra Prima Offerta</a>
-                </div>
+                <!-- Sezione nascosta come richiesto nel punto 76 -->
             {% endif %}
         </div>
     </div>
