@@ -22,7 +22,8 @@
       "Bash(git push:*)",
       "Bash(git commit:*)",
       "WebFetch(domain:github.com)",
-      "Bash(git tag:*)"
+      "Bash(git tag:*)",
+      "Read(\\/**)"
     ],
     "deny": [],
     "ask": []

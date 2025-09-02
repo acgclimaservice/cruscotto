@@ -3580,6 +3580,9 @@ def movimenti_page():
 def export_movimenti_excel():
     """Export Excel dei movimenti magazzino"""
     try:
+        import pandas as pd
+        from io import BytesIO
+        
         query = Movimento.query
         
         # Applica gli stessi filtri della vista
@@ -3605,8 +3608,6 @@ def export_movimenti_excel():
         movimenti = query.order_by(Movimento.data_movimento.desc()).limit(1000).all()
         
         # Crea DataFrame per l'export
-        import pandas as pd
-        from io import BytesIO
         
         data = []
         for movimento in movimenti:
@@ -3678,7 +3679,9 @@ def export_movimenti_excel():
         )
         
     except Exception as e:
+        import traceback
         print(f"Errore export Excel movimenti: {e}")
+        print(f"Traceback completo: {traceback.format_exc()}")
         return f"Errore durante export Excel: {str(e)}", 500
 
 def calcola_giacenza_alla_data(codice_articolo, data_riferimento):
