@@ -103,7 +103,7 @@ onclick @ nuovo:130
 68 se nelle offerte faccio rifiuto mi da questo {"message":"Offerta rifiutata con successo","redirect_url":"/offerte/1","success":true} FATTO - CONTROLLATO OK
 69 voglio avere la possibilità di modificare sempre lo stato di un'offerta in creata, richiesta, in valutazione, accettata, rifiutata. devo avere sempre la possibilità di passare da uno stato all'altro
 70 se modifico un'offerta mi deve ricaricare i dati dell'offerta da modificare adesso invece vedo solo campi vuoti
-71 nel punto 70 per adesso mi ricarica solo l'oggetto
+71 nel punto 70 per adesso mi ricarica solo l'oggetto FATTO - CONTROLLATO OK
 72 
 
 
