@@ -225,27 +225,18 @@
         <div class="form-actions">
             <a href="/offerte" class="btn btn-secondary">⬅️ Torna alle Offerte</a>
             
-            {% if offerta.stato == 'creata' %}
-                <button class="btn btn-warning" onclick="mostraModalValutazione({{ offerta.id }})">🔍 Valuta Offerta</button>
+            {% if offerta.stato in ['creata', 'richiesta', 'valutata'] %}
                 <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
                     <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
                 </form>
                 <button class="btn btn-danger" onclick="mostraModalRifiuto('offerta', {{ offerta.id }})">❌ Rifiuta</button>
-            {% elif offerta.stato == 'richiesta' %}
-                <button class="btn btn-warning" onclick="mostraModalValutazione({{ offerta.id }})">🔍 Valuta Offerta</button>
-                <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
-                    <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
+                {% if offerta.stato != 'valutata' %}
+                <form method="POST" action="/offerte/{{ offerta.id }}/valuta" style="display: inline;">
+                    <button type="submit" class="btn btn-warning" onclick="return confirm('Vuoi mettere questa offerta in valutazione?')">🔍 Metti in Valutazione</button>
                 </form>
-                <button class="btn btn-danger" onclick="mostraModalRifiuto('offerta', {{ offerta.id }})">❌ Rifiuta</button>
-            {% elif offerta.stato == 'valutata' %}
-                <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
-                    <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
-                </form>
-                <button class="btn btn-danger" onclick="mostraModalRifiuto('offerta', {{ offerta.id }})">❌ Rifiuta</button>
-                <button class="btn btn-primary" onclick="mostraModalValutazione({{ offerta.id }})">✍️ Aggiorna Valutazione</button>
+                {% endif %}
             {% endif %}
             
-            <a href="/offerte/confronta" class="btn btn-secondary">📋 Confronta Offerte</a>
             <a href="/offerte/{{ offerta.id }}/pdf" class="btn btn-secondary" target="_blank">📄 Stampa PDF</a>
             
             {% if offerta.stato in ['creata', 'richiesta', 'valutata'] %}
@@ -556,9 +547,16 @@
                     </span></p>
                 </div>
                 
+                <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-size: 0.9em;">
+                    <strong>💡 Modalità invio:</strong><br>
+                    • <strong>Invia Diretta:</strong> Invia email automaticamente via server con allegati reali<br>
+                    • <strong>Prepara per Outlook:</strong> Apre Outlook con email precompilata e link ai download
+                </div>
+                
                 <div style="text-align: right; margin-top: 20px;">
                     <button type="button" class="btn btn-secondary" onclick="chiudiModalEmail()">❌ Annulla</button>
-                    <button type="submit" class="btn btn-success">📧 Invia Email</button>
+                    <button type="button" class="btn btn-success" onclick="inviaEmailDiretta()">📧 Invia Diretta (con allegati)</button>
+                    <button type="button" class="btn btn-info" onclick="preparaPerOutlook()">📝 Prepara per Outlook</button>
                 </div>
             </form>
         </div>
@@ -566,6 +564,9 @@
 
     <script>
         function mostraModalInvioEmail(offertaId) {
+            // Salva ID globalmente per le due funzioni
+            window.currentOffertaId = offertaId;
+            
             const modal = document.getElementById('modal-invio-email');
             const emailInput = document.getElementById('email-fornitore');
             const previewEmail = document.getElementById('preview-email');
@@ -587,19 +588,83 @@
             emailInput.addEventListener('input', function() {
                 previewEmail.textContent = this.value || '-';
             });
-            
-            // Gestisce invio form
-            document.getElementById('form-invio-email').onsubmit = function(e) {
-                e.preventDefault();
-                inviaEmailOfferta(offertaId);
-            };
         }
         
         function chiudiModalEmail() {
             document.getElementById('modal-invio-email').style.display = 'none';
         }
         
-        function inviaEmailOfferta(offertaId) {
+        function inviaEmailDiretta() {
+            const offertaId = window.currentOffertaId;
+            const emailFornitore = document.getElementById('email-fornitore').value;
+            const messaggio = document.getElementById('messaggio-personalizzato').value;
+            const includiAllegati = document.getElementById('includi-allegati').checked;
+            
+            if (!emailFornitore.trim()) {
+                alert('Inserisci un indirizzo email valido');
+                return;
+            }
+            
+            // Disabilita pulsanti durante l'invio
+            const btnInvia = document.querySelector('.btn-success');
+            const btnOutlook = document.querySelector('.btn-info');
+            const originalTextInvia = btnInvia.innerHTML;
+            const originalTextOutlook = btnOutlook.innerHTML;
+            
+            btnInvia.innerHTML = '⏳ Invio in corso...';
+            btnInvia.disabled = true;
+            btnOutlook.disabled = true;
+            
+            // Usa l'endpoint SMTP esistente con allegati reali
+            fetch(`/offerte/${offertaId}/invia-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: emailFornitore,
+                    messaggio: messaggio,
+                    includi_allegati: includiAllegati
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let messaggioSuccesso = `✅ Email inviata con successo!\n\n`;
+                    messaggioSuccesso += `- Destinatario: ${data.dettagli.destinatario}\n`;
+                    messaggioSuccesso += `- Allegati inviati: ${data.allegati_inviati}\n`;
+                    if (data.dettagli.allegati.length > 0) {
+                        messaggioSuccesso += `- File: ${data.dettagli.allegati.join(', ')}\n`;
+                    }
+                    messaggioSuccesso += `- Stato offerta: Aggiornato a "Richiesta"`;
+                    
+                    alert(messaggioSuccesso);
+                    chiudiModalEmail();
+                    
+                    // Refresh pagina per mostrare nuovo stato
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert('Errore invio email: ' + (data.error || 'Errore sconosciuto'));
+                    // Ripristina pulsanti
+                    btnInvia.innerHTML = originalTextInvia;
+                    btnInvia.disabled = false;
+                    btnOutlook.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore di rete: ' + error.message);
+                // Ripristina pulsanti
+                btnInvia.innerHTML = originalTextInvia;
+                btnInvia.disabled = false;
+                btnOutlook.disabled = false;
+            });
+        }
+        
+        function preparaPerOutlook() {
+            const offertaId = window.currentOffertaId; // Salviamo l'ID globalmente
             const emailFornitore = document.getElementById('email-fornitore').value;
             const messaggio = document.getElementById('messaggio-personalizzato').value;
             const includiAllegati = document.getElementById('includi-allegati').checked;

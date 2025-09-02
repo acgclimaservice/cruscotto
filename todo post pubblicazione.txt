@@ -68,6 +68,11 @@ VASO RISC 250LT ER 10B CE 1GAS
 297,35
 0575002000
 🗑️
-vedi questa schermata? è corretta. poi quando premo conferma ddt in va tutto a puttane FATTO - CONTROLLATO OK
-
+vedi questa schermata? è corretta. poi quando premo conferma ddt in va tutto a puttane
+46 
+47 dalla sezione offerte nascondi il tasto Confronta offerte
+48 dalla sezione offerte nascondi il tasto Valuta offerta
+49 all'interno di un offerta devo avere la possibilità di accettarla, rifiutarla o metterla in valutazione, che sono tre stati che devo poter modificare successivamente
+50 per l'invio delle mail di richiesta offerta al fornitore non utilizzare mail l'endpoint ma usa sempre Outlook aprendo una nuova mail e allegando fisicamente al messaggio du Outlook gli allegati
+51 
 
