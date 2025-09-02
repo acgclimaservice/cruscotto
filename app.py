@@ -3604,8 +3604,8 @@ def inventario_page():
         filtro_articolo = request.args.get('articolo', '').strip()
         stato_scorta = request.args.get('stato_scorta', '').strip()
         
-        # Query base per articoli attivi
-        query = CatalogoArticolo.query.filter_by(attivo=True)
+        # Query base per articoli attivi con giacenza > 0
+        query = CatalogoArticolo.query.filter_by(attivo=True).filter(CatalogoArticolo.giacenza_attuale > 0)
         
         # Filtro per data - se specificato, filtra articoli che hanno avuto movimenti nel periodo
         if data_da or data_a:
