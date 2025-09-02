@@ -282,7 +282,7 @@ class DDTOutTemplate(DocumentTemplate):
     
     @staticmethod
     def get_styles():
-        return DDTInTemplate.get_styles() + """
+        return DocumentTemplate.get_styles() + """
         .transport-info { margin: 30px 0; background: #f8f9fa; padding: 20px; border-radius: 8px; }
         .transport-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
         .signatures { display: flex; justify-content: space-between; margin: 40px 0 20px 0; }
@@ -391,7 +391,7 @@ class PreventivoTemplate(DocumentTemplate):
     
     @staticmethod
     def get_styles():
-        return DDTInTemplate.get_styles() + """
+        return DocumentTemplate.get_styles() + """
         .services-table { margin: 30px 0; }
         .conditions { margin: 30px 0; background: #f8f9fa; padding: 20px; border-radius: 8px; }
         .conditions ul { margin: 10px 0; padding-left: 20px; }
@@ -533,7 +533,7 @@ class RichiestaOffertaTemplate(DocumentTemplate):
     
     @staticmethod
     def get_styles():
-        return DDTInTemplate.get_styles() + """
+        return DocumentTemplate.get_styles() + """
         .request-content { margin: 30px 0; background: #f8f9fa; padding: 20px; border-radius: 8px; }
         .content-section p { margin: 10px 0; line-height: 1.6; }
         .request-conditions { margin: 30px 0; background: #f8f9fa; padding: 20px; border-radius: 8px; }
@@ -640,7 +640,7 @@ class OrdineFornitoreTemplate(DocumentTemplate):
     
     @staticmethod
     def get_styles():
-        return DDTInTemplate.get_styles() + """
+        return DocumentTemplate.get_styles() + """
         .order-conditions { margin: 30px 0; background: #f8f9fa; padding: 20px; border-radius: 8px; }
         .conditions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
         .signature { text-align: right; margin: 40px 0 20px 0; }

@@ -1590,9 +1590,11 @@ def stampa_ddt_completa(id):
 @app.route('/ddt-in/<int:id>/pdf-unificato')
 def pdf_unificato_ddt(id):
     """Genera un PDF unificato con DDT + PDF allegato"""
-    # Non mettiamo try-catch qui per lasciare che get_or_404 gestisca correttamente il 404
-    ddt = DDTIn.query.get_or_404(id)
-    articoli = ArticoloIn.query.filter_by(ddt_id=id).all()
+    try:
+        print(f"[PDF_UNIFICATO] Inizio generazione per DDT ID: {id}")
+        ddt = DDTIn.query.get_or_404(id)
+        articoli = ArticoloIn.query.filter_by(ddt_id=id).all()
+        print(f"[PDF_UNIFICATO] DDT trovato: {ddt.numero_ddt}, Articoli: {len(articoli)}")
     
     if not ddt.pdf_allegato:
         # Se non c'è PDF allegato, reindirizza alla stampa normale
@@ -1606,7 +1608,7 @@ def pdf_unificato_ddt(id):
         'numero_ddt': ddt.numero_ddt or f'DDT-{ddt.id}',
         'data_ddt': ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-',
         'data_ddt_origine': ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '-',
-        'numero_ddt_origine': ddt.numero_ddt_origine or '-',
+        'numero_ddt_origine': ddt.riferimento or '-',
         'fornitore': ddt.fornitore or '-',
         'destinazione': ddt.destinazione or '-',
         'riferimento': ddt.riferimento or '-',
@@ -1631,7 +1633,9 @@ def pdf_unificato_ddt(id):
         })
     
     # Genera HTML del DDT con template v2
+    print(f"[PDF_UNIFICATO] Generando HTML con DDTInTemplate...")
     html_ddt = DDTInTemplate.generate_html(ddt_data)
+    print(f"[PDF_UNIFICATO] HTML generato con successo, lunghezza: {len(html_ddt)}")
     
     try:
         # Usa reportlab per generare PDF del DDT (funziona su Windows senza GTK)
@@ -1833,6 +1837,12 @@ def pdf_unificato_ddt(id):
                 response.headers['Content-Type'] = 'text/html'
                 response.headers['Content-Disposition'] = f'attachment; filename="DDT_{ddt.numero_ddt or ddt.id}.html"'
                 return response
+
+    except Exception as e:
+        import traceback
+        print(f"[PDF_UNIFICATO] Errore: {e}")
+        print(f"[PDF_UNIFICATO] Traceback: {traceback.format_exc()}")
+        return f"Errore generazione PDF Unificato: {str(e)}", 500
 
 
 @app.route('/ddt-in/nuovo', methods=['GET', 'POST'])
