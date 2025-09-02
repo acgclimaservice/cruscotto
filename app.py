@@ -3109,30 +3109,80 @@ def modifica_ddt_out(id):
 
 @app.route('/stampa-ddt/in/<int:id>')
 def stampa_ddt_in(id):
-    """Stampa DDT IN"""
+    """Stampa DDT IN - Template professionale v2"""
     try:
+        from document_templates import DDTInTemplate
+        
         ddt = DDTIn.query.get_or_404(id)
         articoli = ArticoloIn.query.filter_by(ddt_id=id).all()
         
-        return render_template('pdf/ddt-in-pdf-simple.html',
-                             ddt=ddt,
-                             articoli=articoli)
+        # Prepara dati per il template v2
+        ddt_data = {
+            'numero_ddt': ddt.numero_ddt or f'BOZZA-{ddt.id}',
+            'fornitore': ddt.fornitore or 'N/A',
+            'data_ddt_origine': ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else 'N/A',
+            'numero_ddt_origine': ddt.riferimento or 'N/A',
+            'riferimento': ddt.riferimento or 'N/A', 
+            'destinazione': ddt.destinazione or 'N/A',
+            'stato': ddt.stato or 'bozza',
+            'articoli': []
+        }
+        
+        # Aggiungi articoli
+        for art in articoli:
+            ddt_data['articoli'].append({
+                'codice': art.codice_interno or art.codice_fornitore or 'N/A',
+                'descrizione': art.descrizione or 'N/A',
+                'quantita': art.quantita or 0,
+                'unita_misura': 'PZ',  # Default, aggiungere al modello se necessario
+                'costo_unitario': art.costo_unitario or 0
+            })
+        
+        # Genera HTML professionale
+        html_content = DDTInTemplate.generate_html(ddt_data)
+        return html_content
+        
     except Exception as e:
-        print(f"Errore stampa DDT IN: {e}")
+        print(f"Errore stampa DDT IN v2: {e}")
         return str(e), 500
 
 @app.route('/stampa-ddt/out/<int:id>')
 def stampa_ddt_out(id):
-    """Stampa DDT OUT"""
+    """Stampa DDT OUT - Template professionale v2"""
     try:
+        from document_templates import DDTOutTemplate
+        
         ddt = DDTOut.query.get_or_404(id)
         articoli = ArticoloOut.query.filter_by(ddt_id=id).all()
         
-        return render_template('ddt-out-stampa.html',
-                             ddt=ddt,
-                             articoli=articoli)
+        # Prepara dati per il template v2
+        ddt_data = {
+            'numero_ddt': ddt.numero_ddt or f'BOZZA-{ddt.id}',
+            'nome_origine': ddt.nome_origine or 'N/A',
+            'destinazione': ddt.destinazione or 'N/A',
+            'data_ddt_origine': ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else 'N/A',
+            'magazzino_partenza': ddt.magazzino_partenza or 'Magazzino Centrale',
+            'riferimento': ddt.riferimento or 'N/A',
+            'stato': ddt.stato or 'bozza',
+            'articoli': []
+        }
+        
+        # Aggiungi articoli
+        for art in articoli:
+            ddt_data['articoli'].append({
+                'codice': art.codice_interno or 'N/A',
+                'descrizione': art.descrizione or 'N/A',
+                'quantita': art.quantita or 0,
+                'unita_misura': 'PZ',  # Default
+                'prezzo_unitario': art.prezzo_unitario or 0
+            })
+        
+        # Genera HTML professionale
+        html_content = DDTOutTemplate.generate_html(ddt_data)
+        return html_content
+        
     except Exception as e:
-        print(f"Errore stampa DDT OUT: {e}")
+        print(f"Errore stampa DDT OUT v2: {e}")
         return str(e), 500
 
 # ========== ALTRE PAGINE PRINCIPALI ==========
@@ -5217,18 +5267,33 @@ def crea_ddt_out_da_preventivo(id):
 
 @app.route('/preventivi/<int:id>/pdf')
 def preventivi_pdf(id):
-    """Genera PDF del preventivo"""
+    """Genera PDF del preventivo - Template professionale v2"""
     try:
+        from document_templates import PreventivoTemplate
+        
         preventivo = Preventivo.query.get_or_404(id)
         
-        # Fallback a HTML diretto - WeasyPrint non necessario per il test
-        html_content = render_template('pdf/preventivo-pdf-simple.html', preventivo=preventivo)
+        # Prepara dati per il template v2
+        preventivo_data = {
+            'numero': preventivo.numero or f'PREV-{preventivo.id}',
+            'cliente': preventivo.cliente or 'N/A',
+            'data_creazione': preventivo.data_creazione.strftime('%d/%m/%Y') if preventivo.data_creazione else 'N/A',
+            'oggetto': preventivo.oggetto or 'Preventivo per fornitura e installazione',
+            'stato': preventivo.stato or 'BOZZA',
+            'validita_giorni': 30,  # Default
+            'totale_netto': preventivo.totale_netto or 0,
+            'iva_percentuale': preventivo.iva_percentuale or 22,
+            'totale_lordo': preventivo.totale_lordo or 0
+        }
+        
+        # Genera HTML professionale
+        html_content = PreventivoTemplate.generate_html(preventivo_data)
         response = make_response(html_content)
         response.headers['Content-Type'] = 'text/html'
         return response
             
     except Exception as e:
-        print(f"Errore PDF preventivo: {e}")
+        print(f"Errore PDF preventivo v2: {e}")
         import traceback
         traceback.print_exc()
         return f"Errore PDF: {e}", 500

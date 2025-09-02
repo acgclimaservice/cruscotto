@@ -217,12 +217,41 @@ class DDTOutTemplate(DocumentTemplate):
                         </tr>
                     </thead>
                     <tbody>
+        """
+        
+        # Aggiungi articoli (se presenti nei dati DDT)
+        totale_generale = 0
+        if 'articoli' in ddt_data and ddt_data['articoli']:
+            for articolo in ddt_data['articoli']:
+                subtotal = float(articolo.get('quantita', 0)) * float(articolo.get('prezzo_unitario', 0))
+                totale_generale += subtotal
+                html += f"""
+                        <tr>
+                            <td>{articolo.get('codice', 'N/A')}</td>
+                            <td>{articolo.get('descrizione', 'N/A')}</td>
+                            <td>{articolo.get('quantita', 0)}</td>
+                            <td>{articolo.get('unita_misura', 'PZ')}</td>
+                            <td>€ {float(articolo.get('prezzo_unitario', 0)):.2f}</td>
+                            <td>€ {subtotal:.2f}</td>
+                        </tr>
+                """
+        else:
+            html += """
                         <tr>
                             <td colspan="6" style="text-align: center; padding: 30px; color: #666;">
-                                Articoli da implementare tramite relazioni DDT-Articoli
+                                Nessun articolo presente
                             </td>
                         </tr>
+            """
+        
+        html += """
                     </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="5"><strong>TOTALE DOCUMENTO:</strong></td>
+                            <td><strong>€ """ + f"{totale_generale:.2f}" + """</strong></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
             
