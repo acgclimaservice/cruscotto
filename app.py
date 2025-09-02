@@ -8944,6 +8944,46 @@ def log_javascript_error():
         logger.error(f"Error logging JavaScript error: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/force-migration', methods=['POST'])
+def force_migration():
+    """Endpoint per forzare la migrazione database"""
+    try:
+        migrations_applied = []
+        
+        # Migration: Add disponibilita to dettaglio_offerta table if not exists
+        try:
+            db.session.execute(text("SELECT disponibilita FROM dettaglio_offerta LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE dettaglio_offerta ADD COLUMN disponibilita VARCHAR(50)"))
+            db.session.commit()
+            migrations_applied.append("Added disponibilita column to dettaglio_offerta table")
+            
+        # Migration: Add tempo_consegna to dettaglio_offerta table if not exists  
+        try:
+            db.session.execute(text("SELECT tempo_consegna FROM dettaglio_offerta LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE dettaglio_offerta ADD COLUMN tempo_consegna VARCHAR(50)"))
+            db.session.commit()
+            migrations_applied.append("Added tempo_consegna column to dettaglio_offerta table")
+        
+        if migrations_applied:
+            return jsonify({
+                'success': True,
+                'message': f'Applied {len(migrations_applied)} migrations',
+                'migrations': migrations_applied
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'message': 'Database already up to date, no migrations needed'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error in force migration: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
