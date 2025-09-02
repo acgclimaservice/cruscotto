@@ -40,10 +40,10 @@ logging.basicConfig(
 logger = logging.getLogger('CRUSCOTTO_DEBUG')
 logger.setLevel(logging.DEBUG)
 
-# Middleware to log ALL requests and responses
+# Middleware to log ALL requests and responses (NO EMOJI - Windows compatibility)
 @app.before_request
 def log_request_info():
-    logger.info(f"🔍 REQUEST: {request.method} {request.url}")
+    logger.info(f"REQUEST: {request.method} {request.url}")
     logger.info(f"   Headers: {dict(request.headers)}")
     if request.method in ['POST', 'PUT', 'PATCH']:
         logger.info(f"   Content-Type: {request.content_type}")
@@ -57,7 +57,7 @@ def log_request_info():
 
 @app.after_request  
 def log_response_info(response):
-    logger.info(f"🔍 RESPONSE: {response.status_code} for {request.method} {request.url}")
+    logger.info(f"RESPONSE: {response.status_code} for {request.method} {request.url}")
     logger.info(f"   Content-Type: {response.content_type}")
     
     # Log response body for JSON responses
@@ -68,17 +68,17 @@ def log_response_info(response):
             json_lib.loads(response_data)
             logger.info(f"   JSON Response: {response_data}")
         except json_lib.JSONDecodeError as e:
-            logger.error(f"   ❌ INVALID JSON RESPONSE: {e}")
-            logger.error(f"   ❌ Raw Response: {response_data}")
+            logger.error(f"   [ERROR] INVALID JSON RESPONSE: {e}")
+            logger.error(f"   [ERROR] Raw Response: {response_data}")
         except Exception as e:
-            logger.error(f"   ❌ Error reading response: {e}")
+            logger.error(f"   [ERROR] Error reading response: {e}")
     
     # Check for JavaScript errors in HTML responses
     if response.content_type and 'text/html' in response.content_type:
         response_text = response.get_data(as_text=True)
         if 'expected token' in response_text.lower():
-            logger.error(f"   ❌ Found 'expected token' in HTML response!")
-            logger.error(f"   ❌ Response snippet: {response_text[:500]}...")
+            logger.error(f"   [ERROR] Found 'expected token' in HTML response!")
+            logger.error(f"   [ERROR] Response snippet: {response_text[:500]}...")
     
     return response
 
@@ -380,11 +380,16 @@ from models import (DDTIn, ArticoloIn, DDTOut, ArticoloOut,
 def from_json_filter(json_string):
     """Decodifica una stringa JSON"""
     import json
+    logger.info(f"[FROM_JSON] Input: {repr(json_string)}, type: {type(json_string)}")
     if json_string:
         try:
-            return json.loads(json_string)
-        except:
+            result = json.loads(json_string)
+            logger.info(f"[FROM_JSON] Success: {result}")
+            return result
+        except Exception as e:
+            logger.error(f"[FROM_JSON] Parse error: {e}")
             return []
+    logger.info("[FROM_JSON] Empty input, returning []")
     return []
 
 # Import sistema parsing AI (opzionale)
@@ -6009,14 +6014,33 @@ def lista_offerte():
 def dettaglio_offerta(id):
     """Dettaglio offerta"""
     from werkzeug.exceptions import NotFound
+    import json
     try:
+        logger.info(f"[DETTAGLIO] Loading offerta {id}")
         offerta = OffertaFornitore.query.get_or_404(id)
-        return render_template('dettaglio-offerta.html', offerta=offerta)
+        logger.info(f"[DETTAGLIO] Found offerta {id}, allegati: {repr(offerta.allegati)}")
+        
+        # Parse allegati safely server-side
+        allegati_parsed = []
+        if offerta.allegati:
+            try:
+                allegati_parsed = json.loads(offerta.allegati)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.error(f"[DETTAGLIO] Failed to parse allegati JSON: {e}")
+                allegati_parsed = []
+        
+        logger.info(f"[DETTAGLIO] Rendering template...")
+        result = render_template('dettaglio-offerta.html', offerta=offerta, allegati_parsed=allegati_parsed)
+        logger.info(f"[DETTAGLIO] Template rendered successfully")
+        return result
     except NotFound:
+        logger.error(f"[DETTAGLIO] Offerta {id} not found")
         # Let Flask handle 404 properly
         raise
     except Exception as e:
         import traceback
+        logger.error(f"[DETTAGLIO] Error loading offerta {id}: {e}")
+        logger.error(f"[DETTAGLIO] Traceback: {traceback.format_exc()}")
         print(f"Errore dettaglio offerta {id}: {e}")
         print(f"Traceback: {traceback.format_exc()}")
         return f"Errore nel caricamento dell'offerta: {str(e)}", 500
@@ -8551,14 +8575,14 @@ def log_javascript_error():
     """Riceve errori JavaScript dal frontend"""
     try:
         error_data = request.get_json()
-        logger.error(f"🚨 JAVASCRIPT ERROR: {error_data.get('type', 'UNKNOWN')}")
+        logger.error(f"[JAVASCRIPT ERROR]: {error_data.get('type', 'UNKNOWN')}")
         logger.error(f"   Error Data: {error_data}")
         
         if error_data.get('type') == 'FETCH_JSON_PARSE_ERROR':
-            logger.error(f"   🔍 This is likely the JSON parsing error we're hunting!")
-            logger.error(f"   🔍 URL: {error_data.get('data', {}).get('url')}")
-            logger.error(f"   🔍 Status: {error_data.get('data', {}).get('status')}")
-            logger.error(f"   🔍 Response Text: {error_data.get('data', {}).get('responseText')}")
+            logger.error(f"   [TARGET] This is likely the JSON parsing error we're hunting!")
+            logger.error(f"   [TARGET] URL: {error_data.get('data', {}).get('url')}")
+            logger.error(f"   [TARGET] Status: {error_data.get('data', {}).get('status')}")
+            logger.error(f"   [TARGET] Response Text: {error_data.get('data', {}).get('responseText')}")
         
         return jsonify({'status': 'logged'})
     except Exception as e:
@@ -8609,8 +8633,8 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Email Monitor: Errore - {e}")
     
-    logger.info("🚀 Starting Flask server with detailed logging...")
-    logger.info("📁 Logs will be written to: flask_debug.log") 
-    logger.info("🔍 All requests and responses will be logged")
+    logger.info("[STARTING] Flask server with detailed logging...")
+    logger.info("[LOGS] Logs will be written to: flask_debug.log") 
+    logger.info("[DEBUG] All requests and responses will be logged")
     app.version = "2.42"
     app.run(debug=True, host='0.0.0.0', port=8080)

@@ -11,8 +11,8 @@ BASE_URL = "http://localhost:8080"
 
 def test_logging_system():
     """Test if our logging system captures the JSON error"""
-    print("🔍 Testing detailed logging system...")
-    print(f"📡 Server URL: {BASE_URL}")
+    print("[TEST] Testing detailed logging system...")
+    print(f"[SERVER] Server URL: {BASE_URL}")
     
     try:
         # Test the error logging endpoint first
@@ -57,25 +57,25 @@ def test_logging_system():
                         json_data = response.json()
                         print(f"   JSON: {json_data}")
                     except json.JSONDecodeError as e:
-                        print(f"   ❌ JSON ERROR: {e}")
+                        print(f"   [JSON ERROR]: {e}")
                         print(f"   Raw: {response.text[:100]}...")
                         
             except requests.exceptions.ConnectionError:
-                print(f"   ❌ Connection refused - server not running?")
+                print(f"   [CONNECTION ERROR] - server not running?")
                 break
             except Exception as e:
-                print(f"   ❌ Error: {e}")
+                print(f"   [ERROR]: {e}")
         
-        print("\n✅ Check the following files for detailed logs:")
-        print("   📄 flask_debug.log - Server-side logs")
-        print("   🌐 Browser console - Client-side logs")
-        print("\n🔍 Look for these markers:")
-        print("   🚨 JAVASCRIPT ERROR - Client-side errors")
-        print("   ❌ INVALID JSON RESPONSE - Server JSON errors")
-        print("   🔍 FETCH_JSON_PARSE_ERROR - The error we're hunting!")
+        print("\n[LOGS] Check the following files for detailed logs:")
+        print("   [FILE] flask_debug.log - Server-side logs")
+        print("   [BROWSER] Browser console - Client-side logs")
+        print("\n[MARKERS] Look for these markers:")
+        print("   [MARKER] JAVASCRIPT ERROR - Client-side errors")
+        print("   [MARKER] INVALID JSON RESPONSE - Server JSON errors")
+        print("   [MARKER] FETCH_JSON_PARSE_ERROR - The error we're hunting!")
         
     except Exception as e:
-        print(f"❌ Test failed: {e}")
+        print(f"[TEST FAILED]: {e}")
 
 if __name__ == "__main__":
     test_logging_system()

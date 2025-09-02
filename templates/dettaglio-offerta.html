@@ -178,13 +178,11 @@
         </div>
 
         <!-- Allegati -->
-        {% if offerta.allegati %}
-        {% set allegati_list = offerta.allegati | from_json %}
-        {% if allegati_list %}
+        {% if allegati_parsed %}
         <div class="card">
-            <h3>📎 Allegati ({{ allegati_list|length }})</h3>
+            <h3>📎 Allegati ({{ allegati_parsed|length }})</h3>
             <div class="allegati-section">
-                {% for allegato in allegati_list %}
+                {% for allegato in allegati_parsed %}
                 <div class="allegato-item">
                     <span class="allegato-icon">📄</span>
                     <div class="allegato-info">
@@ -199,7 +197,6 @@
                 {% endfor %}
             </div>
         </div>
-        {% endif %}
         {% endif %}
 
         <!-- Riepilogo totali nascosto come richiesto -->
@@ -538,9 +535,8 @@
                     <p><strong>A:</strong> <span id="preview-email">-</span></p>
                     <p><strong>Oggetto:</strong> Richiesta Offerta {{ offerta.numero_offerta }} - ACG Clima Service</p>
                     <p><strong>Allegati:</strong> <span id="preview-allegati">
-                        {% if offerta.allegati %}
-                            {% set allegati_lista = offerta.allegati|from_json if offerta.allegati else [] %}
-                            {{ allegati_lista|length }} file
+                        {% if allegati_parsed %}
+                            {{ allegati_parsed|length }} file
                         {% else %}
                             Nessuno
                         {% endif %}
@@ -601,14 +597,11 @@
             
             // Aggiungi link per download allegati se presenti e richiesti
             if (includiAllegati) {
-                {% if offerta.allegati %}
-                    {% set allegati_lista = offerta.allegati|from_json if offerta.allegati else [] %}
-                    {% if allegati_lista %}
-                        corpoEmail += `\n📎 ALLEGATI DISPONIBILI PER DOWNLOAD:\n`;
-                        {% for allegato in allegati_lista %}
-                            corpoEmail += `${{{ loop.index }}} {{ allegato.nome_originale }}: ${window.location.origin}/offerte/{{ offerta.id }}/allegato/{{ loop.index0 }}?download=1\n`;
-                        {% endfor %}
-                    {% endif %}
+                {% if allegati_parsed %}
+                    corpoEmail += `\n📎 ALLEGATI DISPONIBILI PER DOWNLOAD:\n`;
+                    {% for allegato in allegati_parsed %}
+                        corpoEmail += `{{ loop.index }} {{ allegato.nome_originale|e }}: ${window.location.origin}/offerte/{{ offerta.id }}/allegato/{{ loop.index0 }}?download=1\n`;
+                    {% endfor %}
                 {% endif %}
             }
             
@@ -624,17 +617,14 @@
             setTimeout(() => {
                 let messaggioConferma = `📧 Email preparata per Outlook!\n\n- Destinatario: ${emailFornitore}\n- Oggetto: ${oggetto}`;
                 
-                {% if offerta.allegati %}
-                    {% set allegati_lista = offerta.allegati|from_json if offerta.allegati else [] %}
-                    {% if allegati_lista %}
-                        if (includiAllegati) {
-                            messaggioConferma += `\n\n📎 Allegati inclusi nel corpo email:\n`;
-                            {% for allegato in allegati_lista %}
-                                messaggioConferma += `• {{ allegato.nome_originale }}\n`;
-                            {% endfor %}
-                            messaggioConferma += `\nI link di download sono già inclusi nel corpo dell'email.`;
-                        }
-                    {% endif %}
+                {% if allegati_parsed %}
+                    if (includiAllegati) {
+                        messaggioConferma += `\n\n📎 Allegati inclusi nel corpo email:\n`;
+                        {% for allegato in allegati_parsed %}
+                            messaggioConferma += `• {{ allegato.nome_originale|e }}\n`;
+                        {% endfor %}
+                        messaggioConferma += `\nI link di download sono già inclusi nel corpo dell'email.`;
+                    }
                 {% endif %}
                 
                 alert(messaggioConferma);
