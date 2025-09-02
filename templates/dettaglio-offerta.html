@@ -547,16 +547,19 @@
                     </span></p>
                 </div>
                 
-                <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-size: 0.9em;">
-                    <strong>💡 Modalità invio:</strong><br>
-                    • <strong>Invia Diretta:</strong> Invia email automaticamente via server con allegati reali<br>
-                    • <strong>Prepara per Outlook:</strong> Apre Outlook con email precompilata e link ai download
+                {% if allegati_parsed %}
+                <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; font-size: 0.9em;">
+                    <strong>📎 Allegati da aggiungere manualmente in Outlook:</strong><br>
+                    {% for allegato in allegati_parsed %}
+                        • <strong>{{ allegato.nome_originale }}</strong> ({{ "%.1f"|format(allegato.dimensione / 1024) }} KB)<br>
+                    {% endfor %}
+                    <small><em>Ricorda di allegare questi file alla email in Outlook prima di inviarla</em></small>
                 </div>
+                {% endif %}
                 
                 <div style="text-align: right; margin-top: 20px;">
                     <button type="button" class="btn btn-secondary" onclick="chiudiModalEmail()">❌ Annulla</button>
-                    <button type="button" class="btn btn-success" onclick="inviaEmailDiretta()">📧 Invia Diretta (con allegati)</button>
-                    <button type="button" class="btn btn-info" onclick="preparaPerOutlook()">📝 Prepara per Outlook</button>
+                    <button type="button" class="btn btn-success" onclick="preparaPerOutlook()">📧 Prepara Email in Outlook</button>
                 </div>
             </form>
         </div>
@@ -594,74 +597,6 @@
             document.getElementById('modal-invio-email').style.display = 'none';
         }
         
-        function inviaEmailDiretta() {
-            const offertaId = window.currentOffertaId;
-            const emailFornitore = document.getElementById('email-fornitore').value;
-            const messaggio = document.getElementById('messaggio-personalizzato').value;
-            const includiAllegati = document.getElementById('includi-allegati').checked;
-            
-            if (!emailFornitore.trim()) {
-                alert('Inserisci un indirizzo email valido');
-                return;
-            }
-            
-            // Disabilita pulsanti durante l'invio
-            const btnInvia = document.querySelector('.btn-success');
-            const btnOutlook = document.querySelector('.btn-info');
-            const originalTextInvia = btnInvia.innerHTML;
-            const originalTextOutlook = btnOutlook.innerHTML;
-            
-            btnInvia.innerHTML = '⏳ Invio in corso...';
-            btnInvia.disabled = true;
-            btnOutlook.disabled = true;
-            
-            // Usa l'endpoint SMTP esistente con allegati reali
-            fetch(`/offerte/${offertaId}/invia-email`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: emailFornitore,
-                    messaggio: messaggio,
-                    includi_allegati: includiAllegati
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    let messaggioSuccesso = `✅ Email inviata con successo!\n\n`;
-                    messaggioSuccesso += `- Destinatario: ${data.dettagli.destinatario}\n`;
-                    messaggioSuccesso += `- Allegati inviati: ${data.allegati_inviati}\n`;
-                    if (data.dettagli.allegati.length > 0) {
-                        messaggioSuccesso += `- File: ${data.dettagli.allegati.join(', ')}\n`;
-                    }
-                    messaggioSuccesso += `- Stato offerta: Aggiornato a "Richiesta"`;
-                    
-                    alert(messaggioSuccesso);
-                    chiudiModalEmail();
-                    
-                    // Refresh pagina per mostrare nuovo stato
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    alert('Errore invio email: ' + (data.error || 'Errore sconosciuto'));
-                    // Ripristina pulsanti
-                    btnInvia.innerHTML = originalTextInvia;
-                    btnInvia.disabled = false;
-                    btnOutlook.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Errore di rete: ' + error.message);
-                // Ripristina pulsanti
-                btnInvia.innerHTML = originalTextInvia;
-                btnInvia.disabled = false;
-                btnOutlook.disabled = false;
-            });
-        }
         
         function preparaPerOutlook() {
             const offertaId = window.currentOffertaId; // Salviamo l'ID globalmente
@@ -678,15 +613,15 @@
             const oggetto = `Richiesta Offerta ${document.querySelector('h1').textContent.trim()}`;
             let corpoEmail = `Gentile Fornitore,\n\nVi inviamo la richiesta di offerta.\n\n${messaggio.trim() ? messaggio + '\n\n' : ''}`;
             
-            // Aggiungi link per download allegati se presenti e richiesti
-            if (includiAllegati) {
-                {% if allegati_parsed %}
-                    corpoEmail += `\n📎 ALLEGATI DISPONIBILI PER DOWNLOAD:\n`;
+            // Nota per allegati da aggiungere manualmente
+            {% if allegati_parsed %}
+                if (includiAllegati) {
+                    corpoEmail += `\n📎 ALLEGATI:\nSono presenti {{ allegati_parsed|length }} file allegati alla presente richiesta:\n`;
                     {% for allegato in allegati_parsed %}
-                        corpoEmail += `{{ loop.index }} {{ allegato.nome_originale|e }}: ${window.location.origin}/offerte/{{ offerta.id }}/allegato/{{ loop.index0 }}?download=1\n`;
+                        corpoEmail += `• {{ allegato.nome_originale|e }}\n`;
                     {% endfor %}
-                {% endif %}
-            }
+                }
+            {% endif %}
             
             corpoEmail += `\nRimaniamo in attesa di un vostro riscontro.\n\nCordiali saluti,\nACG Clima Service S.r.l.`;
             
@@ -726,11 +661,11 @@
                 
                 {% if allegati_parsed %}
                     if (includiAllegati) {
-                        messaggioConferma += `\n\n📎 Allegati inclusi nel corpo email:\n`;
+                        messaggioConferma += `\n\n📎 IMPORTANTE - Ricorda di allegare manualmente in Outlook:\n`;
                         {% for allegato in allegati_parsed %}
                             messaggioConferma += `• {{ allegato.nome_originale|e }}\n`;
                         {% endfor %}
-                        messaggioConferma += `\nI link di download sono già inclusi nel corpo dell'email.`;
+                        messaggioConferma += `\nI file sono disponibili nella sezione allegati dell'offerta.`;
                     }
                 {% endif %}
                 
