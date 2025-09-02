@@ -90,7 +90,7 @@ vedi questa schermata? è corretta. poi quando premo conferma ddt in va tutto a 
 59 IN QUESTA SEZIONE https://acgclimaservice.pythonanywhere.com/offerte/1 voglio solo i tasti torna alle offerte, stampa pdf e invia mail, gli altri tasti (accetta, rifiuta e metti in valutazione) vanno spostati qui https://acgclimaservice.pythonanywhere.com/offerte/1/modifica insieme a quelli presenti (annulla e aggiorna richiesta) FATTO - CONTROLLATO OK
 60 nella sezione inventario nella barra dei filtri se seleziono una data non mi si aggiornano i valori. FATTO - CONTROLLATO OK  
 61
-62. quando confermo un movimento interno nella sezione inventario mi riporta come ubicazione il codice magazzino di destinazione e non la descrizione. 
+62. quando confermo un movimento interno nella sezione inventario mi riporta come ubicazione il codice magazzino di destinazione e non la descrizione. FATTO - CONTROLLATO OK 
 63. nella sezione inventario non darmi la visualizzazione degli articoli con giacenza 0.  
 64 nella sezione commesse quando visualizzo il dettaglio di una commessa non vedo gli ordini collegati ad essa. 
 65 nei preventivi non funziona il tasto aggiungi riga: nuovo:304 Uncaught ReferenceError: container is not defined

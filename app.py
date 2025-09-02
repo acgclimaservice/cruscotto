@@ -7774,7 +7774,7 @@ def conferma_movimento_interno(id):
                             unita_misura=cat_articolo_partenza.unita_misura,
                             giacenza_attuale=articolo.quantita,
                             scorta_minima=cat_articolo_partenza.scorta_minima,
-                            ubicazione=movimento.magazzino_destinazione,
+                            ubicazione=nome_mag_destinazione,
                             attivo=True
                         )
                         db.session.add(nuovo_articolo_dest)
