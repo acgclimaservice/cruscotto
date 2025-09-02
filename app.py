@@ -6188,7 +6188,8 @@ def modifica_offerta(id):
     return render_template('nuova-offerta.html', 
                          offerta=offerta,
                          fornitori=fornitori,
-                         modalita='modifica')
+                         modalita='modifica',
+                         today=datetime.now().strftime('%Y-%m-%d'))
 
 @app.route('/offerte/<int:id>/modifica', methods=['POST'])
 def aggiorna_offerta(id):

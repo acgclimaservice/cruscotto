@@ -46,7 +46,7 @@
                     
                     <div class="form-group">
                         <label for="data_offerta">Data Richiesta Offerta</label>
-                        <input type="date" id="data_offerta" name="data_offerta" value="{{ offerta.data_ricevuta.strftime('%Y-%m-%d') if modalita == 'modifica' and offerta.data_ricevuta else today|default('') }}">
+                        <input type="date" id="data_offerta" name="data_offerta" value="{{ offerta.data_offerta.strftime('%Y-%m-%d') if modalita == 'modifica' and offerta.data_offerta else today|default('') }}">
                     </div>
                     
                     <div class="form-group">

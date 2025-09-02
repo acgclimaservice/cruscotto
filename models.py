@@ -354,6 +354,8 @@ class DettaglioOfferta(db.Model):
     prezzo_unitario = db.Column(db.Float)
     sconto_percentuale = db.Column(db.Float, default=0)
     totale_riga = db.Column(db.Float)
+    disponibilita = db.Column(db.String(50))
+    tempo_consegna = db.Column(db.String(50))
     note = db.Column(db.Text)
     
     # Relazioni
