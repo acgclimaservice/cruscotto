@@ -6159,77 +6159,50 @@ def nuova_offerta():
             db.session.add(offerta)
             db.session.flush()
             
-            # Debug: Stampa tutti i dati ricevuti per gli articoli
-            debug_msg = f"[DEBUG] Dati ricevuti nella nuova offerta:\n[DEBUG] Chiavi data: {list(data.keys())}"
-            print(debug_msg)
+            # Aggiungi articoli se presenti - versione semplificata e sicura
+            import re
+            dettagli_dict = {}
             
-            # Salva debug in file temporaneo per visualizzazione
-            try:
-                with open('debug_offerte.log', 'a') as f:
-                    from datetime import datetime
-                    f.write(f"\n{datetime.now()}: {debug_msg}\n")
-                    f.write(f"Data completa: {data}\n")
-            except:
-                pass
-            
-            # Cerca i dati degli articoli in tutti i possibili formati
-            articoli_data = []
-            if 'articoli' in data:
-                articoli_data = data['articoli']
-                print(f"[DEBUG] Trovati articoli in 'articoli': {len(articoli_data)}")
-            elif 'dettagli' in data:
-                articoli_data = data['dettagli'] 
-                print(f"[DEBUG] Trovati articoli in 'dettagli': {len(articoli_data)}")
-            else:
-                # Cerca pattern dettagli[0][campo] nel form data
-                dettagli_dict = {}
-                for key, value in data.items():
-                    if key.startswith('dettagli['):
-                        # Estrai indice e campo da dettagli[0][descrizione]
-                        try:
-                            import re
-                            match = re.match(r'dettagli\[(\d+)\]\[(\w+)\]', key)
-                            if match:
-                                index, field = int(match.group(1)), match.group(2)
-                                if index not in dettagli_dict:
-                                    dettagli_dict[index] = {}
-                                dettagli_dict[index][field] = value
-                        except:
-                            pass
-                
-                articoli_data = list(dettagli_dict.values())
-                print(f"[DEBUG] Articoli estratti da form data: {len(articoli_data)}")
-                print(f"[DEBUG] Dettagli estratti: {dettagli_dict}")
-            
-            # Aggiungi articoli se presenti
-            if articoli_data:
-                print(f"[DEBUG] Processo {len(articoli_data)} articoli")
-                for i, art_data in enumerate(articoli_data):
-                    print(f"[DEBUG] Articolo {i}: {art_data}")
-                    
-                    # Controlla che abbia almeno una descrizione
-                    if not art_data.get('descrizione', '').strip():
-                        print(f"[DEBUG] Salto articolo {i} senza descrizione")
+            # Estrai dati articoli dal form data
+            for key, value in data.items():
+                if key.startswith('dettagli['):
+                    try:
+                        match = re.match(r'dettagli\[(\d+)\]\[(\w+)\]', key)
+                        if match:
+                            index, field = int(match.group(1)), match.group(2)
+                            if index not in dettagli_dict:
+                                dettagli_dict[index] = {}
+                            dettagli_dict[index][field] = value
+                    except:
                         continue
-                        
+            
+            # Salva articoli
+            for index in sorted(dettagli_dict.keys()):
+                art_data = dettagli_dict[index]
+                
+                # Controlla che abbia almeno una descrizione
+                if not art_data.get('descrizione', '').strip():
+                    continue
+                    
+                try:
                     articolo = DettaglioOfferta(
                         offerta_id=offerta.id,
-                        codice_articolo=art_data.get('codice', ''),  # Nota: 'codice' non 'codice_interno'
+                        codice_articolo=art_data.get('codice', ''),
                         codice_fornitore=art_data.get('codice_fornitore', ''),
                         descrizione=art_data.get('descrizione', ''),
-                        quantita=float(art_data.get('quantita', 0)),
-                        unita_misura=art_data.get('unita', 'PZ'),  # Nota: 'unita' non 'unita_misura'
+                        quantita=float(art_data.get('quantita', 1)),
+                        unita_misura=art_data.get('unita', 'PZ'),
                         prezzo_unitario=float(art_data.get('prezzo_unitario', 0)) if art_data.get('prezzo_unitario') else None,
                         sconto_percentuale=float(art_data.get('sconto', 0)) if art_data.get('sconto') else 0,
                         totale_riga=float(art_data.get('totale_riga', 0)) if art_data.get('totale_riga') else None,
                         disponibilita=art_data.get('disponibilita', ''),
-                        tempo_consegna=art_data.get('consegna', ''),  # Nota: 'consegna' non 'tempo_consegna'
+                        tempo_consegna=art_data.get('consegna', ''),
                         note=art_data.get('note', '')
                     )
                     db.session.add(articolo)
-                    print(f"[DEBUG] Articolo {i} aggiunto: {articolo.descrizione}")
-            else:
-                print("[DEBUG] Nessun articolo trovato nei dati")
+                except Exception as e:
+                    print(f"Errore salvataggio articolo {index}: {e}")
+                    continue
             
             db.session.commit()
             
