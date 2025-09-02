@@ -420,10 +420,20 @@ IMPORTANTE: quantità come numero puro (2 non 2,000), prezzi come decimali."""
             
             print(f"DEBUG Claude: Testo estratto: {len(pdf_text)} caratteri")
             
-            prompt = f"""Analizza questo testo estratto da un'offerta fornitore e restituisci SOLO il JSON in questo formato:
+            prompt = f"""Analizza questo testo estratto da un'offerta fornitore e restituisci SOLO il JSON in questo formato.
+
+IMPORTANTE per la data_offerta: Cerca attentamente tutte le date presenti nel documento, incluse:
+- Data dell'offerta, preventivo o proposta
+- Data di emissione del documento
+- Data di redazione
+- Qualsiasi data vicino a "offerta", "preventivo", "proposta", "del", "in data"
+- Date in intestazione o footer del documento
+
+Formati date da riconoscere: dd/mm/yyyy, dd-mm-yyyy, yyyy-mm-dd, gg mese aaaa, ecc.
+
 {{
   "fornitore": "Nome del fornitore",
-  "data_offerta": "YYYY-MM-DD",
+  "data_offerta": "YYYY-MM-DD (OBBLIGATORIO: cerca tutte le date nel documento)",
   "numero_offerta": "Numero offerta",
   "validita_offerta": "YYYY-MM-DD",
   "oggetto": "Oggetto/descrizione dell'offerta",
@@ -487,11 +497,20 @@ TESTO DA ANALIZZARE:
             
             url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={self.gemini_api_key}'
             
-            prompt = """Analizza questo PDF di un'offerta fornitore e restituisci i dati in formato JSON con questa struttura:
+            prompt = """Analizza questo PDF di un'offerta fornitore e restituisci i dati in formato JSON con questa struttura.
+
+IMPORTANTE per la data_offerta: Cerca attentamente tutte le date presenti nel documento, incluse:
+- Data dell'offerta, preventivo o proposta
+- Data di emissione del documento  
+- Data di redazione
+- Qualsiasi data vicino a "offerta", "preventivo", "proposta", "del", "in data"
+- Date in intestazione o footer del documento
+
+Formati date da riconoscere: dd/mm/yyyy, dd-mm-yyyy, yyyy-mm-dd, gg mese aaaa, ecc.
 
 {
   "fornitore": "Nome del fornitore",
-  "data_offerta": "YYYY-MM-DD",
+  "data_offerta": "YYYY-MM-DD (OBBLIGATORIO: cerca tutte le date nel documento)",
   "numero_offerta": "Numero offerta", 
   "validita_offerta": "YYYY-MM-DD (scadenza offerta)",
   "oggetto": "Oggetto/descrizione dell'offerta",
