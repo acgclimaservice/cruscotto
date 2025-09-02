@@ -153,9 +153,10 @@
                                 <div class="form-group" style="position: relative;">
                                     <label>Descrizione *</label>
                                     <input type="text" name="dettagli[{{ loop.index0 }}][descrizione]" required 
-                                           value="{{ dettaglio.descrizione or '' }}" placeholder="Descrizione articolo..." 
+                                           value="{{ dettaglio.descrizione or '' }}" placeholder="Descrizione articolo (anche non in catalogo)..." 
                                            oninput="cercaArticoloOfferta(this, {{ loop.index0 }})" autocomplete="off">
                                     <div class="autocomplete-results" id="articolo-results-{{ loop.index0 }}"></div>
+                                    <small style="color: #6c757d; font-size: 11px;">💡 Puoi inserire articoli personalizzati anche se non sono nel catalogo</small>
                                 </div>
                                 <div class="form-group">
                                     <label>Quantità *</label>
@@ -221,9 +222,10 @@
                                 </div>
                                 <div class="form-group" style="position: relative;">
                                     <label>Descrizione *</label>
-                                    <input type="text" name="dettagli[0][descrizione]" required placeholder="Descrizione articolo..." 
+                                    <input type="text" name="dettagli[0][descrizione]" required placeholder="Descrizione articolo (anche non in catalogo)..." 
                                            oninput="cercaArticoloOfferta(this, 0)" autocomplete="off">
                                     <div class="autocomplete-results" id="articolo-results-0"></div>
+                                    <small style="color: #6c757d; font-size: 11px;">💡 Puoi inserire articoli personalizzati anche se non sono nel catalogo</small>
                                 </div>
                                 <div class="form-group">
                                     <label>Quantità *</label>
@@ -415,9 +417,10 @@
                     </div>
                     <div class="form-group" style="position: relative;">
                         <label>Descrizione *</label>
-                        <input type="text" name="dettagli[${dettaglioIndex}][descrizione]" required placeholder="Descrizione articolo..." 
+                        <input type="text" name="dettagli[${dettaglioIndex}][descrizione]" required placeholder="Descrizione articolo (anche non in catalogo)..." 
                                oninput="cercaArticoloOfferta(this, ${dettaglioIndex})" autocomplete="off">
                         <div class="autocomplete-results" id="articolo-results-${dettaglioIndex}"></div>
+                        <small style="color: #6c757d; font-size: 11px;">💡 Puoi inserire articoli personalizzati anche se non sono nel catalogo</small>
                     </div>
                     <div class="form-group">
                         <label>Quantità *</label>

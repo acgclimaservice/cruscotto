@@ -118,7 +118,8 @@ Inizia registrando la tua prima offerta
 80 dovresti inserire un totale DDT OUT che è la somma di tutti i costi acquisto dei singoli articoli
 81 https://acgclimaservice.pythonanywhere.com/offerte/nuova mi da nuova:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
 82 quando modifico un'offerta già creata, non mi popola i campi articoli
-83
+83 nelle offerte, se aggiungo un articolo che non è in magazzino, aggiugilo nell'offerta così come l'ho scritto senza aggiungere l'articolo nel catalogo
+84
 
 
 
