@@ -100,5 +100,6 @@ aggiungiDettaglio @ nuovo:304
 onclick @ nuovo:130
 66. nei preventivi togli come campo obbligatorio il costo unitario.
 67. nella sezione impostazioni nella parte relativa all'Importazione Automatica DDT via Email ho impostato come Intervallo controllo (minuti): 1, ma noto che per processare una mail ci mette circa 15 minuti. riusciamo a controllare il monitoraggio automatico della mail.
-
+68 se nelle offerte faccio rifiuto mi da questo {"message":"Offerta rifiutata con successo","redirect_url":"/offerte/1","success":true}
+69 
 

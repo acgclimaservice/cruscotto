@@ -964,6 +964,8 @@ def dettaglio_commessa(id):
             (OrdineFornitore.commessa == commessa_search)
         ).order_by(OrdineFornitore.data_ordine.desc()).all()
         
+        print(f"Debug commessa {numero_commessa}: trovati {len(ordini_collegati)} ordini collegati")
+        
         # Combina tutti i DDT per la visualizzazione
         ddt_collegati = []
         
