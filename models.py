@@ -395,3 +395,70 @@ class BatchImportFile(db.Model):
     # Relazioni
     job = db.relationship('BatchImportJob', backref='files')
     ddt_in = db.relationship('DDTIn', backref='batch_imports')
+
+# ========== MODELLI MPLS ==========
+
+class MPLS(db.Model):
+    """Modello per Margine, Prezzo, Lavoro, Servizio"""
+    __tablename__ = 'mpls'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    numero_mpls = db.Column(db.String(50), unique=True, nullable=False)
+    
+    # Fonte del MPLS
+    fonte_tipo = db.Column(db.String(20))  # 'ddt_in', 'offerta', 'ordine'
+    fonte_id = db.Column(db.Integer)  # ID della fonte
+    
+    # Dati cliente e commessa
+    cliente_nome = db.Column(db.String(200))
+    commessa_id = db.Column(db.Integer, db.ForeignKey('commessa.id'), nullable=True)
+    indirizzo = db.Column(db.String(500))
+    condominio = db.Column(db.String(200))
+    
+    # Date
+    data_creazione = db.Column(db.Date, default=datetime.now)
+    data_intervento = db.Column(db.Date)
+    
+    # Tecnico e dettagli intervento
+    tecnico_intervento = db.Column(db.String(200))
+    intervento_effettuato = db.Column(db.Text)
+    
+    # Parametri calcolo
+    ore_manodopera = db.Column(db.Float, default=0.0)
+    sovrapprezzo = db.Column(db.Float, default=0.0)
+    is_guazzotti = db.Column(db.Boolean, default=False)  # Cliente speciale
+    iva_percentuale = db.Column(db.Integer, default=22)
+    
+    # Totali calcolati
+    subtotale_materiali = db.Column(db.Float, default=0.0)
+    subtotale_manodopera = db.Column(db.Float, default=0.0)
+    totale_generale = db.Column(db.Float, default=0.0)
+    importo_iva = db.Column(db.Float, default=0.0)
+    totale_ivato = db.Column(db.Float, default=0.0)
+    margine_euro = db.Column(db.Float, default=0.0)
+    margine_percentuale = db.Column(db.Float, default=0.0)
+    
+    # Stato e note
+    stato = db.Column(db.String(20), default='bozza')  # bozza, confermato, preventivo_inviato
+    note = db.Column(db.Text)
+    
+    # Relazioni
+    commessa = db.relationship('Commessa', backref='mpls_list')
+    materiali = db.relationship('MaterialeMPLS', backref='mpls', cascade='all, delete-orphan')
+
+class MaterialeMPLS(db.Model):
+    """Materiali utilizzati nell'MPLS"""
+    __tablename__ = 'materiale_mpls'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    mpls_id = db.Column(db.Integer, db.ForeignKey('mpls.id'), nullable=False)
+    
+    nome = db.Column(db.String(200), nullable=False)
+    quantita = db.Column(db.Float, nullable=False, default=1.0)
+    prezzo_acquisto = db.Column(db.Float, nullable=False, default=0.0)
+    prezzo_vendita = db.Column(db.Float)  # Calcolato automaticamente con ricarico
+    ricarico_applicato = db.Column(db.Float)  # % ricarico applicato
+    
+    # Totali
+    totale_acquisto = db.Column(db.Float)  # quantita * prezzo_acquisto
+    totale_vendita = db.Column(db.Float)   # quantita * prezzo_vendita

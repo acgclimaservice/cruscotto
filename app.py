@@ -373,7 +373,8 @@ from models import (DDTIn, ArticoloIn, DDTOut, ArticoloOut,
                     CatalogoArticolo, Movimento, Cliente, Fornitore, 
                     Magazzino, Mastrino, MovimentoInterno, ArticoloMovimentoInterno,
                     Commessa, Preventivo, OrdineFornitore, DettaglioPreventivo, DettaglioOrdine,
-                    OffertaFornitore, DettaglioOfferta, ConfigurazioneSistema, CollegamentoMastrini)
+                    OffertaFornitore, DettaglioOfferta, ConfigurazioneSistema, CollegamentoMastrini,
+                    MPLS, MaterialeMPLS)
 
 # Filtri Jinja2 personalizzati
 @app.template_filter('from_json')
@@ -7816,6 +7817,232 @@ def status_email_monitor():
             'success': False,
             'error': str(e)
         }), 500
+
+# ========== ROTTE MPLS ==========
+
+@app.route('/mpls')
+def lista_mpls():
+    """Lista di tutti gli MPLS"""
+    try:
+        mpls_list = MPLS.query.order_by(MPLS.data_creazione.desc()).all()
+        
+        # Statistiche rapide
+        totale_mpls = len(mpls_list)
+        mpls_bozza = len([m for m in mpls_list if m.stato == 'bozza'])
+        mpls_confermati = len([m for m in mpls_list if m.stato == 'confermato'])
+        
+        return render_template('mpls.html', 
+                             mpls_list=mpls_list,
+                             totale_mpls=totale_mpls,
+                             mpls_bozza=mpls_bozza,
+                             mpls_confermati=mpls_confermati)
+    
+    except Exception as e:
+        print(f"Errore lista MPLS: {e}")
+        return str(e), 500
+
+@app.route('/mpls/<int:id>')
+def dettaglio_mpls(id):
+    """Dettaglio singolo MPLS"""
+    try:
+        mpls = MPLS.query.get_or_404(id)
+        materiali = MaterialeMPLS.query.filter_by(mpls_id=id).all()
+        
+        # Calcola totali aggiornati
+        _ricalcola_totali_mpls(mpls)
+        
+        return render_template('dettaglio-mpls.html', 
+                             mpls=mpls, 
+                             materiali=materiali)
+    
+    except Exception as e:
+        print(f"Errore dettaglio MPLS: {e}")
+        return str(e), 500
+
+@app.route('/mpls/nuovo')
+def nuovo_mpls():
+    """Crea nuovo MPLS vuoto"""
+    try:
+        # Genera numero MPLS automatico
+        ultimo_numero = db.session.query(db.func.max(MPLS.id)).scalar() or 0
+        numero_mpls = f"MPLS-{datetime.now().year}-{str(ultimo_numero + 1).zfill(4)}"
+        
+        # Lista commesse per dropdown
+        commesse = Commessa.query.filter_by(stato='aperta').all()
+        
+        return render_template('nuovo-mpls.html', 
+                             numero_mpls=numero_mpls,
+                             commesse=commesse)
+    
+    except Exception as e:
+        print(f"Errore nuovo MPLS: {e}")
+        return str(e), 500
+
+@app.route('/mpls/da-ddt/<int:ddt_id>')
+def crea_mpls_da_ddt(ddt_id):
+    """Crea MPLS partendo da DDT IN"""
+    try:
+        ddt = DDTIn.query.get_or_404(ddt_id)
+        articoli = ArticoloIn.query.filter_by(ddt_id=ddt_id).all()
+        
+        # Genera numero MPLS
+        ultimo_numero = db.session.query(db.func.max(MPLS.id)).scalar() or 0
+        numero_mpls = f"MPLS-{datetime.now().year}-{str(ultimo_numero + 1).zfill(4)}"
+        
+        # Lista commesse per dropdown
+        commesse = Commessa.query.filter_by(stato='aperta').all()
+        
+        return render_template('nuovo-mpls.html', 
+                             numero_mpls=numero_mpls,
+                             commesse=commesse,
+                             fonte_tipo='ddt_in',
+                             fonte_id=ddt_id,
+                             fonte_data=ddt,
+                             articoli_fonte=articoli)
+    
+    except Exception as e:
+        print(f"Errore MPLS da DDT: {e}")
+        return str(e), 500
+
+@app.route('/mpls/da-offerta/<int:offerta_id>')
+def crea_mpls_da_offerta(offerta_id):
+    """Crea MPLS partendo da Offerta"""
+    try:
+        offerta = OffertaFornitore.query.get_or_404(offerta_id)
+        dettagli = DettaglioOfferta.query.filter_by(offerta_id=offerta_id).all()
+        
+        # Genera numero MPLS
+        ultimo_numero = db.session.query(db.func.max(MPLS.id)).scalar() or 0
+        numero_mpls = f"MPLS-{datetime.now().year}-{str(ultimo_numero + 1).zfill(4)}"
+        
+        # Lista commesse per dropdown
+        commesse = Commessa.query.filter_by(stato='aperta').all()
+        
+        return render_template('nuovo-mpls.html', 
+                             numero_mpls=numero_mpls,
+                             commesse=commesse,
+                             fonte_tipo='offerta',
+                             fonte_id=offerta_id,
+                             fonte_data=offerta,
+                             articoli_fonte=dettagli)
+    
+    except Exception as e:
+        print(f"Errore MPLS da Offerta: {e}")
+        return str(e), 500
+
+@app.route('/mpls/da-ordine/<int:ordine_id>')
+def crea_mpls_da_ordine(ordine_id):
+    """Crea MPLS partendo da Ordine"""
+    try:
+        ordine = OrdineFornitore.query.get_or_404(ordine_id)
+        dettagli = DettaglioOrdine.query.filter_by(ordine_id=ordine_id).all()
+        
+        # Genera numero MPLS
+        ultimo_numero = db.session.query(db.func.max(MPLS.id)).scalar() or 0
+        numero_mpls = f"MPLS-{datetime.now().year}-{str(ultimo_numero + 1).zfill(4)}"
+        
+        # Lista commesse per dropdown
+        commesse = Commessa.query.filter_by(stato='aperta').all()
+        
+        return render_template('nuovo-mpls.html', 
+                             numero_mpls=numero_mpls,
+                             commesse=commesse,
+                             fonte_tipo='ordine',
+                             fonte_id=ordine_id,
+                             fonte_data=ordine,
+                             articoli_fonte=dettagli)
+    
+    except Exception as e:
+        print(f"Errore MPLS da Ordine: {e}")
+        return str(e), 500
+
+def _calcola_ricarico_materiale(prezzo_acquisto, quantita, is_guazzotti):
+    """Calcola ricarico secondo logica business"""
+    costo_totale = prezzo_acquisto * quantita
+    
+    if is_guazzotti:
+        # Cliente Guazzotti: ricarico fisso 20%
+        ricarico = 0.20
+    else:
+        # Cliente standard: ricarico progressivo
+        if costo_totale < 100:
+            ricarico = 0.40  # +40%
+        elif costo_totale <= 200:
+            ricarico = 0.35  # +35%
+        else:
+            ricarico = 0.30  # +30%
+    
+    prezzo_vendita = prezzo_acquisto * (1 + ricarico)
+    return prezzo_vendita, ricarico
+
+def _ricalcola_totali_mpls(mpls):
+    """Ricalcola tutti i totali di un MPLS"""
+    try:
+        # Parametri base
+        ore_manodopera = mpls.ore_manodopera or 0
+        sovrapprezzo = mpls.sovrapprezzo or 0
+        is_guazzotti = mpls.is_guazzotti
+        iva_percentuale = mpls.iva_percentuale or 22
+        
+        # Calcolo materiali
+        subtotale_materiali = 0
+        costo_totale_materiali = 0
+        
+        for materiale in mpls.materiali:
+            # Ricalcola prezzo vendita con ricarico
+            prezzo_vendita, ricarico = _calcola_ricarico_materiale(
+                materiale.prezzo_acquisto, 
+                materiale.quantita, 
+                is_guazzotti
+            )
+            
+            # Aggiorna materiale
+            materiale.prezzo_vendita = prezzo_vendita
+            materiale.ricarico_applicato = ricarico * 100  # Salva in %
+            materiale.totale_acquisto = materiale.prezzo_acquisto * materiale.quantita
+            materiale.totale_vendita = prezzo_vendita * materiale.quantita
+            
+            subtotale_materiali += materiale.totale_vendita
+            costo_totale_materiali += materiale.totale_acquisto
+        
+        # Calcolo manodopera
+        costo_orario_vendita = 25.0 if is_guazzotti else 40.0
+        costo_orario_acquisto = 22.0
+        subtotale_manodopera = ore_manodopera * costo_orario_vendita
+        costo_totale_manodopera = ore_manodopera * costo_orario_acquisto
+        
+        # Costi aggiuntivi
+        costo_gestione = 0 if is_guazzotti else 30.0
+        spese_brevi = 15.0
+        materiale_consumo = 10.0
+        
+        # Totale generale (pre-IVA)
+        totale_generale = (subtotale_materiali + subtotale_manodopera + 
+                          costo_gestione + spese_brevi + materiale_consumo + sovrapprezzo)
+        
+        # IVA
+        importo_iva = totale_generale * (iva_percentuale / 100)
+        totale_ivato = totale_generale + importo_iva
+        
+        # Margine
+        costo_totale_acquisto = costo_totale_materiali + costo_totale_manodopera
+        margine_euro = totale_generale - costo_totale_acquisto
+        margine_percentuale = (margine_euro / totale_generale * 100) if totale_generale > 0 else 0
+        
+        # Aggiorna MPLS
+        mpls.subtotale_materiali = subtotale_materiali
+        mpls.subtotale_manodopera = subtotale_manodopera
+        mpls.totale_generale = totale_generale
+        mpls.importo_iva = importo_iva
+        mpls.totale_ivato = totale_ivato
+        mpls.margine_euro = margine_euro
+        mpls.margine_percentuale = margine_percentuale
+        
+        return True
+        
+    except Exception as e:
+        print(f"Errore calcolo totali MPLS: {e}")
+        return False
 
 # ========== API AUTOCOMPLETE ==========
 

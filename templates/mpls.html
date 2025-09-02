@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 MPLS - Sistema Gestione</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>🏢 ACG Clima</h2>
+            </div>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/ordini">🛒 Ordini</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/mpls" class="active">💰 MPLS</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/commesse">🏗️ Commesse</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <div class="header-actions">
+                <div>
+                    <h1>💰 MPLS (Margine, Prezzo, Lavoro, Servizio)</h1>
+                    <p>Gestisci preventivi con calcolo automatico margini e ricarichi intelligenti</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="/mpls/nuovo" class="btn btn-success">+ Nuovo MPLS</a>
+                </div>
+            </div>
+
+            <!-- Statistiche Rapide -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-info">
+                        <div class="stat-number">{{ totale_mpls }}</div>
+                        <div class="stat-label">MPLS Totali</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-info">
+                        <div class="stat-number">{{ mpls_bozza }}</div>
+                        <div class="stat-label">In Bozza</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <div class="stat-number">{{ mpls_confermati }}</div>
+                        <div class="stat-label">Confermati</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <div class="stat-number">€ {{ "%.2f"|format(mpls_list|sum(attribute='margine_euro') if mpls_list else 0) }}</div>
+                        <div class="stat-label">Margine Totale</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista MPLS -->
+            <div class="table-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>📋 Lista MPLS</h3>
+                    <div>
+                        <a href="/mpls/nuovo" class="btn btn-success">+ Nuovo MPLS</a>
+                    </div>
+                </div>
+
+                {% if mpls_list %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Numero MPLS</th>
+                                <th>Cliente</th>
+                                <th>Fonte</th>
+                                <th>Data Creazione</th>
+                                <th>Stato</th>
+                                <th>Totale</th>
+                                <th>Margine</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mpls in mpls_list %}
+                            <tr>
+                                <td><strong>{{ mpls.numero_mpls }}</strong></td>
+                                <td>{{ mpls.cliente_nome or '-' }}</td>
+                                <td>
+                                    {% if mpls.fonte_tipo == 'ddt_in' %}
+                                        📥 DDT IN #{{ mpls.fonte_id }}
+                                    {% elif mpls.fonte_tipo == 'offerta' %}
+                                        💰 Offerta #{{ mpls.fonte_id }}
+                                    {% elif mpls.fonte_tipo == 'ordine' %}
+                                        🛒 Ordine #{{ mpls.fonte_id }}
+                                    {% else %}
+                                        ➕ Manuale
+                                    {% endif %}
+                                </td>
+                                <td>{{ mpls.data_creazione.strftime('%d/%m/%Y') if mpls.data_creazione else '-' }}</td>
+                                <td>
+                                    {% if mpls.stato == 'bozza' %}
+                                        <span class="badge badge-warning">📝 Bozza</span>
+                                    {% elif mpls.stato == 'confermato' %}
+                                        <span class="badge badge-success">✅ Confermato</span>
+                                    {% elif mpls.stato == 'preventivo_inviato' %}
+                                        <span class="badge badge-info">📤 Preventivo Inviato</span>
+                                    {% endif %}
+                                </td>
+                                <td>€ {{ "%.2f"|format(mpls.totale_ivato) }}</td>
+                                <td>
+                                    <span style="color: green; font-weight: bold;">
+                                        € {{ "%.2f"|format(mpls.margine_euro) }} 
+                                        ({{ "%.1f"|format(mpls.margine_percentuale) }}%)
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="/mpls/{{ mpls.id }}" class="btn btn-sm">👁️ Visualizza</a>
+                                        {% if mpls.stato == 'bozza' %}
+                                            <a href="/mpls/{{ mpls.id }}/modifica" class="btn btn-sm btn-warning">✏️ Modifica</a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">💰</div>
+                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Nessun MPLS presente</div>
+                        <div style="font-size: 14px; margin-bottom: 20px;">Inizia creando il tuo primo MPLS da DDT, Offerte o da zero</div>
+                        <a href="/mpls/nuovo" class="btn btn-success">+ Crea Primo MPLS</a>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+
+    <style>
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-info { background: #cce7ff; color: #0c5460; }
+    </style>
+</body>
+</html>

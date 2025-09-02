@@ -224,7 +224,7 @@
         <!-- Pulsanti azione -->
         <div class="form-actions">
             <a href="/offerte" class="btn btn-secondary">⬅️ Torna alle Offerte</a>
-            
+            <a href="/mpls/da-offerta/{{ offerta.id }}" class="btn btn-success">💰 Crea MPLS</a>
             <a href="/offerte/{{ offerta.id }}/pdf" class="btn btn-secondary" target="_blank">📄 Stampa PDF</a>
             
             {% if offerta.stato in ['creata', 'richiesta', 'valutata'] %}
