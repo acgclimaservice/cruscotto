@@ -6084,12 +6084,20 @@ def nuova_offerta():
             from datetime import date
             fornitori = Fornitore.query.filter_by(attivo=True).all()
             today = date.today().strftime('%Y-%m-%d')
-            return render_template('nuova-offerta.html', fornitori=fornitori, today=today)
+            return render_template('nuova-offerta.html', 
+                                 fornitori=fornitori, 
+                                 today=today,
+                                 modalita='nuova',
+                                 offerta=None)
         except Exception as e:
             print(f"Errore GET nuova offerta: {e}")
             from datetime import date
             today = date.today().strftime('%Y-%m-%d')
-            return render_template('nuova-offerta.html', fornitori=[], today=today)
+            return render_template('nuova-offerta.html', 
+                                 fornitori=[], 
+                                 today=today,
+                                 modalita='nuova',
+                                 offerta=None)
     
     if request.method == 'POST':
         try:
