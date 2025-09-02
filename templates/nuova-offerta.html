@@ -522,6 +522,171 @@
             window.AutocompleteHelpers.setupFornitoriAutocomplete(fornitoreInput);
         }
     });
+        // Modal rifiuto offerta
+        function mostraModalRifiuto(tipo, id) {
+            const modal = document.getElementById('modal-rifiuto');
+            const titoloModal = document.getElementById('titolo-modal-rifiuto');
+            
+            titoloModal.textContent = `Rifiuta ${tipo}`;
+            modal.dataset.tipo = tipo;
+            modal.dataset.id = id;
+            modal.style.display = 'block';
+        }
+        
+        function chiudiModalRifiuto() {
+            document.getElementById('modal-rifiuto').style.display = 'none';
+            document.getElementById('motivo-rifiuto').value = '';
+        }
+        
+        function confermaRifiuto() {
+            const modal = document.getElementById('modal-rifiuto');
+            const tipo = modal.dataset.tipo;
+            const id = modal.dataset.id;
+            const motivo = document.getElementById('motivo-rifiuto').value;
+            
+            const formData = new FormData();
+            formData.append('motivo', motivo);
+            
+            fetch(`/${tipo === 'offerta' ? 'offerte' : 'preventivi'}/${id}/rifiuta`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert('Errore: ' + (data.errore || 'Errore sconosciuto'));
+                }
+                chiudiModalRifiuto();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore di rete: ' + error.message);
+                chiudiModalRifiuto();
+            });
+        }
+        
+        // Chiudi modal cliccando fuori
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-rifiuto');
+            if (event.target == modal) {
+                chiudiModalRifiuto();
+            }
+        }
     </script>
+
+    <!-- Modal Rifiuto -->
+    <div id="modal-rifiuto" class="modal-rifiuto" style="display: none;">
+        <div class="modal-rifiuto-content">
+            <div class="modal-rifiuto-header">
+                <h2 id="titolo-modal-rifiuto">Rifiuta Offerta</h2>
+                <span class="close-rifiuto" onclick="chiudiModalRifiuto()">&times;</span>
+            </div>
+            
+            <div class="modal-rifiuto-body">
+                <div class="form-group-rifiuto">
+                    <label for="motivo-rifiuto">Motivo del rifiuto (opzionale):</label>
+                    <textarea id="motivo-rifiuto" placeholder="Inserisci il motivo del rifiuto..." rows="4"></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-rifiuto-footer">
+                <button class="btn btn-secondary" onclick="chiudiModalRifiuto()">❌ Annulla</button>
+                <button class="btn btn-danger" onclick="confermaRifiuto()">✅ Conferma Rifiuto</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal-rifiuto {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-rifiuto-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .modal-rifiuto-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .modal-rifiuto-header h2 {
+            margin: 0;
+            color: #dc3545;
+        }
+        
+        .close-rifiuto {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close-rifiuto:hover {
+            color: #000;
+        }
+        
+        .modal-rifiuto-body {
+            padding: 20px;
+        }
+        
+        .form-group-rifiuto {
+            margin-bottom: 15px;
+        }
+        
+        .form-group-rifiuto label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group-rifiuto textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .modal-rifiuto-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            text-align: right;
+            background: #f8f9fa;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .modal-rifiuto-footer .btn {
+            margin-left: 10px;
+        }
+    </style>
 </body>
 </html>
