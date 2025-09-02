@@ -8965,6 +8965,23 @@ if __name__ == '__main__':
             db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN allegati TEXT"))
             db.session.commit()
             print("✅ Migration: Added allegati column to offerta_fornitore table")
+        
+        # Migration: Add disponibilita and tempo_consegna to dettaglio_offerta table if not exists
+        try:
+            db.session.execute(text("SELECT disponibilita FROM dettaglio_offerta LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE dettaglio_offerta ADD COLUMN disponibilita VARCHAR(50)"))
+            db.session.commit()
+            print("✅ Migration: Added disponibilita column to dettaglio_offerta table")
+            
+        try:
+            db.session.execute(text("SELECT tempo_consegna FROM dettaglio_offerta LIMIT 1"))
+        except Exception:
+            # Column doesn't exist, add it
+            db.session.execute(text("ALTER TABLE dettaglio_offerta ADD COLUMN tempo_consegna VARCHAR(50)"))
+            db.session.commit()
+            print("✅ Migration: Added tempo_consegna column to dettaglio_offerta table")
     
     print("=" * 50)
     print(f"SISTEMA GESTIONE DDT - VERSIONE {APP_VERSION}")
