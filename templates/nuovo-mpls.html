@@ -73,6 +73,19 @@
                             <textarea id="descrizione" name="descrizione" rows="3" class="form-control" placeholder="Descrizione del progetto/lavoro"></textarea>
                         </div>
 
+                        <div class="form-group">
+                            <label for="commessa_id">Commessa Associata</label>
+                            <select id="commessa_id" name="commessa_id" class="form-control">
+                                <option value="">-- Seleziona Commessa (Opzionale) --</option>
+                                {% for commessa in commesse %}
+                                <option value="{{ commessa.id }}">
+                                    {{ commessa.numero_progressivo }} - {{ commessa.cliente_nome }} - {{ commessa.descrizione[:50] }}{% if commessa.descrizione|length > 50 %}...{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Collega questo MPLS a una commessa esistente</small>
+                        </div>
+
                         <!-- Parametri MPLS Enhanced -->
                         <div class="form-row">
                             <div class="form-group">

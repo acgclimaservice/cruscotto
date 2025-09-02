@@ -7971,6 +7971,7 @@ def save_mpls():
         ore_manodopera = float(request.form.get('ore_manodopera', 0))
         sovrapprezzo = float(request.form.get('sovrapprezzo', 0))
         is_guazzotti = bool(request.form.get('is_guazzotti'))
+        commessa_id = int(request.form.get('commessa_id')) if request.form.get('commessa_id') else None
         
         # Totali Enhanced
         subtotale_materiali_vendita = float(request.form.get('subtotale_materiali_vendita', 0))
@@ -7998,6 +7999,7 @@ def save_mpls():
             stato=stato,
             fonte_tipo=fonte_tipo,
             fonte_id=int(fonte_id) if fonte_id else None,
+            commessa_id=commessa_id,
             
             # Parametri Enhanced
             ore_manodopera=ore_manodopera,
@@ -8160,7 +8162,13 @@ def update_mpls(id):
 @app.route('/mpls/import')
 def mpls_import():
     """Pagina import MPLS da PDF"""
-    return render_template('mpls-import.html')
+    try:
+        # Lista commesse aperte per dropdown
+        commesse = Commessa.query.filter_by(stato='aperta').order_by(Commessa.data_apertura.desc()).all()
+        return render_template('mpls-import.html', commesse=commesse)
+    except Exception as e:
+        print(f"Errore import MPLS: {e}")
+        return render_template('mpls-import.html', commesse=[])
 
 @app.route('/mpls-import/parse-pdf', methods=['POST'])
 def mpls_parse_pdf():
@@ -8277,6 +8285,7 @@ def mpls_create_from_import():
             ore_manodopera=float(data.get('ore_manodopera', 0)),
             sovrapprezzo=float(data.get('sovrapprezzo', 0)),
             is_guazzotti=data.get('is_guazzotti', False),
+            commessa_id=int(data.get('commessa_id')) if data.get('commessa_id') else None,
             stato='bozza'
         )
         

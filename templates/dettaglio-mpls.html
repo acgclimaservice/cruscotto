@@ -119,6 +119,16 @@
                             <label>Sovrapprezzo:</label>
                             <span>€{{ "%.2f"|format(mpls.sovrapprezzo or 0) }}</span>
                         </div>
+                        {% if mpls.commessa %}
+                        <div class="info-item">
+                            <label>Commessa Associata:</label>
+                            <span>
+                                <a href="/commesse/{{ mpls.commessa.id }}" class="commessa-link">
+                                    {{ mpls.commessa.numero_progressivo }} - {{ mpls.commessa.cliente_nome }}
+                                </a>
+                            </span>
+                        </div>
+                        {% endif %}
                         {% if mpls.fonte_tipo %}
                         <div class="info-item">
                             <label>Fonte:</label>
@@ -394,6 +404,17 @@
         .margin-amount {
             color: #059669;
             font-weight: bold;
+        }
+        
+        .commessa-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .commessa-link:hover {
+            color: #1e40af;
+            text-decoration: underline;
         }
         
         .alert {
