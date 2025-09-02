@@ -6738,6 +6738,10 @@ Messaggio generato automaticamente dal Sistema Gestione Richieste Offerte v{app.
         if allegati_aggiunti:
             offerta.note += f"\nAllegati inviati: {', '.join(allegati_aggiunti)}"
         
+        # Cambia stato dell'offerta a "richiesta" se era "creata"
+        if offerta.stato == 'creata':
+            offerta.stato = 'richiesta'
+        
         db.session.commit()
         
         return jsonify({
@@ -6756,6 +6760,47 @@ Messaggio generato automaticamente dal Sistema Gestione Richieste Offerte v{app.
         print(f"Errore invio email richiesta offerta: {e}")
         print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Errore invio email: {str(e)}'}), 500
+
+@app.route('/offerte/<int:id>/registro-invio-email', methods=['POST'])
+def registro_invio_email_offerta(id):
+    """Registra l'invio email e cambia stato offerta (per mailto workflow)"""
+    try:
+        offerta = OffertaFornitore.query.get_or_404(id)
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Dati richiesta mancanti'}), 400
+        
+        email_fornitore = data.get('email', '').strip()
+        messaggio_personalizzato = data.get('messaggio', '').strip()
+        includi_allegati = data.get('includi_allegati', True)
+        
+        if not email_fornitore:
+            return jsonify({'error': 'Email destinatario richiesta'}), 400
+        
+        # Registra l'invio nelle note dell'offerta
+        offerta.note = f"{offerta.note or ''}\n\n[{datetime.now().strftime('%d/%m/%Y %H:%M')}] Email preparata per: {email_fornitore}"
+        if messaggio_personalizzato:
+            offerta.note += f"\nMessaggio: {messaggio_personalizzato}"
+        if includi_allegati:
+            offerta.note += f"\nAllegati inclusi: Sì"
+        
+        # Cambia stato dell'offerta a "richiesta" se era "creata"
+        if offerta.stato == 'creata':
+            offerta.stato = 'richiesta'
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Stato offerta aggiornato',
+            'nuovo_stato': offerta.stato
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore registro invio email: {e}")
+        return jsonify({'error': f'Errore aggiornamento stato: {str(e)}'}), 500
 
 @app.route('/preventivi/<int:id>/invia', methods=['POST'])
 def invia_preventivo(id):

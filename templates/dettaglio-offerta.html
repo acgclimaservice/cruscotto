@@ -42,6 +42,7 @@
                     </span>
                     <span class="status-badge status-{{ offerta.stato }}">
                         {% if offerta.stato == 'creata' %}📝 Creata
+                        {% elif offerta.stato == 'richiesta' %}📧 Richiesta
                         {% elif offerta.stato == 'valutata' %}🔍 Valutata
                         {% elif offerta.stato == 'accettata' %}✅ Accettata
                         {% elif offerta.stato == 'rifiutata' %}❌ Rifiutata
@@ -230,6 +231,12 @@
                     <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
                 </form>
                 <button class="btn btn-danger" onclick="mostraModalRifiuto('offerta', {{ offerta.id }})">❌ Rifiuta</button>
+            {% elif offerta.stato == 'richiesta' %}
+                <button class="btn btn-warning" onclick="mostraModalValutazione({{ offerta.id }})">🔍 Valuta Offerta</button>
+                <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
+                    <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
+                </form>
+                <button class="btn btn-danger" onclick="mostraModalRifiuto('offerta', {{ offerta.id }})">❌ Rifiuta</button>
             {% elif offerta.stato == 'valutata' %}
                 <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
                     <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
@@ -241,7 +248,7 @@
             <a href="/offerte/confronta" class="btn btn-secondary">📋 Confronta Offerte</a>
             <a href="/offerte/{{ offerta.id }}/pdf" class="btn btn-secondary" target="_blank">📄 Stampa PDF</a>
             
-            {% if offerta.stato in ['creata', 'valutata'] %}
+            {% if offerta.stato in ['creata', 'richiesta', 'valutata'] %}
                 <button class="btn btn-info" onclick="mostraModalInvioEmail({{ offerta.id }})">📧 Invia Email</button>
             {% endif %}
             
@@ -431,13 +438,17 @@
         
         .modal-invio-content {
             background-color: #fefefe;
-            margin: 5% auto;
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
             padding: 20px;
             border: none;
             border-radius: 8px;
             width: 80%;
             max-width: 600px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            cursor: move;
         }
         
         .modal-invio-header {
@@ -447,6 +458,8 @@
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
+            cursor: move;
+            user-select: none;
         }
         
         .close-email {
@@ -565,6 +578,11 @@
             
             modal.style.display = 'block';
             
+            // Attiva il drag and drop
+            setTimeout(() => {
+                makeDraggable();
+            }, 100);
+            
             // Aggiorna preview quando cambia email
             emailInput.addEventListener('input', function() {
                 previewEmail.textContent = this.value || '-';
@@ -607,6 +625,30 @@
             
             corpoEmail += `\nRimaniamo in attesa di un vostro riscontro.\n\nCordiali saluti,\nACG Clima Service S.r.l.`;
             
+            // Prima registra l'invio email sul server per cambiare lo stato
+            fetch(`/offerte/${offertaId}/registro-invio-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: emailFornitore,
+                    messaggio: messaggio,
+                    includi_allegati: includiAllegati
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Stato offerta aggiornato dopo invio email');
+                } else {
+                    console.warn('Errore aggiornamento stato:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Errore chiamata API:', error);
+            });
+            
             // Crea link mailto per aprire Outlook
             const mailtoLink = `mailto:${encodeURIComponent(emailFornitore)}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpoEmail)}`;
             
@@ -615,7 +657,7 @@
             
             // Mostra messaggio di conferma con dettagli allegati
             setTimeout(() => {
-                let messaggioConferma = `📧 Email preparata per Outlook!\n\n- Destinatario: ${emailFornitore}\n- Oggetto: ${oggetto}`;
+                let messaggioConferma = `📧 Email preparata per Outlook!\n\n- Destinatario: ${emailFornitore}\n- Oggetto: ${oggetto}\n- Stato offerta: Aggiornato a "Richiesta"`;
                 
                 {% if allegati_parsed %}
                     if (includiAllegati) {
@@ -629,6 +671,11 @@
                 
                 alert(messaggioConferma);
                 chiudiModalEmail();
+                
+                // Refresh pagina per mostrare nuovo stato
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             }, 500);
         }
         
@@ -643,6 +690,63 @@
         // Chiudi modal con X
         document.querySelector('.close-email').onclick = function() {
             chiudiModalEmail();
+        }
+        
+        // Funzionalità drag and drop per modal
+        function makeDraggable() {
+            const modal = document.querySelector('.modal-invio-content');
+            const header = document.querySelector('.modal-invio-header');
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+
+            header.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+
+            function dragStart(e) {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+
+                if (e.target === header || header.contains(e.target)) {
+                    isDragging = true;
+                    modal.style.cursor = 'grabbing';
+                }
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+
+                    xOffset = currentX;
+                    yOffset = currentY;
+
+                    // Mantieni la modal all'interno dello schermo
+                    const rect = modal.getBoundingClientRect();
+                    const maxX = window.innerWidth - rect.width;
+                    const maxY = window.innerHeight - rect.height;
+                    
+                    currentX = Math.min(Math.max(currentX, -rect.width/2), maxX + rect.width/2);
+                    currentY = Math.max(currentY, 0);
+
+                    modal.style.transform = `translate(${currentX}px, ${currentY}px)`;
+                    modal.style.left = '50%';
+                    modal.style.top = '10%';
+                }
+            }
+
+            function dragEnd(e) {
+                initialX = currentX;
+                initialY = currentY;
+                isDragging = false;
+                modal.style.cursor = 'move';
+            }
         }
     </script>
 </body>
