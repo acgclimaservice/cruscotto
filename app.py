@@ -374,7 +374,7 @@ from models import (DDTIn, ArticoloIn, DDTOut, ArticoloOut,
                     Magazzino, Mastrino, MovimentoInterno, ArticoloMovimentoInterno,
                     Commessa, Preventivo, OrdineFornitore, DettaglioPreventivo, DettaglioOrdine,
                     OffertaFornitore, DettaglioOfferta, ConfigurazioneSistema, CollegamentoMastrini,
-                    MPLS, MaterialeMPLS)
+                    MPLS, MaterialeMPLS, MPLSArticolo)
 
 # Filtri Jinja2 personalizzati
 @app.template_filter('from_json')
@@ -7872,7 +7872,8 @@ def nuovo_mpls():
         
         return render_template('nuovo-mpls.html', 
                              numero_mpls=numero_mpls,
-                             commesse=commesse)
+                             commesse=commesse,
+                             today=datetime.now().strftime('%Y-%m-%d'))
     
     except Exception as e:
         print(f"Errore nuovo MPLS: {e}")
@@ -7955,6 +7956,180 @@ def crea_mpls_da_ordine(ordine_id):
     except Exception as e:
         print(f"Errore MPLS da Ordine: {e}")
         return str(e), 500
+
+@app.route('/mpls/save', methods=['POST'])
+def save_mpls():
+    """Salva nuovo MPLS"""
+    try:
+        # Dati generali
+        numero_mpls = request.form.get('numero_mpls')
+        data_creazione = datetime.strptime(request.form.get('data_creazione'), '%Y-%m-%d')
+        cliente_nome = request.form.get('cliente_nome')
+        cliente_codice = request.form.get('cliente_codice', '')
+        descrizione = request.form.get('descrizione', '')
+        stato = request.form.get('stato', 'bozza')
+        
+        # Dati fonte (se presente)
+        fonte_tipo = request.form.get('fonte_tipo')
+        fonte_id = request.form.get('fonte_id')
+        
+        # Totali
+        totale_costi = float(request.form.get('totale_costi', 0))
+        totale_vendita = float(request.form.get('totale_vendita', 0))
+        totale_iva = float(request.form.get('totale_iva', 0))
+        totale_ivato = float(request.form.get('totale_ivato', 0))
+        margine_euro = float(request.form.get('margine_euro', 0))
+        margine_percentuale = float(request.form.get('margine_percentuale', 0))
+        
+        # Crea MPLS
+        mpls = MPLS(
+            numero_mpls=numero_mpls,
+            data_creazione=data_creazione,
+            cliente_nome=cliente_nome,
+            cliente_codice=cliente_codice,
+            descrizione=descrizione,
+            stato=stato,
+            fonte_tipo=fonte_tipo,
+            fonte_id=int(fonte_id) if fonte_id else None,
+            totale_costi=totale_costi,
+            totale_vendita=totale_vendita,
+            totale_iva=totale_iva,
+            totale_ivato=totale_ivato,
+            margine_euro=margine_euro,
+            margine_percentuale=margine_percentuale
+        )
+        
+        db.session.add(mpls)
+        db.session.flush()  # Per ottenere l'ID
+        
+        # Salva articoli
+        articoli_data = {}
+        for key, value in request.form.items():
+            if key.startswith('articoli['):
+                # Parse: articoli[0][codice] -> index=0, field=codice
+                import re
+                match = re.match(r'articoli\[(\d+)\]\[(\w+)\]', key)
+                if match:
+                    index = int(match.group(1))
+                    field = match.group(2)
+                    
+                    if index not in articoli_data:
+                        articoli_data[index] = {}
+                    articoli_data[index][field] = value
+        
+        # Crea articoli MPLS
+        for index, art_data in articoli_data.items():
+            if art_data.get('codice') or art_data.get('descrizione'):  # Solo se ha dati
+                articolo = MPLSArticolo(
+                    mpls_id=mpls.id,
+                    codice=art_data.get('codice', ''),
+                    descrizione=art_data.get('descrizione', ''),
+                    quantita=float(art_data.get('quantita', 1)),
+                    prezzo_costo=float(art_data.get('prezzo_costo', 0)),
+                    ricarico_percentuale=float(art_data.get('ricarico_percentuale', 30)),
+                    prezzo_vendita=float(art_data.get('prezzo_vendita', 0))
+                )
+                db.session.add(articolo)
+        
+        db.session.commit()
+        
+        flash(f"MPLS {numero_mpls} salvato con successo!", "success")
+        return redirect(f'/mpls/{mpls.id}')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore salvataggio MPLS: {e}")
+        flash(f"Errore nel salvataggio: {str(e)}", "error")
+        return redirect('/mpls/nuovo')
+
+@app.route('/mpls/<int:id>/modifica')
+def modifica_mpls(id):
+    """Modifica MPLS esistente"""
+    try:
+        mpls = MPLS.query.get_or_404(id)
+        
+        if mpls.stato != 'bozza':
+            flash("Puoi modificare solo MPLS in bozza", "error")
+            return redirect(f'/mpls/{id}')
+        
+        # Carica articoli
+        articoli = MPLSArticolo.query.filter_by(mpls_id=id).all()
+        
+        return render_template('modifica-mpls.html',
+                             mpls=mpls,
+                             articoli=articoli,
+                             today=datetime.now().strftime('%Y-%m-%d'))
+                             
+    except Exception as e:
+        print(f"Errore modifica MPLS: {e}")
+        return str(e), 500
+
+@app.route('/mpls/<int:id>/update', methods=['POST'])
+def update_mpls(id):
+    """Aggiorna MPLS esistente"""
+    try:
+        mpls = MPLS.query.get_or_404(id)
+        
+        if mpls.stato != 'bozza':
+            flash("Puoi modificare solo MPLS in bozza", "error")
+            return redirect(f'/mpls/{id}')
+        
+        # Aggiorna dati generali
+        mpls.data_creazione = datetime.strptime(request.form.get('data_creazione'), '%Y-%m-%d')
+        mpls.cliente_nome = request.form.get('cliente_nome')
+        mpls.cliente_codice = request.form.get('cliente_codice', '')
+        mpls.descrizione = request.form.get('descrizione', '')
+        mpls.stato = request.form.get('stato', 'bozza')
+        
+        # Aggiorna totali
+        mpls.totale_costi = float(request.form.get('totale_costi', 0))
+        mpls.totale_vendita = float(request.form.get('totale_vendita', 0))
+        mpls.totale_iva = float(request.form.get('totale_iva', 0))
+        mpls.totale_ivato = float(request.form.get('totale_ivato', 0))
+        mpls.margine_euro = float(request.form.get('margine_euro', 0))
+        mpls.margine_percentuale = float(request.form.get('margine_percentuale', 0))
+        
+        # Rimuovi articoli esistenti
+        MPLSArticolo.query.filter_by(mpls_id=id).delete()
+        
+        # Salva articoli aggiornati
+        articoli_data = {}
+        for key, value in request.form.items():
+            if key.startswith('articoli['):
+                import re
+                match = re.match(r'articoli\[(\d+)\]\[(\w+)\]', key)
+                if match:
+                    index = int(match.group(1))
+                    field = match.group(2)
+                    
+                    if index not in articoli_data:
+                        articoli_data[index] = {}
+                    articoli_data[index][field] = value
+        
+        # Crea articoli aggiornati
+        for index, art_data in articoli_data.items():
+            if art_data.get('codice') or art_data.get('descrizione'):
+                articolo = MPLSArticolo(
+                    mpls_id=mpls.id,
+                    codice=art_data.get('codice', ''),
+                    descrizione=art_data.get('descrizione', ''),
+                    quantita=float(art_data.get('quantita', 1)),
+                    prezzo_costo=float(art_data.get('prezzo_costo', 0)),
+                    ricarico_percentuale=float(art_data.get('ricarico_percentuale', 30)),
+                    prezzo_vendita=float(art_data.get('prezzo_vendita', 0))
+                )
+                db.session.add(articolo)
+        
+        db.session.commit()
+        
+        flash(f"MPLS {mpls.numero_mpls} aggiornato con successo!", "success")
+        return redirect(f'/mpls/{mpls.id}')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore aggiornamento MPLS: {e}")
+        flash(f"Errore nell'aggiornamento: {str(e)}", "error")
+        return redirect(f'/mpls/{id}/modifica')
 
 def _calcola_ricarico_materiale(prezzo_acquisto, quantita, is_guazzotti):
     """Calcola ricarico secondo logica business"""

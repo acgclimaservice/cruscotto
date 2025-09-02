@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 Nuovo MPLS - Sistema Gestione</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>🏢 ACG Clima</h2>
+            </div>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/ordini">🛒 Ordini</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/mpls" class="active">💰 MPLS</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/commesse">🏗️ Commesse</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <div class="header-actions">
+                <div>
+                    <h1>💰 Nuovo MPLS</h1>
+                    <p>Crea un nuovo preventivo con calcolo automatico margini e ricarichi</p>
+                </div>
+                <div>
+                    <a href="/mpls" class="btn btn-secondary">← Torna alla Lista</a>
+                </div>
+            </div>
+
+            <form id="mplsForm" method="POST" action="/mpls/save">
+                <!-- Dati Generali -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📋 Dati Generali</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="numero_mpls">Numero MPLS *</label>
+                                <input type="text" id="numero_mpls" name="numero_mpls" value="{{ numero_mpls }}" readonly class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="data_creazione">Data Creazione *</label>
+                                <input type="date" id="data_creazione" name="data_creazione" value="{{ today }}" required class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cliente_nome">Nome Cliente *</label>
+                                <input type="text" id="cliente_nome" name="cliente_nome" required class="form-control" placeholder="Inserisci nome cliente">
+                            </div>
+                            <div class="form-group">
+                                <label for="cliente_codice">Codice Cliente</label>
+                                <input type="text" id="cliente_codice" name="cliente_codice" class="form-control" placeholder="Codice cliente (opzionale)">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descrizione">Descrizione Progetto</label>
+                            <textarea id="descrizione" name="descrizione" rows="3" class="form-control" placeholder="Descrizione del progetto/lavoro"></textarea>
+                        </div>
+
+                        <!-- Fonte del MPLS -->
+                        {% if fonte_tipo %}
+                        <div class="alert alert-info">
+                            <strong>📋 Fonte:</strong> 
+                            {% if fonte_tipo == 'ddt_in' %}
+                                📥 DDT IN #{{ fonte_id }}
+                            {% elif fonte_tipo == 'offerta' %}
+                                💰 Offerta #{{ fonte_id }}
+                            {% elif fonte_tipo == 'ordine' %}
+                                🛒 Ordine #{{ fonte_id }}
+                            {% endif %}
+                        </div>
+                        <input type="hidden" name="fonte_tipo" value="{{ fonte_tipo }}">
+                        <input type="hidden" name="fonte_id" value="{{ fonte_id }}">
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Articoli -->
+                <div class="card">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3>📦 Articoli</h3>
+                            <button type="button" id="addArticolo" class="btn btn-success btn-sm">+ Aggiungi Articolo</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="articoliTable">
+                                <thead>
+                                    <tr>
+                                        <th>Codice</th>
+                                        <th>Descrizione</th>
+                                        <th>Qtà</th>
+                                        <th>Prezzo Costo</th>
+                                        <th>Ricarico %</th>
+                                        <th>Prezzo Vendita</th>
+                                        <th>Totale</th>
+                                        <th>Azioni</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="articoliTableBody">
+                                    <!-- Articoli precompilati dalla fonte -->
+                                    {% if articoli_precompilati %}
+                                        {% for articolo in articoli_precompilati %}
+                                        <tr class="articolo-row">
+                                            <td><input type="text" name="articoli[{{ loop.index0 }}][codice]" value="{{ articolo.codice }}" class="form-control form-control-sm"></td>
+                                            <td><input type="text" name="articoli[{{ loop.index0 }}][descrizione]" value="{{ articolo.descrizione }}" class="form-control form-control-sm"></td>
+                                            <td><input type="number" name="articoli[{{ loop.index0 }}][quantita]" value="{{ articolo.quantita }}" step="0.01" class="form-control form-control-sm quantita-input"></td>
+                                            <td><input type="number" name="articoli[{{ loop.index0 }}][prezzo_costo]" value="{{ articolo.prezzo_costo or 0 }}" step="0.01" class="form-control form-control-sm prezzo-costo-input"></td>
+                                            <td><input type="number" name="articoli[{{ loop.index0 }}][ricarico_percentuale]" value="30" step="0.1" class="form-control form-control-sm ricarico-input"></td>
+                                            <td><input type="number" name="articoli[{{ loop.index0 }}][prezzo_vendita]" readonly class="form-control form-control-sm prezzo-vendita-input"></td>
+                                            <td><span class="totale-riga">€ 0.00</span></td>
+                                            <td><button type="button" class="btn btn-danger btn-sm remove-articolo">🗑️</button></td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <!-- Riga vuota iniziale -->
+                                        <tr class="articolo-row">
+                                            <td><input type="text" name="articoli[0][codice]" class="form-control form-control-sm"></td>
+                                            <td><input type="text" name="articoli[0][descrizione]" class="form-control form-control-sm"></td>
+                                            <td><input type="number" name="articoli[0][quantita]" value="1" step="0.01" class="form-control form-control-sm quantita-input"></td>
+                                            <td><input type="number" name="articoli[0][prezzo_costo]" value="0" step="0.01" class="form-control form-control-sm prezzo-costo-input"></td>
+                                            <td><input type="number" name="articoli[0][ricarico_percentuale]" value="30" step="0.1" class="form-control form-control-sm ricarico-input"></td>
+                                            <td><input type="number" name="articoli[0][prezzo_vendita]" readonly class="form-control form-control-sm prezzo-vendita-input"></td>
+                                            <td><span class="totale-riga">€ 0.00</span></td>
+                                            <td><button type="button" class="btn btn-danger btn-sm remove-articolo">🗑️</button></td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Totali e Margini -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>💰 Riepilogo Totali</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="totali-grid">
+                            <div class="totale-item">
+                                <label>Totale Costi:</label>
+                                <span id="totaleCosti">€ 0.00</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Totale Vendita (IVA esclusa):</label>
+                                <span id="totaleVendita">€ 0.00</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>IVA (22%):</label>
+                                <span id="totaleIva">€ 0.00</span>
+                            </div>
+                            <div class="totale-item totale-finale">
+                                <label>Totale IVA Inclusa:</label>
+                                <span id="totaleIvato">€ 0.00</span>
+                            </div>
+                            <div class="totale-item margine">
+                                <label>Margine:</label>
+                                <span id="margineEuro">€ 0.00</span>
+                                <span id="marginePercentuale">(0.0%)</span>
+                            </div>
+                        </div>
+
+                        <!-- Campi nascosti per i totali -->
+                        <input type="hidden" id="hiddenTotaleCosti" name="totale_costi" value="0">
+                        <input type="hidden" id="hiddenTotaleVendita" name="totale_vendita" value="0">
+                        <input type="hidden" id="hiddenTotaleIva" name="totale_iva" value="0">
+                        <input type="hidden" id="hiddenTotaleIvato" name="totale_ivato" value="0">
+                        <input type="hidden" id="hiddenMargineEuro" name="margine_euro" value="0">
+                        <input type="hidden" id="hiddenMarginePercentuale" name="margine_percentuale" value="0">
+                    </div>
+                </div>
+
+                <!-- Azioni -->
+                <div class="form-actions">
+                    <button type="submit" name="stato" value="bozza" class="btn btn-warning">📝 Salva come Bozza</button>
+                    <button type="submit" name="stato" value="confermato" class="btn btn-success">✅ Salva e Conferma</button>
+                    <a href="/mpls" class="btn btn-secondary">❌ Annulla</a>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <style>
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            background: #f8f9fa;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        
+        .form-control-sm {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 12px;
+            color: #374151;
+        }
+        
+        .totali-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .totale-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        
+        .totale-item label {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .totale-finale {
+            border-top: 2px solid #007bff;
+            padding-top: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .margine {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+    </style>
+
+    <script>
+        let articoloIndex = {{ articoli_precompilati|length if articoli_precompilati else 1 }};
+
+        // Aggiungi nuovo articolo
+        document.getElementById('addArticolo').addEventListener('click', function() {
+            const tbody = document.getElementById('articoliTableBody');
+            const row = document.createElement('tr');
+            row.className = 'articolo-row';
+            row.innerHTML = `
+                <td><input type="text" name="articoli[${articoloIndex}][codice]" class="form-control form-control-sm"></td>
+                <td><input type="text" name="articoli[${articoloIndex}][descrizione]" class="form-control form-control-sm"></td>
+                <td><input type="number" name="articoli[${articoloIndex}][quantita]" value="1" step="0.01" class="form-control form-control-sm quantita-input"></td>
+                <td><input type="number" name="articoli[${articoloIndex}][prezzo_costo]" value="0" step="0.01" class="form-control form-control-sm prezzo-costo-input"></td>
+                <td><input type="number" name="articoli[${articoloIndex}][ricarico_percentuale]" value="30" step="0.1" class="form-control form-control-sm ricarico-input"></td>
+                <td><input type="number" name="articoli[${articoloIndex}][prezzo_vendita]" readonly class="form-control form-control-sm prezzo-vendita-input"></td>
+                <td><span class="totale-riga">€ 0.00</span></td>
+                <td><button type="button" class="btn btn-danger btn-sm remove-articolo">🗑️</button></td>
+            `;
+            tbody.appendChild(row);
+            
+            // Aggiorna event listeners
+            updateEventListeners();
+            articoloIndex++;
+        });
+
+        // Rimuovi articolo
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-articolo')) {
+                e.target.closest('tr').remove();
+                calcolaTotali();
+            }
+        });
+
+        // Aggiorna event listeners per calcoli
+        function updateEventListeners() {
+            document.querySelectorAll('.quantita-input, .prezzo-costo-input, .ricarico-input').forEach(input => {
+                input.removeEventListener('input', calcolaRiga);
+                input.addEventListener('input', calcolaRiga);
+            });
+        }
+
+        // Calcola valori singola riga
+        function calcolaRiga(e) {
+            const row = e.target.closest('tr');
+            const quantita = parseFloat(row.querySelector('.quantita-input').value) || 0;
+            const prezzoCosto = parseFloat(row.querySelector('.prezzo-costo-input').value) || 0;
+            const ricarico = parseFloat(row.querySelector('.ricarico-input').value) || 0;
+            
+            // Calcola prezzo di vendita
+            const prezzoVendita = prezzoCosto * (1 + ricarico / 100);
+            row.querySelector('.prezzo-vendita-input').value = prezzoVendita.toFixed(2);
+            
+            // Calcola totale riga
+            const totaleRiga = quantita * prezzoVendita;
+            row.querySelector('.totale-riga').textContent = `€ ${totaleRiga.toFixed(2)}`;
+            
+            // Ricalcola totali generali
+            calcolaTotali();
+        }
+
+        // Calcola totali generali
+        function calcolaTotali() {
+            let totaleCosti = 0;
+            let totaleVendita = 0;
+            
+            document.querySelectorAll('.articolo-row').forEach(row => {
+                const quantita = parseFloat(row.querySelector('.quantita-input').value) || 0;
+                const prezzoCosto = parseFloat(row.querySelector('.prezzo-costo-input').value) || 0;
+                const prezzoVendita = parseFloat(row.querySelector('.prezzo-vendita-input').value) || 0;
+                
+                totaleCosti += quantita * prezzoCosto;
+                totaleVendita += quantita * prezzoVendita;
+            });
+            
+            const totaleIva = totaleVendita * 0.22;
+            const totaleIvato = totaleVendita + totaleIva;
+            const margineEuro = totaleVendita - totaleCosti;
+            const marginePercentuale = totaleCosti > 0 ? (margineEuro / totaleCosti) * 100 : 0;
+            
+            // Aggiorna UI
+            document.getElementById('totaleCosti').textContent = `€ ${totaleCosti.toFixed(2)}`;
+            document.getElementById('totaleVendita').textContent = `€ ${totaleVendita.toFixed(2)}`;
+            document.getElementById('totaleIva').textContent = `€ ${totaleIva.toFixed(2)}`;
+            document.getElementById('totaleIvato').textContent = `€ ${totaleIvato.toFixed(2)}`;
+            document.getElementById('margineEuro').textContent = `€ ${margineEuro.toFixed(2)}`;
+            document.getElementById('marginePercentuale').textContent = `(${marginePercentuale.toFixed(1)}%)`;
+            
+            // Aggiorna campi nascosti
+            document.getElementById('hiddenTotaleCosti').value = totaleCosti.toFixed(2);
+            document.getElementById('hiddenTotaleVendita').value = totaleVendita.toFixed(2);
+            document.getElementById('hiddenTotaleIva').value = totaleIva.toFixed(2);
+            document.getElementById('hiddenTotaleIvato').value = totaleIvato.toFixed(2);
+            document.getElementById('hiddenMargineEuro').value = margineEuro.toFixed(2);
+            document.getElementById('hiddenMarginePercentuale').value = marginePercentuale.toFixed(2);
+        }
+
+        // Inizializza event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            updateEventListeners();
+            calcolaTotali();
+        });
+    </script>
+</body>
+</html>

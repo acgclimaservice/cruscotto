@@ -411,6 +411,8 @@ class MPLS(db.Model):
     
     # Dati cliente e commessa
     cliente_nome = db.Column(db.String(200))
+    cliente_codice = db.Column(db.String(100))
+    descrizione = db.Column(db.Text)
     commessa_id = db.Column(db.Integer, db.ForeignKey('commessa.id'), nullable=True)
     indirizzo = db.Column(db.String(500))
     condominio = db.Column(db.String(200))
@@ -430,13 +432,18 @@ class MPLS(db.Model):
     iva_percentuale = db.Column(db.Integer, default=22)
     
     # Totali calcolati
+    totale_costi = db.Column(db.Float, default=0.0)
+    totale_vendita = db.Column(db.Float, default=0.0)
+    totale_iva = db.Column(db.Float, default=0.0)
+    totale_ivato = db.Column(db.Float, default=0.0)
+    margine_euro = db.Column(db.Float, default=0.0)
+    margine_percentuale = db.Column(db.Float, default=0.0)
+    
+    # Totali legacy (mantenuti per compatibilità)
     subtotale_materiali = db.Column(db.Float, default=0.0)
     subtotale_manodopera = db.Column(db.Float, default=0.0)
     totale_generale = db.Column(db.Float, default=0.0)
     importo_iva = db.Column(db.Float, default=0.0)
-    totale_ivato = db.Column(db.Float, default=0.0)
-    margine_euro = db.Column(db.Float, default=0.0)
-    margine_percentuale = db.Column(db.Float, default=0.0)
     
     # Stato e note
     stato = db.Column(db.String(20), default='bozza')  # bozza, confermato, preventivo_inviato
@@ -462,3 +469,20 @@ class MaterialeMPLS(db.Model):
     # Totali
     totale_acquisto = db.Column(db.Float)  # quantita * prezzo_acquisto
     totale_vendita = db.Column(db.Float)   # quantita * prezzo_vendita
+
+class MPLSArticolo(db.Model):
+    """Articoli per MPLS semplificato"""
+    __tablename__ = 'mpls_articolo'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    mpls_id = db.Column(db.Integer, db.ForeignKey('mpls.id'), nullable=False)
+    
+    codice = db.Column(db.String(100))
+    descrizione = db.Column(db.String(500), nullable=False)
+    quantita = db.Column(db.Float, nullable=False, default=1.0)
+    prezzo_costo = db.Column(db.Float, nullable=False, default=0.0)
+    ricarico_percentuale = db.Column(db.Float, default=30.0)
+    prezzo_vendita = db.Column(db.Float, nullable=False, default=0.0)
+    
+    # Relazione
+    mpls_parent = db.relationship('MPLS', backref='articoli')
