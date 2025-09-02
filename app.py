@@ -1359,6 +1359,25 @@ def create_ddt_from_import():
     try:
         data = request.json
         
+        # Controllo duplicati DDT (numero DDT fornitore)
+        numero_ddt_fornitore = data.get('numero_ddt_origine', '').strip()
+        fornitore_nome = data.get('fornitore', '').strip()
+        
+        if numero_ddt_fornitore and fornitore_nome:
+            # Controlla se esiste già un DDT con stesso riferimento e fornitore
+            ddt_esistente = DDTIn.query.filter_by(
+                riferimento=numero_ddt_fornitore,
+                fornitore=fornitore_nome
+            ).first()
+            
+            if ddt_esistente:
+                return jsonify({
+                    'success': False,
+                    'error': f'DDT duplicato: {numero_ddt_fornitore} dal fornitore {fornitore_nome} già importato (DDT ID: {ddt_esistente.id})',
+                    'duplicate_ddt_id': ddt_esistente.id,
+                    'show_duplicate_info': True
+                })
+        
         # Crea nuovo DDT IN
         nuovo_ddt = DDTIn(
             fornitore=data.get('fornitore', ''),
@@ -1831,6 +1850,21 @@ def nuovo_ddt_in():
     
     # POST - Salva nuovo DDT
     try:
+        # Controllo duplicati DDT (numero DDT fornitore)
+        numero_ddt_fornitore = request.form.get('riferimento', '').strip()
+        fornitore_nome = request.form.get('fornitore', '').strip()
+        
+        if numero_ddt_fornitore and fornitore_nome:
+            # Controlla se esiste già un DDT con stesso riferimento e fornitore
+            ddt_esistente = DDTIn.query.filter_by(
+                riferimento=numero_ddt_fornitore,
+                fornitore=fornitore_nome
+            ).first()
+            
+            if ddt_esistente:
+                flash(f'ATTENZIONE: DDT duplicato! Il DDT {numero_ddt_fornitore} dal fornitore {fornitore_nome} è già stato importato (ID: {ddt_esistente.id})', 'error')
+                return redirect(f'/ddt-in/{ddt_esistente.id}')
+        
         nuovo_ddt = DDTIn(
             fornitore=request.form.get('fornitore', ''),
             riferimento=request.form.get('riferimento', ''),
@@ -2654,6 +2688,23 @@ def process_batch_files(job_id):
                                 )
                                 db.session.add(fornitore)
                                 db.session.flush()
+                        
+                        # Controllo duplicati DDT (numero DDT fornitore)
+                        numero_ddt_fornitore = data.get('numero_ddt', '').strip()
+                        if numero_ddt_fornitore and fornitore_nome:
+                            # Controlla se esiste già un DDT con stesso riferimento e fornitore
+                            ddt_esistente = DDTIn.query.filter_by(
+                                riferimento=numero_ddt_fornitore,
+                                fornitore=fornitore_nome
+                            ).first()
+                            
+                            if ddt_esistente:
+                                batch_file.status = 'skipped'
+                                batch_file.error_message = f'DDT duplicato: {numero_ddt_fornitore} dal fornitore {fornitore_nome} già importato (ID: {ddt_esistente.id})'
+                                job.failed_files += 1
+                                print(f"DDT DUPLICATO saltato: {numero_ddt_fornitore} da {fornitore_nome}")
+                                db.session.commit()
+                                continue
                         
                         # Leggi e codifica PDF originale in base64
                         import base64
