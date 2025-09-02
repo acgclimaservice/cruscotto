@@ -6325,6 +6325,63 @@ def rifiuta_offerta(id):
         db.session.rollback()
         return jsonify({'errore': str(e)}), 500
 
+@app.route('/offerte/<int:id>/cambia-stato', methods=['POST'])
+def cambia_stato_offerta(id):
+    """Cambia stato di un'offerta - permette qualsiasi transizione"""
+    from werkzeug.exceptions import NotFound
+    try:
+        offerta = OffertaFornitore.query.get_or_404(id)
+        nuovo_stato = request.form.get('stato', '')
+        motivo = request.form.get('motivo', '')
+        
+        stati_validi = ['creata', 'richiesta', 'valutata', 'accettata', 'rifiutata']
+        
+        if nuovo_stato not in stati_validi:
+            return jsonify({'errore': f'Stato non valido: {nuovo_stato}'}), 400
+            
+        stato_precedente = offerta.stato
+        offerta.stato = nuovo_stato
+        
+        # Aggiorna campi specifici in base al nuovo stato
+        oggi = datetime.now().date()
+        
+        if nuovo_stato == 'valutata':
+            offerta.data_valutazione = oggi
+            if motivo:
+                offerta.valutazione = motivo
+        elif nuovo_stato == 'accettata':
+            offerta.data_accettazione = oggi
+        elif nuovo_stato == 'rifiutata':
+            offerta.data_valutazione = oggi
+            if motivo:
+                offerta.valutazione = f"Rifiutata: {motivo}"
+        
+        db.session.commit()
+        
+        # Messaggi personalizzati
+        messaggi = {
+            'creata': 'Offerta riportata in stato creata',
+            'richiesta': 'Offerta marcata come richiesta',
+            'valutata': 'Offerta messa in valutazione',
+            'accettata': 'Offerta accettata',
+            'rifiutata': 'Offerta rifiutata'
+        }
+        
+        return jsonify({
+            'success': True,
+            'message': messaggi.get(nuovo_stato, f'Stato cambiato in {nuovo_stato}'),
+            'stato_precedente': stato_precedente,
+            'nuovo_stato': nuovo_stato,
+            'redirect_url': f'/offerte/{id}'
+        })
+        
+    except NotFound:
+        return jsonify({'errore': 'Offerta non trovata'}), 404
+    except Exception as e:
+        print(f"Errore cambio stato offerta {id}: {e}")
+        db.session.rollback()
+        return jsonify({'errore': str(e)}), 500
+
 @app.route('/offerte/<int:id>/pdf')
 def offerte_pdf(id):
     """Genera PDF professionale dell'offerta con logo a sinistra"""

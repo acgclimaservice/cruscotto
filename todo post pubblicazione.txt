@@ -101,7 +101,7 @@ onclick @ nuovo:130
 66. nei preventivi togli come campo obbligatorio il costo unitario. FATTO - CONTROLLATO OK
 67. nella sezione impostazioni nella parte relativa all'Importazione Automatica DDT via Email ho impostato come Intervallo controllo (minuti): 1, ma noto che per processare una mail ci mette circa 15 minuti. riusciamo a controllare il monitoraggio automatico della mail.
 68 se nelle offerte faccio rifiuto mi da questo {"message":"Offerta rifiutata con successo","redirect_url":"/offerte/1","success":true} FATTO - CONTROLLATO OK
-69 voglio avere la possibilità di modificare sempre lo stato di un'offerta in creata, richiesta, in valutazione, accettata, rifiutata. devo avere sempre la possibilità di passare da uno stato all'altro
+69 voglio avere la possibilità di modificare sempre lo stato di un'offerta in creata, richiesta, in valutazione, accettata, rifiutata. devo avere sempre la possibilità di passare da uno stato all'altro FATTO - CONTROLLATO OK
 70 se modifico un'offerta mi deve ricaricare i dati dell'offerta da modificare adesso invece vedo solo campi vuoti
 71 
 

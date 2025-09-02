@@ -178,17 +178,20 @@
                 <a href="/offerte" class="btn btn-secondary">⬅️ Annulla</a>
                 <button type="submit" class="btn btn-success">💾 {{ 'Aggiorna' if modalita == 'modifica' else 'Salva' }} Richiesta</button>
                 
-                {% if modalita == 'modifica' and offerta.stato in ['creata', 'richiesta', 'valutata'] %}
+                {% if modalita == 'modifica' %}
                     <div style="border-left: 2px solid #e5e7eb; margin: 0 15px; padding-left: 15px; display: inline-block;">
-                        <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
-                            <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
-                        </form>
-                        <button class="btn btn-danger" onclick="mostraModalRifiuto('offerta', {{ offerta.id }})">❌ Rifiuta</button>
-                        {% if offerta.stato != 'valutata' %}
-                        <form method="POST" action="/offerte/{{ offerta.id }}/valuta" style="display: inline;">
-                            <button type="submit" class="btn btn-warning" onclick="return confirm('Vuoi mettere questa offerta in valutazione?')">🔍 Metti in Valutazione</button>
-                        </form>
-                        {% endif %}
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label for="cambio-stato" style="font-weight: 500; margin: 0;">Cambia Stato:</label>
+                            <select id="cambio-stato" class="form-control" style="width: auto; min-width: 150px;">
+                                <option value="">Seleziona nuovo stato...</option>
+                                <option value="creata" {{ 'disabled' if offerta.stato == 'creata' else '' }}>📝 Creata</option>
+                                <option value="richiesta" {{ 'disabled' if offerta.stato == 'richiesta' else '' }}>📧 Richiesta</option>
+                                <option value="valutata" {{ 'disabled' if offerta.stato == 'valutata' else '' }}>🔍 In Valutazione</option>
+                                <option value="accettata" {{ 'disabled' if offerta.stato == 'accettata' else '' }}>✅ Accettata</option>
+                                <option value="rifiutata" {{ 'disabled' if offerta.stato == 'rifiutata' else '' }}>❌ Rifiutata</option>
+                            </select>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="mostraModalCambioStato()">🔄 Cambia</button>
+                        </div>
                     </div>
                 {% endif %}
             </div>
@@ -572,11 +575,87 @@
             });
         }
         
+        // Modal cambio stato
+        function mostraModalCambioStato() {
+            const selectStato = document.getElementById('cambio-stato');
+            const nuovoStato = selectStato.value;
+            
+            if (!nuovoStato) {
+                alert('Seleziona un nuovo stato');
+                return;
+            }
+            
+            const modal = document.getElementById('modal-cambio-stato');
+            const titoloModal = document.getElementById('titolo-modal-cambio-stato');
+            const testoModal = document.getElementById('testo-modal-cambio-stato');
+            
+            const stati = {
+                'creata': '📝 Creata',
+                'richiesta': '📧 Richiesta', 
+                'valutata': '🔍 In Valutazione',
+                'accettata': '✅ Accettata',
+                'rifiutata': '❌ Rifiutata'
+            };
+            
+            titoloModal.textContent = `Cambia Stato in ${stati[nuovoStato]}`;
+            testoModal.textContent = `Sei sicuro di voler cambiare lo stato dell'offerta in "${stati[nuovoStato]}"?`;
+            
+            modal.dataset.stato = nuovoStato;
+            modal.style.display = 'block';
+        }
+        
+        function chiudiModalCambioStato() {
+            document.getElementById('modal-cambio-stato').style.display = 'none';
+            document.getElementById('motivo-cambio-stato').value = '';
+            document.getElementById('cambio-stato').value = '';
+        }
+        
+        function confermaCambioStato() {
+            const modal = document.getElementById('modal-cambio-stato');
+            const nuovoStato = modal.dataset.stato;
+            const motivo = document.getElementById('motivo-cambio-stato').value;
+            
+            const formData = new FormData();
+            formData.append('stato', nuovoStato);
+            formData.append('motivo', motivo);
+            
+            {% if modalita == 'modifica' %}
+            fetch(`/offerte/{{ offerta.id }}/cambia-stato`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert('Errore: ' + (data.errore || 'Errore sconosciuto'));
+                }
+                chiudiModalCambioStato();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore di rete: ' + error.message);
+                chiudiModalCambioStato();
+            });
+            {% endif %}
+        }
+        
         // Chiudi modal cliccando fuori
         window.onclick = function(event) {
-            const modal = document.getElementById('modal-rifiuto');
-            if (event.target == modal) {
+            const modalRifiuto = document.getElementById('modal-rifiuto');
+            const modalCambioStato = document.getElementById('modal-cambio-stato');
+            
+            if (event.target == modalRifiuto) {
                 chiudiModalRifiuto();
+            }
+            if (event.target == modalCambioStato) {
+                chiudiModalCambioStato();
             }
         }
     </script>
@@ -599,6 +678,29 @@
             <div class="modal-rifiuto-footer">
                 <button class="btn btn-secondary" onclick="chiudiModalRifiuto()">❌ Annulla</button>
                 <button class="btn btn-danger" onclick="confermaRifiuto()">✅ Conferma Rifiuto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cambio Stato -->
+    <div id="modal-cambio-stato" class="modal-rifiuto" style="display: none;">
+        <div class="modal-rifiuto-content">
+            <div class="modal-rifiuto-header">
+                <h2 id="titolo-modal-cambio-stato">Cambia Stato</h2>
+                <span class="close-rifiuto" onclick="chiudiModalCambioStato()">&times;</span>
+            </div>
+            
+            <div class="modal-rifiuto-body">
+                <p id="testo-modal-cambio-stato" style="margin-bottom: 15px; font-weight: 500;"></p>
+                <div class="form-group-rifiuto">
+                    <label for="motivo-cambio-stato">Motivo/Note (opzionale):</label>
+                    <textarea id="motivo-cambio-stato" placeholder="Inserisci eventuali note sul cambio di stato..." rows="3"></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-rifiuto-footer">
+                <button class="btn btn-secondary" onclick="chiudiModalCambioStato()">❌ Annulla</button>
+                <button class="btn btn-primary" onclick="confermaCambioStato()">✅ Conferma Cambio</button>
             </div>
         </div>
     </div>
