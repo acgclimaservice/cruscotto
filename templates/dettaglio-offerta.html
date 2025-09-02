@@ -685,7 +685,8 @@
                     document.body.removeChild(downloadLink);
                     URL.revokeObjectURL(url);
                     
-                    alert(`✅ Email preparata in Outlook!\n📎 PDF scaricato: ${pdfData.filename}\n\n💡 Trascina il file PDF appena scaricato nell'email di Outlook come allegato.`);
+                    // Mostra modal con istruzioni dettagliate
+                    showPDFInstructions(pdfData.filename);
                     chiudiModalEmail();
                     
                     setTimeout(() => window.location.reload(), 1500);
@@ -724,6 +725,60 @@
                 chiudiModalEmail();
                 setTimeout(() => window.location.reload(), 1000);
             }, 500);
+        }
+        
+        function showPDFInstructions(filename) {
+            // Crea modal con istruzioni dettagliate
+            const modal = document.createElement('div');
+            modal.id = 'pdf-instructions-modal';
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 10001; display: flex; 
+                align-items: center; justify-content: center;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h2 style="color: #007bff; margin: 0 0 10px 0;">✅ Email Preparata!</h2>
+                        <p style="color: #666; margin: 0;">PDF scaricato: <strong>${filename}</strong></p>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 15px 0; color: #495057;">📎 Come allegare il PDF:</h3>
+                        <ol style="margin: 0; padding-left: 20px; color: #495057; line-height: 1.6;">
+                            <li><strong>Vai nella cartella Download</strong> del tuo computer</li>
+                            <li><strong>Trova il file</strong> <code>${filename}</code></li>
+                            <li><strong>Trascinalo nell'email</strong> di Outlook già aperta</li>
+                            <li><strong>Controlla l'allegato</strong> e invia l'email</li>
+                        </ol>
+                    </div>
+                    
+                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #28a745;">
+                        <p style="margin: 0; color: #155724;"><strong>💡 Suggerimento:</strong><br>
+                        Il file PDF è stato scaricato automaticamente nella tua cartella Download. 
+                        Puoi anche fare clic destro sul file e selezionare "Invia a → Destinatario posta"</p>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <button onclick="closePDFInstructions()" 
+                                style="background: #007bff; color: white; border: none; padding: 12px 24px; 
+                                       border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                            🆗 Perfetto, grazie!
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        function closePDFInstructions() {
+            const modal = document.getElementById('pdf-instructions-modal');
+            if (modal) {
+                document.body.removeChild(modal);
+                setTimeout(() => window.location.reload(), 500);
+            }
         }
         
         // Chiudi modal cliccando fuori

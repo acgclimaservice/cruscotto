@@ -8,3 +8,5 @@
 8. nei movimenti interni se cambio il magazzino di partenza mi da il codice magazzino invece che la descrizione magazzino e se seleziono un articolo mi dice sempre giacenza 0 anche se in quel magazzino quell'articolo e' disponibile. questo non succede se come magazzino di partenza e' selezionato il magazzino principale  che invece funziona tutto perfettamente. 
 9. nella sezione report, nei report movimenti non funziona il tasto export excel. 
 10. nella sezione impostazioni nella parte relativa all'importazione automatica DDT via Mail ho impostato come Intervallo controllo (minuti): 1, ma noto che non fa il processo automatico devo cliccare su verifica ora. riusciamo a controllare il monitoraggio automatico della mail e testare se funziona tutto. 
+11 durante il parsing dei ddt in, sia multiplo che singolo, sia quelli arrivati per mail, dovresti controllare (analizzando il numero del ddt fornitore) che non vengano importati dei ddt fornitori già importati (anche in bozza).
+12 

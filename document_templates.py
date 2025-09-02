@@ -38,7 +38,8 @@ class DocumentTemplate:
                 <p><strong>{DocumentTemplate.COMPANY_DATA['settore']}</strong></p>
             </div>
             <div class="document-logo">
-                <div class="logo-placeholder">ACG</div>
+                <img src="/static/logo-acg.png" alt="ACG Clima Service" style="height: 60px; width: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="logo-placeholder" style="display: none;">ACG</div>
             </div>
         </div>
         """
