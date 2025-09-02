@@ -207,6 +207,89 @@
     <script>
     let rigaCount = 1;
     let datiPDFEstratti = null;
+
+    // Funzione per mostrare errori copiabili invece di alert()
+    function showCopyableError(title, message) {
+        // Rimuovi eventuali modali esistenti
+        const existingModal = document.getElementById('copyable-error-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Crea il modal
+        const modal = document.createElement('div');
+        modal.id = 'copyable-error-modal';
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.7); z-index: 10000; display: flex; 
+            align-items: center; justify-content: center;
+        `;
+        
+        const content = document.createElement('div');
+        content.style.cssText = `
+            background: white; padding: 25px; border-radius: 10px; 
+            max-width: 600px; max-height: 80%; overflow: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        `;
+        
+        content.innerHTML = `
+            <h3 style="color: #e74c3c; margin: 0 0 15px 0;">❌ ${title}</h3>
+            <textarea readonly style="width: 100%; height: 200px; padding: 10px; 
+                     border: 1px solid #ddd; border-radius: 5px; font-family: monospace;
+                     resize: vertical; user-select: all; -webkit-user-select: all;">${message}</textarea>
+            <div style="margin-top: 15px; text-align: center;">
+                <button onclick="copyErrorToClipboard()" style="background: #3498db; color: white; 
+                       padding: 8px 16px; border: none; border-radius: 4px; margin-right: 10px; cursor: pointer;">
+                    📋 Copia Errore
+                </button>
+                <button onclick="closeErrorModal()" style="background: #95a5a6; color: white; 
+                       padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                    ✖️ Chiudi
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        
+        // Focus sulla textarea per facilitare la selezione
+        setTimeout(() => {
+            const textarea = content.querySelector('textarea');
+            textarea.focus();
+            textarea.select();
+        }, 100);
+    }
+    
+    function copyErrorToClipboard() {
+        const textarea = document.querySelector('#copyable-error-modal textarea');
+        textarea.select();
+        document.execCommand('copy');
+        
+        const button = document.querySelector('#copyable-error-modal button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '✅ Copiato!';
+        button.style.background = '#27ae60';
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.style.background = '#3498db';
+        }, 2000);
+    }
+    
+    function closeErrorModal() {
+        const modal = document.getElementById('copyable-error-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    // Chiudi modal cliccando fuori
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('copyable-error-modal');
+        if (modal && e.target === modal) {
+            closeErrorModal();
+        }
+    });
     
     // Funzioni navigazione sezioni
     function mostraCreazioneManovale() {
@@ -286,7 +369,7 @@
                     mostraPDFConHighlight(data.highlight_data, data.pdf_image);
                 }
             } else {
-                alert('Errore parsing: ' + data.error);
+                showCopyableError('Errore parsing PDF', data.error);
                 // Fallback a simulazione
                 setTimeout(() => simulaEstrazionePDF(file.name), 1000);
             }
