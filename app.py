@@ -7971,8 +7971,66 @@ def api_fornitori_search():
     return jsonify([{
         'ragione_sociale': f.ragione_sociale,
         'partita_iva': f.partita_iva or '',
+        'codice_fiscale': f.codice_fiscale or f.partita_iva or '',
+        'citta': f.citta or '',
         'id': f.id
     } for f in fornitori])
+
+@app.route('/api/fornitori/create', methods=['POST'])
+def api_fornitori_create():
+    """API per creare un nuovo fornitore"""
+    try:
+        # Ottieni dati dal form
+        ragione_sociale = request.form.get('ragione_sociale', '').strip()
+        codice_fiscale = request.form.get('codice_fiscale', '').strip()
+        indirizzo = request.form.get('indirizzo', '').strip()
+        citta = request.form.get('citta', '').strip()
+        cap = request.form.get('cap', '').strip()
+        provincia = request.form.get('provincia', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        email = request.form.get('email', '').strip()
+        
+        # Validazioni base
+        if not ragione_sociale:
+            return jsonify({'success': False, 'error': 'Ragione sociale è obbligatoria'}), 400
+            
+        # Controlla se esiste già un fornitore con la stessa ragione sociale
+        existing = Fornitore.query.filter_by(ragione_sociale=ragione_sociale).first()
+        if existing:
+            return jsonify({'success': False, 'error': 'Esiste già un fornitore con questa ragione sociale'}), 400
+        
+        # Crea nuovo fornitore
+        nuovo_fornitore = Fornitore(
+            ragione_sociale=ragione_sociale,
+            codice_fiscale=codice_fiscale if codice_fiscale else None,
+            partita_iva=codice_fiscale if codice_fiscale else None,  # Usar codice_fiscale anche come P.IVA
+            indirizzo=indirizzo if indirizzo else None,
+            citta=citta if citta else None,
+            cap=cap if cap else None,
+            provincia=provincia if provincia else None,
+            telefono=telefono if telefono else None,
+            email=email if email else None,
+            attivo=True
+        )
+        
+        db.session.add(nuovo_fornitore)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Fornitore creato con successo',
+            'fornitore': {
+                'id': nuovo_fornitore.id,
+                'ragione_sociale': nuovo_fornitore.ragione_sociale,
+                'codice_fiscale': nuovo_fornitore.codice_fiscale,
+                'citta': nuovo_fornitore.citta
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore creazione fornitore: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/clienti/search')

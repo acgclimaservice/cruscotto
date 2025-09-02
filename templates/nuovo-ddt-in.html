@@ -125,9 +125,16 @@
                         <label>Data DDT Origine *</label>
                         <input type="date" name="data_ddt_origine" required style="width: 100%; margin-top: 5px;" max="{{ today }}">
                     </div>
-                    <div>
+                    <div style="position: relative;">
                         <label>Fornitore *</label>
-                        <input type="text" name="fornitore" placeholder="Nome fornitore" required style="width: 100%; margin-top: 5px;">
+                        <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
+                            <input type="text" id="fornitore-search" name="fornitore" placeholder="Digita per cercare fornitore..." 
+                                   required style="flex: 1;" oninput="cercaFornitore(this)" autocomplete="off">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="mostraModalNuovoFornitore()" 
+                                    title="Crea nuovo fornitore">👤+</button>
+                        </div>
+                        <div class="autocomplete-results" id="fornitore-results" style="display: none;"></div>
+                        <input type="hidden" id="fornitore-id" name="fornitore_id" value="">
                     </div>
                     <div>
                         <label>Riferimento</label>
@@ -1383,6 +1390,312 @@ document.addEventListener('click', function(e) {
             div.style.display = 'none';
         });
     }
+    
+    // Nascondi anche suggerimenti fornitori
+    if (!e.target.closest('#fornitore-results') && !e.target.matches('#fornitore-search')) {
+        document.getElementById('fornitore-results').style.display = 'none';
+    }
 });
+
+// Funzioni per gestione fornitori
+function cercaFornitore(input) {
+    const query = input.value;
+    const resultsDiv = document.getElementById('fornitore-results');
+    
+    if (query.length < 2) {
+        resultsDiv.style.display = 'none';
+        return;
+    }
+
+    fetch(`/api/fornitori/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            resultsDiv.innerHTML = '';
+            
+            if (data.length === 0) {
+                resultsDiv.innerHTML = `
+                    <div class="autocomplete-item" style="padding: 10px; background: #f8f9fa; border: 1px solid #ddd;">
+                        <strong>Nessun fornitore trovato</strong>
+                        <div style="margin-top: 5px;">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="mostraModalNuovoFornitore('${query}')">
+                                👤+ Crea nuovo fornitore "${query}"
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                data.forEach(fornitore => {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    item.innerHTML = `
+                        <strong>${fornitore.ragione_sociale}</strong>
+                        <div style="font-size: 0.85em; color: #666;">
+                            ${fornitore.citta || 'N/A'} - ${fornitore.codice_fiscale || 'N/A'}
+                        </div>
+                    `;
+                    item.onclick = () => selezionaFornitore(fornitore);
+                    resultsDiv.appendChild(item);
+                });
+            }
+            
+            resultsDiv.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Errore ricerca fornitori:', error);
+            resultsDiv.style.display = 'none';
+        });
+}
+
+function selezionaFornitore(fornitore) {
+    document.getElementById('fornitore-search').value = fornitore.ragione_sociale;
+    document.getElementById('fornitore-id').value = fornitore.id;
+    document.getElementById('fornitore-results').style.display = 'none';
+}
+
+function mostraModalNuovoFornitore(nomePrecompilato = '') {
+    const modal = document.getElementById('modal-nuovo-fornitore');
+    
+    // Pre-compila il nome se fornito
+    if (nomePrecompilato) {
+        document.getElementById('nuovo-ragione-sociale').value = nomePrecompilato;
+    }
+    
+    modal.style.display = 'block';
+}
+
+function chiudiModalNuovoFornitore() {
+    document.getElementById('modal-nuovo-fornitore').style.display = 'none';
+    // Resetta il form
+    document.getElementById('form-nuovo-fornitore').reset();
+}
+
+function salvaNuovoFornitore() {
+    const formData = new FormData(document.getElementById('form-nuovo-fornitore'));
+    
+    fetch('/api/fornitori/create', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Seleziona automaticamente il nuovo fornitore
+            document.getElementById('fornitore-search').value = data.fornitore.ragione_sociale;
+            document.getElementById('fornitore-id').value = data.fornitore.id;
+            
+            alert('Fornitore creato con successo!');
+            chiudiModalNuovoFornitore();
+        } else {
+            alert('Errore nella creazione del fornitore: ' + (data.error || 'Errore sconosciuto'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Errore di rete nella creazione del fornitore');
+    });
+}
+
+// Chiudi modal cliccando fuori
+window.onclick = function(event) {
+    const modal = document.getElementById('modal-nuovo-fornitore');
+    if (event.target == modal) {
+        chiudiModalNuovoFornitore();
+    }
+}
 </script>
+
+<!-- Modal Nuovo Fornitore -->
+<div id="modal-nuovo-fornitore" class="modal-fornitore" style="display: none;">
+    <div class="modal-fornitore-content">
+        <div class="modal-fornitore-header">
+            <h2>👤 Nuovo Fornitore</h2>
+            <span class="close-fornitore" onclick="chiudiModalNuovoFornitore()">&times;</span>
+        </div>
+        
+        <div class="modal-fornitore-body">
+            <form id="form-nuovo-fornitore">
+                <div class="form-grid-fornitore">
+                    <div class="form-group-fornitore">
+                        <label for="nuovo-ragione-sociale">Ragione Sociale *</label>
+                        <input type="text" id="nuovo-ragione-sociale" name="ragione_sociale" required>
+                    </div>
+                    <div class="form-group-fornitore">
+                        <label for="nuovo-codice-fiscale">Codice Fiscale / P.IVA</label>
+                        <input type="text" id="nuovo-codice-fiscale" name="codice_fiscale">
+                    </div>
+                    <div class="form-group-fornitore">
+                        <label for="nuovo-indirizzo">Indirizzo</label>
+                        <input type="text" id="nuovo-indirizzo" name="indirizzo">
+                    </div>
+                    <div class="form-group-fornitore">
+                        <label for="nuovo-citta">Città</label>
+                        <input type="text" id="nuovo-citta" name="citta">
+                    </div>
+                    <div class="form-group-fornitore">
+                        <label for="nuovo-cap">CAP</label>
+                        <input type="text" id="nuovo-cap" name="cap">
+                    </div>
+                    <div class="form-group-fornitore">
+                        <label for="nuovo-provincia">Provincia</label>
+                        <input type="text" id="nuovo-provincia" name="provincia" maxlength="2">
+                    </div>
+                    <div class="form-group-fornitore">
+                        <label for="nuovo-telefono">Telefono</label>
+                        <input type="text" id="nuovo-telefono" name="telefono">
+                    </div>
+                    <div class="form-group-fornitore">
+                        <label for="nuovo-email">Email</label>
+                        <input type="email" id="nuovo-email" name="email">
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="modal-fornitore-footer">
+            <button class="btn btn-secondary" onclick="chiudiModalNuovoFornitore()">❌ Annulla</button>
+            <button class="btn btn-primary" onclick="salvaNuovoFornitore()">✅ Crea Fornitore</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal-fornitore {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-fornitore-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.modal-fornitore-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-fornitore-header h2 {
+    margin: 0;
+    color: #007bff;
+}
+
+.close-fornitore {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-fornitore:hover {
+    color: #000;
+}
+
+.modal-fornitore-body {
+    padding: 20px;
+}
+
+.form-grid-fornitore {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.form-group-fornitore {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group-fornitore label {
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group-fornitore input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group-fornitore input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.modal-fornitore-footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    text-align: right;
+    background: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+}
+
+.modal-fornitore-footer .btn {
+    margin-left: 10px;
+}
+
+.autocomplete-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.autocomplete-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.autocomplete-item:hover {
+    background-color: #f5f5f5;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 768px) {
+    .form-grid-fornitore {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-fornitore-content {
+        width: 95%;
+        margin: 2% auto;
+    }
+}
+</style>
+
+</body>
+</html>
 
