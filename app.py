@@ -7973,7 +7973,20 @@ def save_mpls():
         fonte_tipo = request.form.get('fonte_tipo')
         fonte_id = request.form.get('fonte_id')
         
-        # Totali
+        # Parametri Enhanced
+        ore_manodopera = float(request.form.get('ore_manodopera', 0))
+        sovrapprezzo = float(request.form.get('sovrapprezzo', 0))
+        is_guazzotti = bool(request.form.get('is_guazzotti'))
+        
+        # Totali Enhanced
+        subtotale_materiali_vendita = float(request.form.get('subtotale_materiali_vendita', 0))
+        subtotale_manodopera_vendita = float(request.form.get('subtotale_manodopera_vendita', 0))
+        costo_gestione = float(request.form.get('costo_gestione', 0))
+        spese_brevi = float(request.form.get('spese_brevi', 0))
+        materiale_consumo = float(request.form.get('materiale_consumo', 0))
+        costo_totale_interno = float(request.form.get('costo_totale_interno', 0))
+        
+        # Totali compatibilità
         totale_costi = float(request.form.get('totale_costi', 0))
         totale_vendita = float(request.form.get('totale_vendita', 0))
         totale_iva = float(request.form.get('totale_iva', 0))
@@ -7981,7 +7994,7 @@ def save_mpls():
         margine_euro = float(request.form.get('margine_euro', 0))
         margine_percentuale = float(request.form.get('margine_percentuale', 0))
         
-        # Crea MPLS
+        # Crea MPLS Enhanced
         mpls = MPLS(
             numero_mpls=numero_mpls,
             data_creazione=data_creazione,
@@ -7991,6 +8004,21 @@ def save_mpls():
             stato=stato,
             fonte_tipo=fonte_tipo,
             fonte_id=int(fonte_id) if fonte_id else None,
+            
+            # Parametri Enhanced
+            ore_manodopera=ore_manodopera,
+            sovrapprezzo=sovrapprezzo,
+            is_guazzotti=is_guazzotti,
+            
+            # Totali Enhanced
+            subtotale_materiali_vendita=subtotale_materiali_vendita,
+            subtotale_manodopera_vendita=subtotale_manodopera_vendita,
+            costo_gestione=costo_gestione,
+            spese_brevi=spese_brevi,
+            materiale_consumo=materiale_consumo,
+            costo_totale_interno=costo_totale_interno,
+            
+            # Compatibilità
             totale_costi=totale_costi,
             totale_vendita=totale_vendita,
             totale_iva=totale_iva,
@@ -8132,14 +8160,14 @@ def update_mpls(id):
         return redirect(f'/mpls/{id}/modifica')
 
 def _calcola_ricarico_materiale(prezzo_acquisto, quantita, is_guazzotti):
-    """Calcola ricarico secondo logica business"""
+    """Calcola ricarico secondo logica business Enhanced"""
     costo_totale = prezzo_acquisto * quantita
     
     if is_guazzotti:
         # Cliente Guazzotti: ricarico fisso 20%
         ricarico = 0.20
     else:
-        # Cliente standard: ricarico progressivo
+        # Cliente standard: ricarico progressivo basato su costo totale
         if costo_totale < 100:
             ricarico = 0.40  # +40%
         elif costo_totale <= 200:
@@ -8150,68 +8178,129 @@ def _calcola_ricarico_materiale(prezzo_acquisto, quantita, is_guazzotti):
     prezzo_vendita = prezzo_acquisto * (1 + ricarico)
     return prezzo_vendita, ricarico
 
+def _calcola_costi_accessori_mpls(is_guazzotti, ore_manodopera, costo_materiali_acquisto):
+    """Calcola costi accessori secondo logica Gemini"""
+    
+    # Costo gestione: €30 fissi per clienti normali, €0 per Guazzotti
+    costo_gestione = 0.0 if is_guazzotti else 30.0
+    
+    # Spese brevi: €30 se intervento < 3 ore (solo clienti normali)
+    spese_brevi = 0.0
+    if not is_guazzotti and ore_manodopera > 0 and ore_manodopera < 3:
+        spese_brevi = 30.0
+    
+    # Materiale consumo: minimo €10 o 3% del costo materiali (solo clienti normali)
+    materiale_consumo = 0.0
+    if not is_guazzotti and costo_materiali_acquisto > 0:
+        materiale_consumo = max(10.0, costo_materiali_acquisto * 0.03)
+    
+    return costo_gestione, spese_brevi, materiale_consumo
+
+def _calcola_manodopera_mpls(ore_manodopera, is_guazzotti):
+    """Calcola costi manodopera secondo logica Gemini"""
+    
+    # Tariffe orarie
+    costo_orario_vendita = 25.0 if is_guazzotti else 40.0
+    costo_orario_interno = 22.0  # Costo fisso interno
+    
+    subtotale_manodopera_vendita = ore_manodopera * costo_orario_vendita
+    costo_manodopera_interno = ore_manodopera * costo_orario_interno
+    
+    return subtotale_manodopera_vendita, costo_manodopera_interno
+
 def _ricalcola_totali_mpls(mpls):
-    """Ricalcola tutti i totali di un MPLS"""
+    """Ricalcola tutti i totali di un MPLS con logica Enhanced di Gemini"""
     try:
         # Parametri base
         ore_manodopera = mpls.ore_manodopera or 0
         sovrapprezzo = mpls.sovrapprezzo or 0
-        is_guazzotti = mpls.is_guazzotti
+        is_guazzotti = mpls.is_guazzotti or False
         iva_percentuale = mpls.iva_percentuale or 22
         
-        # Calcolo materiali
-        subtotale_materiali = 0
-        costo_totale_materiali = 0
+        # 1. CALCOLO MATERIALI con ricarichi automatici
+        subtotale_materiali_vendita = 0
+        costo_materiali_acquisto = 0
         
-        for materiale in mpls.materiali:
-            # Ricalcola prezzo vendita con ricarico
-            prezzo_vendita, ricarico = _calcola_ricarico_materiale(
-                materiale.prezzo_acquisto, 
-                materiale.quantita, 
-                is_guazzotti
-            )
-            
-            # Aggiorna materiale
-            materiale.prezzo_vendita = prezzo_vendita
-            materiale.ricarico_applicato = ricarico * 100  # Salva in %
-            materiale.totale_acquisto = materiale.prezzo_acquisto * materiale.quantita
-            materiale.totale_vendita = prezzo_vendita * materiale.quantita
-            
-            subtotale_materiali += materiale.totale_vendita
-            costo_totale_materiali += materiale.totale_acquisto
+        # Se usa articoli invece di materiali (nuovo sistema)
+        articoli = getattr(mpls, 'articoli', [])
+        if articoli:
+            for articolo in articoli:
+                costo_totale = articolo.prezzo_costo * articolo.quantita
+                
+                # Calcola ricarico automatico per articolo
+                prezzo_vendita, ricarico = _calcola_ricarico_materiale(
+                    articolo.prezzo_costo, 
+                    articolo.quantita, 
+                    is_guazzotti
+                )
+                
+                # Aggiorna articolo con calcoli automatici
+                articolo.prezzo_vendita = prezzo_vendita
+                articolo.ricarico_percentuale = ricarico * 100  # Salva in %
+                
+                subtotale_materiali_vendita += prezzo_vendita * articolo.quantita
+                costo_materiali_acquisto += costo_totale
         
-        # Calcolo manodopera
-        costo_orario_vendita = 25.0 if is_guazzotti else 40.0
-        costo_orario_acquisto = 22.0
-        subtotale_manodopera = ore_manodopera * costo_orario_vendita
-        costo_totale_manodopera = ore_manodopera * costo_orario_acquisto
+        # Fallback per sistema legacy MaterialeMPLS
+        materiali = getattr(mpls, 'materiali', [])
+        if materiali and not articoli:
+            for materiale in materiali:
+                prezzo_vendita, ricarico = _calcola_ricarico_materiale(
+                    materiale.prezzo_acquisto, 
+                    materiale.quantita, 
+                    is_guazzotti
+                )
+                
+                materiale.prezzo_vendita = prezzo_vendita
+                materiale.ricarico_applicato = ricarico * 100
+                materiale.totale_acquisto = materiale.prezzo_acquisto * materiale.quantita
+                materiale.totale_vendita = prezzo_vendita * materiale.quantita
+                
+                subtotale_materiali_vendita += materiale.totale_vendita
+                costo_materiali_acquisto += materiale.totale_acquisto
         
-        # Costi aggiuntivi
-        costo_gestione = 0 if is_guazzotti else 30.0
-        spese_brevi = 15.0
-        materiale_consumo = 10.0
+        # 2. CALCOLO MANODOPERA
+        subtotale_manodopera_vendita, costo_manodopera_interno = _calcola_manodopera_mpls(
+            ore_manodopera, is_guazzotti
+        )
         
-        # Totale generale (pre-IVA)
-        totale_generale = (subtotale_materiali + subtotale_manodopera + 
-                          costo_gestione + spese_brevi + materiale_consumo + sovrapprezzo)
+        # 3. CALCOLO COSTI ACCESSORI AUTOMATICI
+        costo_gestione, spese_brevi, materiale_consumo = _calcola_costi_accessori_mpls(
+            is_guazzotti, ore_manodopera, costo_materiali_acquisto
+        )
         
-        # IVA
-        importo_iva = totale_generale * (iva_percentuale / 100)
-        totale_ivato = totale_generale + importo_iva
+        # 4. TOTALI FINALI
+        totale_costi_accessori = costo_gestione + spese_brevi + materiale_consumo
+        totale_vendita = subtotale_materiali_vendita + subtotale_manodopera_vendita + totale_costi_accessori + sovrapprezzo
+        totale_iva = totale_vendita * (iva_percentuale / 100)
+        totale_ivato = totale_vendita + totale_iva
         
-        # Margine
-        costo_totale_acquisto = costo_totale_materiali + costo_totale_manodopera
-        margine_euro = totale_generale - costo_totale_acquisto
-        margine_percentuale = (margine_euro / totale_generale * 100) if totale_generale > 0 else 0
+        # 5. CALCOLO MARGINI
+        costo_totale_interno = costo_materiali_acquisto + costo_manodopera_interno
+        margine_euro = totale_vendita - costo_totale_interno
+        margine_percentuale = (margine_euro / totale_vendita * 100) if totale_vendita > 0 else 0
         
-        # Aggiorna MPLS
-        mpls.subtotale_materiali = subtotale_materiali
-        mpls.subtotale_manodopera = subtotale_manodopera
-        mpls.totale_generale = totale_generale
-        mpls.importo_iva = importo_iva
+        # 6. AGGIORNA MPLS con valori calcolati Enhanced
+        mpls.subtotale_materiali_vendita = subtotale_materiali_vendita
+        mpls.subtotale_manodopera_vendita = subtotale_manodopera_vendita
+        mpls.costo_gestione = costo_gestione
+        mpls.spese_brevi = spese_brevi
+        mpls.materiale_consumo = materiale_consumo
+        mpls.costo_totale_interno = costo_totale_interno
+        
+        # Aggiorna campi compatibili con sistema esistente
+        mpls.totale_costi = costo_totale_interno
+        mpls.totale_vendita = totale_vendita
+        mpls.totale_iva = totale_iva
         mpls.totale_ivato = totale_ivato
         mpls.margine_euro = margine_euro
         mpls.margine_percentuale = margine_percentuale
+        
+        # Compatibilità legacy
+        mpls.subtotale_materiali = subtotale_materiali_vendita
+        mpls.subtotale_manodopera = subtotale_manodopera_vendita
+        mpls.totale_generale = totale_vendita
+        mpls.importo_iva = totale_iva
         
         return True
         
@@ -9926,6 +10015,22 @@ if __name__ == '__main__':
                 db.session.execute(text("ALTER TABLE mpls ADD COLUMN totale_iva REAL DEFAULT 0.0"))
                 db.session.commit()
                 print("OK Migration: Added new totale columns to mpls table")
+            except Exception:
+                pass
+                
+        # Migration: Add Enhanced MPLS columns for Gemini logic
+        try:
+            db.session.execute(text("SELECT costo_gestione FROM mpls LIMIT 1"))
+        except Exception:
+            try:
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN costo_gestione REAL DEFAULT 0.0"))
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN spese_brevi REAL DEFAULT 0.0"))
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN materiale_consumo REAL DEFAULT 0.0"))
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN subtotale_materiali_vendita REAL DEFAULT 0.0"))
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN subtotale_manodopera_vendita REAL DEFAULT 0.0"))
+                db.session.execute(text("ALTER TABLE mpls ADD COLUMN costo_totale_interno REAL DEFAULT 0.0"))
+                db.session.commit()
+                print("OK Migration: Added Enhanced MPLS columns for advanced business logic")
             except Exception:
                 pass
     

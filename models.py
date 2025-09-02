@@ -431,6 +431,14 @@ class MPLS(db.Model):
     is_guazzotti = db.Column(db.Boolean, default=False)  # Cliente speciale
     iva_percentuale = db.Column(db.Integer, default=22)
     
+    # Nuovi campi per logica Enhanced
+    costo_gestione = db.Column(db.Float, default=0.0)
+    spese_brevi = db.Column(db.Float, default=0.0)
+    materiale_consumo = db.Column(db.Float, default=0.0)
+    subtotale_materiali_vendita = db.Column(db.Float, default=0.0)
+    subtotale_manodopera_vendita = db.Column(db.Float, default=0.0)
+    costo_totale_interno = db.Column(db.Float, default=0.0)
+    
     # Totali calcolati
     totale_costi = db.Column(db.Float, default=0.0)
     totale_vendita = db.Column(db.Float, default=0.0)

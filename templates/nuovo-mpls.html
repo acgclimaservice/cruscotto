@@ -73,6 +73,29 @@
                             <textarea id="descrizione" name="descrizione" rows="3" class="form-control" placeholder="Descrizione del progetto/lavoro"></textarea>
                         </div>
 
+                        <!-- Parametri MPLS Enhanced -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ore_manodopera">Ore Manodopera</label>
+                                <input type="number" id="ore_manodopera" name="ore_manodopera" value="0" step="0.1" min="0" class="form-control">
+                                <small class="text-muted">€40/ora standard, €25/ora per Guazzotti</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="sovrapprezzo">Sovrapprezzo (€)</label>
+                                <input type="number" id="sovrapprezzo" name="sovrapprezzo" value="0" step="0.01" min="0" class="form-control">
+                                <small class="text-muted">Costi aggiuntivi personalizzati</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="checkbox-container">
+                                <input type="checkbox" id="is_guazzotti" name="is_guazzotti" value="1">
+                                <label for="is_guazzotti" class="checkbox-label">
+                                    <strong>Cliente Guazzotti</strong> - Ricarico fisso 20% e manodopera €25/ora
+                                </label>
+                            </div>
+                        </div>
+
                         <!-- Fonte del MPLS -->
                         {% if fonte_tipo %}
                         <div class="alert alert-info">
@@ -108,7 +131,7 @@
                                         <th>Descrizione</th>
                                         <th>Qtà</th>
                                         <th>Prezzo Costo</th>
-                                        <th>Ricarico %</th>
+                                        <th>Ricarico % (Auto)</th>
                                         <th>Prezzo Vendita</th>
                                         <th>Totale</th>
                                         <th>Azioni</th>
@@ -155,10 +178,35 @@
                     </div>
                     <div class="card-body">
                         <div class="totali-grid">
+                            <!-- Subtotali -->
                             <div class="totale-item">
-                                <label>Totale Costi:</label>
-                                <span id="totaleCosti">€ 0.00</span>
+                                <label>Materiali (con ricarico):</label>
+                                <span id="subtotaleMateriali">€ 0.00</span>
                             </div>
+                            <div class="totale-item">
+                                <label>Manodopera:</label>
+                                <span id="subtotaleManodopera">€ 0.00</span>
+                            </div>
+                            
+                            <!-- Costi Accessori -->
+                            <div class="totale-item">
+                                <label>Costo Gestione:</label>
+                                <span id="costoGestione">€ 0.00</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Spese Brevi:</label>
+                                <span id="speseBrevi">€ 0.00</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Materiale Consumo:</label>
+                                <span id="materialeConsumo">€ 0.00</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Sovrapprezzo:</label>
+                                <span id="sovrapprezzoDisplay">€ 0.00</span>
+                            </div>
+                            
+                            <!-- Totali Finali -->
                             <div class="totale-item">
                                 <label>Totale Vendita (IVA esclusa):</label>
                                 <span id="totaleVendita">€ 0.00</span>
@@ -171,6 +219,12 @@
                                 <label>Totale IVA Inclusa:</label>
                                 <span id="totaleIvato">€ 0.00</span>
                             </div>
+                            
+                            <!-- Margini -->
+                            <div class="totale-item margine">
+                                <label>Costi Interni:</label>
+                                <span id="costiInterni">€ 0.00</span>
+                            </div>
                             <div class="totale-item margine">
                                 <label>Margine:</label>
                                 <span id="margineEuro">€ 0.00</span>
@@ -178,7 +232,15 @@
                             </div>
                         </div>
 
-                        <!-- Campi nascosti per i totali -->
+                        <!-- Campi nascosti per i totali Enhanced -->
+                        <input type="hidden" id="hiddenSubtotaleMateriali" name="subtotale_materiali_vendita" value="0">
+                        <input type="hidden" id="hiddenSubtotaleManodopera" name="subtotale_manodopera_vendita" value="0">
+                        <input type="hidden" id="hiddenCostoGestione" name="costo_gestione" value="0">
+                        <input type="hidden" id="hiddenSpeseBrevi" name="spese_brevi" value="0">
+                        <input type="hidden" id="hiddenMaterialeConsumo" name="materiale_consumo" value="0">
+                        <input type="hidden" id="hiddenCostoTotaleInterno" name="costo_totale_interno" value="0">
+                        
+                        <!-- Campi compatibilità esistente -->
                         <input type="hidden" id="hiddenTotaleCosti" name="totale_costi" value="0">
                         <input type="hidden" id="hiddenTotaleVendita" name="totale_vendita" value="0">
                         <input type="hidden" id="hiddenTotaleIva" name="totale_iva" value="0">
@@ -326,6 +388,36 @@
             border-radius: 5px;
             margin-bottom: 15px;
         }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        
+        .checkbox-label {
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .text-muted {
+            color: #6c757d;
+            font-size: 0.875em;
+        }
+        
+        .totali-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+        }
     </style>
 
     <script>
@@ -369,15 +461,37 @@
             });
         }
 
-        // Calcola valori singola riga
+        // Calcola ricarico automatico secondo logica Gemini
+        function calcolaRicaricoAutomatico(prezzoCosto, quantita, isGuazzotti) {
+            const costoTotale = prezzoCosto * quantita;
+            
+            if (isGuazzotti) {
+                return 20.0; // 20% fisso per Guazzotti
+            } else {
+                // Ricarichi progressivi per clienti normali
+                if (costoTotale < 100) {
+                    return 40.0; // 40%
+                } else if (costoTotale <= 200) {
+                    return 35.0; // 35%
+                } else {
+                    return 30.0; // 30%
+                }
+            }
+        }
+
+        // Calcola valori singola riga con logica Enhanced
         function calcolaRiga(e) {
             const row = e.target.closest('tr');
             const quantita = parseFloat(row.querySelector('.quantita-input').value) || 0;
             const prezzoCosto = parseFloat(row.querySelector('.prezzo-costo-input').value) || 0;
-            const ricarico = parseFloat(row.querySelector('.ricarico-input').value) || 0;
+            const isGuazzotti = document.getElementById('is_guazzotti').checked;
+            
+            // Calcola ricarico automatico
+            const ricaricoPercentuale = calcolaRicaricoAutomatico(prezzoCosto, quantita, isGuazzotti);
+            row.querySelector('.ricarico-input').value = ricaricoPercentuale.toFixed(1);
             
             // Calcola prezzo di vendita
-            const prezzoVendita = prezzoCosto * (1 + ricarico / 100);
+            const prezzoVendita = prezzoCosto * (1 + ricaricoPercentuale / 100);
             row.querySelector('.prezzo-vendita-input').value = prezzoVendita.toFixed(2);
             
             // Calcola totale riga
@@ -385,49 +499,106 @@
             row.querySelector('.totale-riga').textContent = `€ ${totaleRiga.toFixed(2)}`;
             
             // Ricalcola totali generali
-            calcolaTotali();
+            calcolaTotaliEnhanced();
         }
 
-        // Calcola totali generali
-        function calcolaTotali() {
-            let totaleCosti = 0;
-            let totaleVendita = 0;
+        // Calcola totali generali con logica Enhanced
+        function calcolaTotaliEnhanced() {
+            const isGuazzotti = document.getElementById('is_guazzotti').checked;
+            const oreManodopera = parseFloat(document.getElementById('ore_manodopera').value) || 0;
+            const sovrapprezzo = parseFloat(document.getElementById('sovrapprezzo').value) || 0;
+            
+            // 1. CALCOLO MATERIALI
+            let subtotaleMateriali = 0;
+            let costoMaterialiAcquisto = 0;
             
             document.querySelectorAll('.articolo-row').forEach(row => {
                 const quantita = parseFloat(row.querySelector('.quantita-input').value) || 0;
                 const prezzoCosto = parseFloat(row.querySelector('.prezzo-costo-input').value) || 0;
                 const prezzoVendita = parseFloat(row.querySelector('.prezzo-vendita-input').value) || 0;
                 
-                totaleCosti += quantita * prezzoCosto;
-                totaleVendita += quantita * prezzoVendita;
+                costoMaterialiAcquisto += quantita * prezzoCosto;
+                subtotaleMateriali += quantita * prezzoVendita;
             });
             
+            // 2. CALCOLO MANODOPERA
+            const costoOrarioVendita = isGuazzotti ? 25.0 : 40.0;
+            const costoOrarioInterno = 22.0;
+            const subtotaleManodopera = oreManodopera * costoOrarioVendita;
+            const costoManodoperaInterno = oreManodopera * costoOrarioInterno;
+            
+            // 3. CALCOLO COSTI ACCESSORI
+            const costoGestione = isGuazzotti ? 0 : 30.0;
+            const speseBrevi = (!isGuazzotti && oreManodopera > 0 && oreManodopera < 3) ? 30.0 : 0;
+            const materialeConsumo = (!isGuazzotti && costoMaterialiAcquisto > 0) ? Math.max(10.0, costoMaterialiAcquisto * 0.03) : 0;
+            
+            // 4. TOTALI FINALI
+            const totaleCostiAccessori = costoGestione + speseBrevi + materialeConsumo;
+            const totaleVendita = subtotaleMateriali + subtotaleManodopera + totaleCostiAccessori + sovrapprezzo;
             const totaleIva = totaleVendita * 0.22;
             const totaleIvato = totaleVendita + totaleIva;
-            const margineEuro = totaleVendita - totaleCosti;
-            const marginePercentuale = totaleCosti > 0 ? (margineEuro / totaleCosti) * 100 : 0;
             
-            // Aggiorna UI
-            document.getElementById('totaleCosti').textContent = `€ ${totaleCosti.toFixed(2)}`;
+            // 5. MARGINI
+            const costoTotaleInterno = costoMaterialiAcquisto + costoManodoperaInterno;
+            const margineEuro = totaleVendita - costoTotaleInterno;
+            const marginePercentuale = totaleVendita > 0 ? (margineEuro / totaleVendita) * 100 : 0;
+            
+            // 6. AGGIORNA UI
+            document.getElementById('subtotaleMateriali').textContent = `€ ${subtotaleMateriali.toFixed(2)}`;
+            document.getElementById('subtotaleManodopera').textContent = `€ ${subtotaleManodopera.toFixed(2)}`;
+            document.getElementById('costoGestione').textContent = `€ ${costoGestione.toFixed(2)}`;
+            document.getElementById('speseBrevi').textContent = `€ ${speseBrevi.toFixed(2)}`;
+            document.getElementById('materialeConsumo').textContent = `€ ${materialeConsumo.toFixed(2)}`;
+            document.getElementById('sovrapprezzoDisplay').textContent = `€ ${sovrapprezzo.toFixed(2)}`;
             document.getElementById('totaleVendita').textContent = `€ ${totaleVendita.toFixed(2)}`;
             document.getElementById('totaleIva').textContent = `€ ${totaleIva.toFixed(2)}`;
             document.getElementById('totaleIvato').textContent = `€ ${totaleIvato.toFixed(2)}`;
+            document.getElementById('costiInterni').textContent = `€ ${costoTotaleInterno.toFixed(2)}`;
             document.getElementById('margineEuro').textContent = `€ ${margineEuro.toFixed(2)}`;
             document.getElementById('marginePercentuale').textContent = `(${marginePercentuale.toFixed(1)}%)`;
             
-            // Aggiorna campi nascosti
-            document.getElementById('hiddenTotaleCosti').value = totaleCosti.toFixed(2);
+            // 7. AGGIORNA CAMPI NASCOSTI Enhanced
+            document.getElementById('hiddenSubtotaleMateriali').value = subtotaleMateriali.toFixed(2);
+            document.getElementById('hiddenSubtotaleManodopera').value = subtotaleManodopera.toFixed(2);
+            document.getElementById('hiddenCostoGestione').value = costoGestione.toFixed(2);
+            document.getElementById('hiddenSpeseBrevi').value = speseBrevi.toFixed(2);
+            document.getElementById('hiddenMaterialeConsumo').value = materialeConsumo.toFixed(2);
+            document.getElementById('hiddenCostoTotaleInterno').value = costoTotaleInterno.toFixed(2);
+            
+            // Compatibilità campi esistenti
+            document.getElementById('hiddenTotaleCosti').value = costoTotaleInterno.toFixed(2);
             document.getElementById('hiddenTotaleVendita').value = totaleVendita.toFixed(2);
             document.getElementById('hiddenTotaleIva').value = totaleIva.toFixed(2);
             document.getElementById('hiddenTotaleIvato').value = totaleIvato.toFixed(2);
             document.getElementById('hiddenMargineEuro').value = margineEuro.toFixed(2);
             document.getElementById('hiddenMarginePercentuale').value = marginePercentuale.toFixed(2);
         }
+        
+        // Alias per compatibilità
+        function calcolaTotali() {
+            calcolaTotaliEnhanced();
+        }
 
-        // Inizializza event listeners
+        // Inizializza event listeners Enhanced
         document.addEventListener('DOMContentLoaded', function() {
             updateEventListeners();
-            calcolaTotali();
+            
+            // Event listeners per campi MPLS Enhanced
+            document.getElementById('is_guazzotti').addEventListener('change', function() {
+                // Ricalcola tutti i ricarichi quando cambia il cliente
+                document.querySelectorAll('.articolo-row').forEach(row => {
+                    const quantitaInput = row.querySelector('.quantita-input');
+                    if (quantitaInput) {
+                        calcolaRiga({target: quantitaInput});
+                    }
+                });
+            });
+            
+            document.getElementById('ore_manodopera').addEventListener('input', calcolaTotaliEnhanced);
+            document.getElementById('sovrapprezzo').addEventListener('input', calcolaTotaliEnhanced);
+            
+            // Calcolo iniziale
+            calcolaTotaliEnhanced();
         });
     </script>
 </body>
