@@ -88,7 +88,7 @@ vedi questa schermata? è corretta. poi quando premo conferma ddt in va tutto a 
 57 inserendo un nuovo DDT IN se il fornitore non è esistente aggiungimi la possibilità di creare direttamente una nuova anagrafica fornitore
 58
 59 IN QUESTA SEZIONE https://acgclimaservice.pythonanywhere.com/offerte/1 voglio solo i tasti torna alle offerte, stampa pdf e invia mail, gli altri tasti (accetta, rifiuta e metti in valutazione) vanno spostati qui https://acgclimaservice.pythonanywhere.com/offerte/1/modifica insieme a quelli presenti (annulla e aggiorna richiesta) FATTO - CONTROLLATO OK
-60 ella sezione inventario nella barra dei filtri se seleziono una data non mi si aggiornano i valori.  
+60 nella sezione inventario nella barra dei filtri se seleziono una data non mi si aggiornano i valori. FATTO - CONTROLLATO OK  
 61
 62. quando confermo un movimento interno nella sezione inventario mi riporta come ubicazione il codice magazzino di destinazione e non la descrizione. 
 63. nella sezione inventario non darmi la visualizzazione degli articoli con giacenza 0.  

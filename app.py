@@ -3607,6 +3607,29 @@ def inventario_page():
         # Query base per articoli attivi
         query = CatalogoArticolo.query.filter_by(attivo=True)
         
+        # Filtro per data - se specificato, filtra articoli che hanno avuto movimenti nel periodo
+        if data_da or data_a:
+            # Converti date string in datetime
+            data_da_dt = datetime.strptime(data_da, '%Y-%m-%d').date() if data_da else None
+            data_a_dt = datetime.strptime(data_a, '%Y-%m-%d').date() if data_a else None
+            
+            # Subquery per trovare articoli con movimenti nel periodo
+            movimenti_query = MovimentoInventario.query
+            
+            if data_da_dt:
+                movimenti_query = movimenti_query.filter(MovimentoInventario.data_movimento >= data_da_dt)
+            if data_a_dt:
+                movimenti_query = movimenti_query.filter(MovimentoInventario.data_movimento <= data_a_dt)
+            
+            # Ottieni codici articoli che hanno avuto movimenti
+            codici_articoli_con_movimenti = [m.codice_articolo for m in movimenti_query.distinct(MovimentoInventario.codice_articolo).all()]
+            
+            if codici_articoli_con_movimenti:
+                query = query.filter(CatalogoArticolo.codice_interno.in_(codici_articoli_con_movimenti))
+            else:
+                # Nessun movimento nel periodo = nessun articolo da mostrare
+                query = query.filter(CatalogoArticolo.id == -1)  # Query che non restituisce risultati
+        
         # Filtro per magazzino/ubicazione
         if filtro_magazzino:
             query = query.filter(CatalogoArticolo.ubicazione.ilike(f'%{filtro_magazzino}%'))
