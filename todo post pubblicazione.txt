@@ -83,8 +83,22 @@ vedi questa schermata? è corretta. poi quando premo conferma ddt in va tutto a 
   "success": true
 }
 55 non riesci ad aggiungere automaticamente gli allegati alla mail su Outlook?
+56 
 
-
-52 inserendo un nuovo DDT IN se il fornitore non è esistente aggiungimi la possibilità di creare direttamente una nuova anagrafica fornitore
+57 inserendo un nuovo DDT IN se il fornitore non è esistente aggiungimi la possibilità di creare direttamente una nuova anagrafica fornitore
+58
+59 IN QUESTA SEZIONE https://acgclimaservice.pythonanywhere.com/offerte/1 voglio solo i tasti torna alle offerte, stampa pdf e invia mail, gli altri tasti (accetta, rifiuta e metti in valutazione) vanno spostati qui https://acgclimaservice.pythonanywhere.com/offerte/1/modifica insieme a quelli presenti (annulla e aggiorna richiesta) FATTO - CONTROLLATO OK
+60 ella sezione inventario nella barra dei filtri se seleziono una data non mi si aggiornano i valori.  
+61
+62. quando confermo un movimento interno nella sezione inventario mi riporta come ubicazione il codice magazzino di destinazione e non la descrizione. 
+63. nella sezione inventario non darmi la visualizzazione degli articoli con giacenza 0.  
+64 nella sezione commesse quando visualizzo il dettaglio di una commessa non vedo gli ordini collegati ad essa. 
+65 nei preventivi non funziona il tasto aggiungi riga: nuovo:304 Uncaught ReferenceError: container is not defined
+    at aggiungiDettaglio (nuovo:304:13)
+    at HTMLButtonElement.onclick (nuovo:130:99)
+aggiungiDettaglio @ nuovo:304
+onclick @ nuovo:130
+66. nei preventivi togli come campo obbligatorio il costo unitario.
+67. nella sezione impostazioni nella parte relativa all'Importazione Automatica DDT via Email ho impostato come Intervallo controllo (minuti): 1, ma noto che per processare una mail ci mette circa 15 minuti. riusciamo a controllare il monitoraggio automatico della mail.
 
 

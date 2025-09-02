@@ -177,6 +177,20 @@
             <div class="form-actions">
                 <a href="/offerte" class="btn btn-secondary">⬅️ Annulla</a>
                 <button type="submit" class="btn btn-success">💾 {{ 'Aggiorna' if modalita == 'modifica' else 'Salva' }} Richiesta</button>
+                
+                {% if modalita == 'modifica' and offerta.stato in ['creata', 'richiesta', 'valutata'] %}
+                    <div style="border-left: 2px solid #e5e7eb; margin: 0 15px; padding-left: 15px; display: inline-block;">
+                        <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
+                            <button type="submit" class="btn btn-success" onclick="return confirm('Sei sicuro di voler accettare questa offerta?')">✅ Accetta</button>
+                        </form>
+                        <button class="btn btn-danger" onclick="mostraModalRifiuto('offerta', {{ offerta.id }})">❌ Rifiuta</button>
+                        {% if offerta.stato != 'valutata' %}
+                        <form method="POST" action="/offerte/{{ offerta.id }}/valuta" style="display: inline;">
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Vuoi mettere questa offerta in valutazione?')">🔍 Metti in Valutazione</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
         </form>
     </div>
