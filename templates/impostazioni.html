@@ -1171,6 +1171,44 @@
         });
     }
 
+    // Funzione per controllare stato monitor email
+    function checkEmailMonitorStatus() {
+        fetch('/impostazioni/email/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const statusSpan = document.getElementById('email-status');
+                if (statusSpan) {
+                    statusSpan.textContent = data.status_text;
+                    
+                    if (data.status.is_active && data.status.is_running) {
+                        statusSpan.style.color = '#28a745';
+                    } else if (data.status.configured) {
+                        statusSpan.style.color = '#ffc107';
+                    } else {
+                        statusSpan.style.color = '#dc3545';
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Errore controllo status email monitor:', error);
+            const statusSpan = document.getElementById('email-status');
+            if (statusSpan) {
+                statusSpan.textContent = '❓ Stato sconosciuto';
+                statusSpan.style.color = '#6c757d';
+            }
+        });
+    }
+
+    // Controlla stato monitor email ogni 30 secondi
+    setInterval(checkEmailMonitorStatus, 30000);
+
+    // Controlla stato all'avvio della pagina
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(checkEmailMonitorStatus, 1000); // Attendi 1 secondo dopo il caricamento
+    });
+
     </script>
 </body>
 </html>

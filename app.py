@@ -7660,6 +7660,102 @@ def test_graph_connection():
             'error': f'Test Microsoft Graph fallito: {str(e)}'
         }), 500
 
+@app.route('/impostazioni/email/verifica-immediata', methods=['POST'])
+def verifica_immediata_email():
+    """Verifica immediata delle email"""
+    try:
+        if not app.email_monitor.is_active():
+            return jsonify({
+                'success': False,
+                'message': 'Monitor email non attivo. Attivalo nelle impostazioni.'
+            })
+        
+        # Forza una verifica immediata
+        app.email_monitor._check_emails()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Verifica email completata con successo!'
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Errore durante la verifica: {str(e)}'
+        }), 500
+
+@app.route('/impostazioni/email/restart', methods=['POST'])
+def restart_email_monitor():
+    """Riavvia il monitor email"""
+    try:
+        # Ferma il monitor se in esecuzione
+        app.email_monitor.stop_monitoring()
+        
+        # Attendi un momento per essere sicuri
+        import time
+        time.sleep(1)
+        
+        # Riavvia se configurato come attivo
+        if app.email_monitor.is_active():
+            success = app.email_monitor.start_monitoring()
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': 'Monitor email riavviato con successo!'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Impossibile riavviare il monitor. Potrebbe già essere in esecuzione.'
+                })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Monitor email non attivo. Attivalo nelle impostazioni.'
+            })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Errore durante il riavvio: {str(e)}'
+        }), 500
+
+@app.route('/impostazioni/email/status', methods=['GET'])
+def status_email_monitor():
+    """Controlla lo stato del monitor email"""
+    try:
+        status_info = {
+            'is_active': app.email_monitor.is_active(),
+            'is_running': app.email_monitor.running,
+            'check_interval': app.email_monitor.get_config('email_check_interval', '5'),
+            'configured': all([
+                app.email_monitor.get_config('email_address'),
+                app.email_monitor.get_config('email_password'),
+                app.email_monitor.get_config('email_imap_server')
+            ])
+        }
+        
+        if status_info['is_active'] and status_info['is_running']:
+            status_text = f"🟢 Attivo (controlla ogni {status_info['check_interval']} min)"
+        elif status_info['is_active'] and not status_info['is_running']:
+            status_text = "🟠 Configurato ma non in esecuzione"
+        elif not status_info['configured']:
+            status_text = "🔴 Non configurato"
+        else:
+            status_text = "🔴 Disattivato"
+        
+        return jsonify({
+            'success': True,
+            'status': status_info,
+            'status_text': status_text
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 # ========== API AUTOCOMPLETE ==========
 
 @app.route('/api/articoli/disponibili')
@@ -9350,13 +9446,22 @@ if __name__ == '__main__':
     
     # Avvia il monitor email se configurato
     try:
+        print(f"Email Monitor Status: {'Active' if app.email_monitor.is_active() else 'Inactive'}")
+        interval = app.email_monitor.get_config('email_check_interval', '5')
+        print(f"Email Monitor Interval: {interval} minuti")
+        
         if app.email_monitor.is_active():
-            app.email_monitor.start_monitoring()
-            print("Email Monitor: Attivo")
+            success = app.email_monitor.start_monitoring()
+            if success:
+                print("Email Monitor: Avviato con successo")
+            else:
+                print("Email Monitor: Già in esecuzione o non attivo")
         else:
             print("Email Monitor: Disattivato (configurare nelle impostazioni)")
     except Exception as e:
+        import traceback
         print(f"Email Monitor: Errore - {e}")
+        print(f"Traceback: {traceback.format_exc()}")
     
     logger.info("[STARTING] Flask server with detailed logging...")
     logger.info("[LOGS] Logs will be written to: flask_debug.log") 
