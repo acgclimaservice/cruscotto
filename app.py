@@ -3681,6 +3681,43 @@ def export_movimenti_excel():
         print(f"Errore export Excel movimenti: {e}")
         return f"Errore durante export Excel: {str(e)}", 500
 
+def calcola_giacenza_alla_data(codice_articolo, data_riferimento):
+    """Calcola giacenza di un articolo alla data specificata"""
+    try:
+        # Giacenza attuale
+        articolo = CatalogoArticolo.query.filter_by(codice_interno=codice_articolo).first()
+        if not articolo:
+            return 0
+        
+        giacenza_attuale = articolo.giacenza_attuale or 0
+        
+        # Se la data è oggi o futura, restituisci giacenza attuale
+        if data_riferimento >= datetime.now().date():
+            return giacenza_attuale
+        
+        # Calcola movimenti dopo la data di riferimento (per andare indietro nel tempo)
+        movimenti_successivi = MovimentoInventario.query.filter(
+            MovimentoInventario.codice_articolo == codice_articolo,
+            MovimentoInventario.data_movimento > data_riferimento
+        ).all()
+        
+        # Sottrai/aggiungi movimenti per ricostruire giacenza passata
+        giacenza_alla_data = giacenza_attuale
+        for movimento in movimenti_successivi:
+            quantita = movimento.quantita or 0
+            if movimento.tipo_movimento == 'IN':
+                # Se era entrato dopo la data, lo sottraggo dalla giacenza attuale
+                giacenza_alla_data -= quantita
+            elif movimento.tipo_movimento == 'OUT':
+                # Se era uscito dopo la data, lo riaggiugo alla giacenza attuale
+                giacenza_alla_data += quantita
+        
+        return max(0, giacenza_alla_data)  # Non può essere negativo
+        
+    except Exception as e:
+        print(f"Errore calcolo giacenza alla data {data_riferimento} per {codice_articolo}: {e}")
+        return 0
+
 @app.route('/inventario')
 def inventario_page():
     """Pagina inventario - mostra articoli del catalogo con filtri"""
@@ -3695,28 +3732,14 @@ def inventario_page():
         # Query base per articoli attivi con giacenza > 0
         query = CatalogoArticolo.query.filter_by(attivo=True).filter(CatalogoArticolo.giacenza_attuale > 0)
         
-        # Filtro per data - se specificato, filtra articoli che hanno avuto movimenti nel periodo
-        if data_da or data_a:
-            # Converti date string in datetime
-            data_da_dt = datetime.strptime(data_da, '%Y-%m-%d').date() if data_da else None
-            data_a_dt = datetime.strptime(data_a, '%Y-%m-%d').date() if data_a else None
-            
-            # Subquery per trovare articoli con movimenti nel periodo
-            movimenti_query = MovimentoInventario.query
-            
-            if data_da_dt:
-                movimenti_query = movimenti_query.filter(MovimentoInventario.data_movimento >= data_da_dt)
-            if data_a_dt:
-                movimenti_query = movimenti_query.filter(MovimentoInventario.data_movimento <= data_a_dt)
-            
-            # Ottieni codici articoli che hanno avuto movimenti
-            codici_articoli_con_movimenti = [m.codice_articolo for m in movimenti_query.distinct(MovimentoInventario.codice_articolo).all()]
-            
-            if codici_articoli_con_movimenti:
-                query = query.filter(CatalogoArticolo.codice_interno.in_(codici_articoli_con_movimenti))
-            else:
-                # Nessun movimento nel periodo = nessun articolo da mostrare
-                query = query.filter(CatalogoArticolo.id == -1)  # Query che non restituisce risultati
+        # Filtro per data - se specificato, calcola giacenze disponibili a quella data
+        data_inventario = None
+        if data_da:
+            # Usa solo data_da come data di inventario (ignora data_a per questo filtro)
+            try:
+                data_inventario = datetime.strptime(data_da, '%Y-%m-%d').date()
+            except ValueError:
+                data_inventario = None
         
         # Filtro per magazzino/ubicazione
         if filtro_magazzino:
@@ -3732,6 +3755,17 @@ def inventario_page():
             )
         
         articoli = query.all()
+        
+        # Se c'è un filtro data, calcola giacenze alla data specifica
+        if data_inventario:
+            articoli_con_giacenza_data = []
+            for articolo in articoli:
+                giacenza_alla_data = calcola_giacenza_alla_data(articolo.codice_interno, data_inventario)
+                if giacenza_alla_data > 0:  # Mostra solo articoli con giacenza positiva a quella data
+                    # Temporaneamente sovrascrive la giacenza attuale per la visualizzazione
+                    articolo.giacenza_alla_data = giacenza_alla_data
+                    articoli_con_giacenza_data.append(articolo)
+            articoli = articoli_con_giacenza_data
         
         # Filtro per stato scorta (post-query perché dipende dal calcolo)
         if stato_scorta:
@@ -3754,7 +3788,8 @@ def inventario_page():
         sotto_scorta = 0
         
         for articolo in articoli:
-            giacenza = articolo.giacenza_attuale or 0
+            # Usa giacenza alla data se presente, altrimenti giacenza attuale
+            giacenza = getattr(articolo, 'giacenza_alla_data', None) or articolo.giacenza_attuale or 0
             costo = articolo.costo_medio or 0
             scorta_min = articolo.scorta_minima or 0
             
@@ -3777,7 +3812,8 @@ def inventario_page():
                              articoli=articoli, 
                              statistiche=statistiche,
                              sotto_scorta=sotto_scorta,
-                             magazzini=magazzini)
+                             magazzini=magazzini,
+                             data_inventario=data_inventario)
 
     except Exception as e:
         print(f"Errore inventario: {e}")

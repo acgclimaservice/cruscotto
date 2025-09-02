@@ -9,4 +9,15 @@
 9. nella sezione report, nei report movimenti non funziona il tasto export excel. 
 10. nella sezione impostazioni nella parte relativa all'importazione automatica DDT via Mail ho impostato come Intervallo controllo (minuti): 1, ma noto che non fa il processo automatico devo cliccare su verifica ora. riusciamo a controllare il monitoraggio automatico della mail e testare se funziona tutto. 
 11 durante il parsing dei ddt in, sia multiplo che singolo, sia quelli arrivati per mail, dovresti controllare (analizzando il numero del ddt fornitore) che non vengano importati dei ddt fornitori già importati (anche in bozza).
-12 
+12 nei ddt in importati manualmente il PDF Unificato riporta ancora il vecchio formato del ddt in generato dal sistema. CONTROLLA BENE PERCHE' ADESSO SE PROVO A SCARICARE IL PDF UNIFICATO MI ESCE QUESTO ERRORE: Internal Server Error
+The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application. E NELLA CONSOLE ESCE QUESTO: pdf-unificato:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
+13 quando importo un ordine da pdf, mi cambi l'animazione del caricamento del parsing? mettimi un'animazione con una barra che fa vedere l'avanzamento del caricamento.  FA ANCORA PIU' SCHIFO DI QUELLA DI PRIMA. NMON MI RIESCI A METTERE UN'ANIMAZIONE PROFESSIONALE E SEMPICE?
+14. quando importo un ordine da pdf il parsing non mi legge la data dell' offerta presente nel pdf - MI ESCE QUESTO: Parsing completato con successo!
+Dati estratti:
+📋 Fornitore: CAMBIELLI S.p.A.
+📦 Articoli: 1
+📅 Data offerta: 24/02/2025 
+MA IL CAMPO DATA OFFERTA NON VIENE COMPILATO.
+15
+
+
