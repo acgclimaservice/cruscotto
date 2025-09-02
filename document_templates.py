@@ -398,6 +398,155 @@ class PreventivoTemplate(DocumentTemplate):
         """
 
 
+class RichiestaOffertaTemplate(DocumentTemplate):
+    """Template per Richieste di Offerta ai Fornitori"""
+    
+    @staticmethod
+    def generate_html(offerta_data):
+        """Genera HTML per Richiesta Offerta"""
+        current_date = datetime.now().strftime('%d/%m/%Y')
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="it">
+        <head>
+            <meta charset="UTF-8">
+            <title>Richiesta Offerta - {offerta_data.get('numero_offerta', 'N/A')}</title>
+            <style>{RichiestaOffertaTemplate.get_styles()}</style>
+        </head>
+        <body>
+            {DocumentTemplate.get_header_company()}
+            
+            <div class="document-title">
+                <h1>RICHIESTA DI OFFERTA</h1>
+                <div class="document-number">Richiesta N. {offerta_data.get('numero_offerta', 'N/A')}</div>
+            </div>
+            
+            <div class="document-details">
+                <div class="section">
+                    <h3>FORNITORE DESTINATARIO</h3>
+                    <p><strong>{offerta_data.get('fornitore_nome', 'N/A')}</strong></p>
+                    <p>Data Richiesta: {offerta_data.get('data_offerta', current_date)}</p>
+                    <p>Oggetto: {offerta_data.get('oggetto', 'Richiesta preventivo')}</p>
+                </div>
+                
+                <div class="section">
+                    <h3>CLIENTE FINALE</h3>
+                    <p>Cliente: {offerta_data.get('cliente_nome', 'N/A')}</p>
+                    <p>Commessa: {offerta_data.get('commessa', 'N/A')}</p>
+                    <p>Priorità: {offerta_data.get('priorita', 'Media').upper()}</p>
+                </div>
+            </div>
+            
+            <div class="request-content">
+                <h3>DETTAGLI RICHIESTA</h3>
+                <div class="content-section">
+                    <p>Gentili Signori,</p>
+                    <p>Con la presente richiediamo un preventivo per la fornitura degli articoli sotto elencati:</p>
+                </div>
+            </div>
+            
+            <div class="articles-table">
+                <h3>ARTICOLI RICHIESTI</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Codice</th>
+                            <th>Descrizione</th>
+                            <th>Quantità</th>
+                            <th>U.M.</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+        
+        # Aggiungi articoli richiesti
+        if 'articoli' in offerta_data and offerta_data['articoli']:
+            for articolo in offerta_data['articoli']:
+                html += f"""
+                        <tr>
+                            <td>{articolo.get('codice_articolo', 'N/A')}</td>
+                            <td><strong>{articolo.get('descrizione', 'N/A')}</strong></td>
+                            <td>{articolo.get('quantita', 0)}</td>
+                            <td>{articolo.get('unita_misura', 'PZ')}</td>
+                            <td>{articolo.get('note', '')}</td>
+                        </tr>
+                """
+        else:
+            html += """
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 30px; color: #666;">
+                                Nessun articolo specificato - Richiesta generica
+                            </td>
+                        </tr>
+            """
+        
+        html += f"""
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="request-conditions">
+                <h3>CONDIZIONI RICHIESTE</h3>
+                <div class="conditions-grid">
+                    <div><strong>Tempi di consegna:</strong> Da specificare nell'offerta</div>
+                    <div><strong>Disponibilità:</strong> Da confermare</div>
+                    <div><strong>Validità offerta:</strong> Minimo 30 giorni</div>
+                    <div><strong>Condizioni pagamento:</strong> Da concordare</div>
+                </div>
+                
+                {f'<div class="notes"><strong>Note aggiuntive:</strong><p>{offerta_data.get("note", "")}</p></div>' if offerta_data.get("note") else ""}
+            </div>
+            
+            <div class="response-section">
+                <h3>MODALITÀ DI RISPOSTA</h3>
+                <p>Vi preghiamo di inviarci la vostra migliore offerta entro i tempi concordati, specificando:</p>
+                <ul>
+                    <li>Prezzo unitario per ogni articolo</li>
+                    <li>Sconti applicabili</li>
+                    <li>Tempi di consegna</li>
+                    <li>Disponibilità merce</li>
+                    <li>Condizioni di pagamento</li>
+                    <li>Validità dell'offerta</li>
+                </ul>
+            </div>
+            
+            <div class="document-footer">
+                <div class="signature-section">
+                    <p><strong>Cordiali saluti,</strong></p>
+                    <p><strong>{DocumentTemplate.COMPANY_DATA['ragione_sociale']}</strong><br>
+                       {DocumentTemplate.COMPANY_DATA['indirizzo']}<br>
+                       {DocumentTemplate.COMPANY_DATA['cap']} {DocumentTemplate.COMPANY_DATA['citta']}</p>
+                    <br>
+                    <div class="signature-line">______________________</div>
+                    <p><em>Firma autorizzata</em></p>
+                </div>
+                <p class="generated-date">Documento generato automaticamente il {current_date}</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html
+    
+    @staticmethod
+    def get_styles():
+        return DDTInTemplate.get_styles() + """
+        .request-content { margin: 30px 0; background: #f8f9fa; padding: 20px; border-radius: 8px; }
+        .content-section p { margin: 10px 0; line-height: 1.6; }
+        .request-conditions { margin: 30px 0; background: #f8f9fa; padding: 20px; border-radius: 8px; }
+        .conditions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .notes { margin-top: 15px; padding: 15px; background: #fff; border-left: 4px solid #007bff; }
+        .response-section { margin: 30px 0; }
+        .response-section ul { margin: 15px 0; padding-left: 25px; }
+        .response-section li { margin: 8px 0; line-height: 1.4; }
+        .signature-section { text-align: right; margin: 40px 0 20px 0; }
+        .signature-line { border-bottom: 1px solid #333; width: 200px; margin: 20px 0 10px auto; }
+        .generated-date { text-align: center; font-size: 12px; color: #666; margin-top: 30px; }
+        """
+
+
 class OrdineFornitoreTemplate(DocumentTemplate):
     """Template per Ordini a Fornitori"""
     

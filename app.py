@@ -6514,237 +6514,44 @@ def cambia_stato_offerta(id):
 
 @app.route('/offerte/<int:id>/pdf')
 def offerte_pdf(id):
-    """Genera PDF professionale dell'offerta con logo a sinistra"""
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.units import cm
-    from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-    from io import BytesIO
-    import os
-    
+    """Genera PDF professionale richiesta offerta - Template v2"""
     try:
+        from document_templates import RichiestaOffertaTemplate
+        
         offerta = OffertaFornitore.query.get_or_404(id)
-        dettagli = DettaglioOfferta.query.filter_by(offerta_id=id).all() if hasattr(offerta, 'dettagli') else []
+        dettagli = DettaglioOfferta.query.filter_by(offerta_id=id).all()
         
-        # Crea il buffer per il PDF
-        buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4)
-        content = []
+        # Prepara dati per il template v2
+        offerta_data = {
+            'numero_offerta': offerta.numero_offerta or f'RIC-{offerta.id}',
+            'fornitore_nome': offerta.fornitore_nome or 'N/A',
+            'data_offerta': offerta.data_offerta.strftime('%d/%m/%Y') if offerta.data_offerta else 'N/A',
+            'oggetto': offerta.oggetto or 'Richiesta preventivo',
+            'cliente_nome': offerta.cliente_nome or 'N/A',
+            'commessa': offerta.commessa or 'N/A',
+            'priorita': offerta.priorita or 'Media',
+            'note': offerta.note or '',
+            'articoli': []
+        }
         
-        # Stili
-        styles = getSampleStyleSheet()
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Title'],
-            fontSize=18,
-            textColor=colors.HexColor('#007bff'),
-            alignment=TA_CENTER,
-            spaceAfter=0.3*cm
-        )
-        subtitle_style = ParagraphStyle(
-            'CustomSubtitle',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor=colors.HexColor('#666666'),
-            alignment=TA_CENTER,
-            spaceAfter=0.5*cm
-        )
-        normal_style = styles['Normal']
+        # Aggiungi articoli richiesti
+        for dettaglio in dettagli:
+            offerta_data['articoli'].append({
+                'codice_articolo': dettaglio.codice_articolo or 'N/A',
+                'descrizione': dettaglio.descrizione or 'N/A',
+                'quantita': dettaglio.quantita or 0,
+                'unita_misura': dettaglio.unita_misura or 'PZ',
+                'note': dettaglio.note or ''
+            })
         
-        # Header con logo a SINISTRA e titolo
-        try:
-            # Percorso del logo
-            logo_path = os.path.join(os.path.dirname(__file__), 'static', 'logo-acg.png')
-            if os.path.exists(logo_path):
-                # Crea tabella per header con logo a sinistra e titolo al centro
-                logo_img = Image(logo_path, width=3*cm, height=1.5*cm)
-                
-                # Tabella header: logo a SINISTRA, titolo al centro
-                title_cell = [
-                    Paragraph("OFFERTA FORNITORE", title_style),
-                    Paragraph(offerta.numero_offerta or f'BOZZA #{offerta.id}', subtitle_style)
-                ]
-                
-                header_data = [[logo_img, title_cell]]
-                header_table = Table(header_data, colWidths=[4*cm, 12*cm])
-                header_table.setStyle(TableStyle([
-                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                    ('ALIGN', (0, 0), (0, 0), 'LEFT'),    # Logo a SINISTRA
-                    ('ALIGN', (1, 0), (1, 0), 'CENTER'),  # Titolo al centro
-                    ('TOPPADDING', (0, 0), (-1, -1), 0.5*cm),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 0.5*cm),
-                ]))
-                content.append(header_table)
-            else:
-                # Solo titolo se logo non trovato
-                content.append(Paragraph("OFFERTA FORNITORE", title_style))
-                content.append(Paragraph(offerta.numero_offerta or f'BOZZA #{offerta.id}', subtitle_style))
-        except Exception as e:
-            # Fallback senza logo
-            content.append(Paragraph("OFFERTA FORNITORE", title_style))
-            content.append(Paragraph(offerta.numero_offerta or f'BOZZA #{offerta.id}', subtitle_style))
+        # Genera HTML professionale
+        html_content = RichiestaOffertaTemplate.generate_html(offerta_data)
+        return html_content
         
-        content.append(Spacer(1, 0.5*cm))
-        
-        # Informazioni azienda
-        content.append(Paragraph("<b>ACG CLIMA SERVICE S.R.L.</b>", ParagraphStyle('CompanyInfo', parent=normal_style, alignment=TA_CENTER)))
-        content.append(Paragraph("Via della Tecnica, 123 - 00100 Roma<br/>Tel: +39 06 1234567 - Email: info@acgclimaservice.com<br/>P.IVA: IT12345678901", 
-                                ParagraphStyle('CompanyDetails', parent=normal_style, alignment=TA_CENTER, fontSize=9)))
-        content.append(Spacer(1, 0.8*cm))
-        
-        # Informazioni offerta e fornitore
-        info_data = [
-            ['<b>Data Ricevuta:</b>', offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta else '-', 
-             '<b>Fornitore:</b>', offerta.fornitore_nome or '-'],
-            ['<b>Oggetto:</b>', offerta.oggetto or '-', 
-             '<b>P.IVA:</b>', offerta.fornitore.partita_iva if offerta.fornitore else '-'],
-            ['<b>Stato:</b>', offerta.stato.upper() if offerta.stato else 'CREATA', 
-             '<b>Email:</b>', offerta.fornitore.email if offerta.fornitore else '-'],
-            ['<b>Priorità:</b>', offerta.priorita.upper() if offerta.priorita else 'MEDIA',
-             '<b>Telefono:</b>', offerta.fornitore.telefono if offerta.fornitore else '-']
-        ]
-        
-        if offerta.data_scadenza:
-            info_data.append([
-                '<b>Scadenza:</b>', offerta.data_scadenza.strftime('%d/%m/%Y'),
-                '<b>Commessa:</b>', offerta.commessa or '-'
-            ])
-        elif offerta.commessa:
-            info_data.append([
-                '<b>Commessa:</b>', offerta.commessa,
-                '', ''
-            ])
-        
-        info_table = Table(info_data, colWidths=[3*cm, 5*cm, 3*cm, 5*cm])
-        info_table.setStyle(TableStyle([
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TOPPADDING', (0, 0), (-1, -1), 0.2*cm),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0.2*cm),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0.1*cm),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0.1*cm),
-        ]))
-        content.append(info_table)
-        content.append(Spacer(1, 0.5*cm))
-        
-        # Tabella dettagli articoli se presenti
-        if dettagli:
-            content.append(Paragraph("<b>Dettagli Articoli</b>", ParagraphStyle('SectionHeader', parent=styles['Heading3'], textColor=colors.HexColor('#007bff'))))
-            content.append(Spacer(1, 0.3*cm))
-            
-            # Header tabella
-            table_data = [['Codice', 'Cod. Fornitore', 'Descrizione', 'Qty', 'Prezzo €', 'Sconto %', 'Totale €']]
-            
-            totale_generale = 0
-            for dettaglio in dettagli:
-                totale_riga = (dettaglio.quantita or 0) * (dettaglio.prezzo_unitario or 0)
-                sconto = totale_riga * (dettaglio.sconto_percentuale or 0) / 100
-                totale_finale = totale_riga - sconto
-                totale_generale += totale_finale
-                
-                table_data.append([
-                    dettaglio.codice_articolo or '-',
-                    dettaglio.codice_fornitore or '-',
-                    dettaglio.descrizione or '-',
-                    f"{dettaglio.quantita:.2f}" if dettaglio.quantita else '0',
-                    f"{dettaglio.prezzo_unitario:.2f}" if dettaglio.prezzo_unitario else '0.00',
-                    f"{dettaglio.sconto_percentuale:.1f}%" if dettaglio.sconto_percentuale else '0%',
-                    f"{totale_finale:.2f}"
-                ])
-            
-            # Crea tabella
-            table = Table(table_data, colWidths=[1.8*cm, 1.8*cm, 5.5*cm, 1.5*cm, 2*cm, 1.5*cm, 2.4*cm])
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8f9fa')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#495057')),
-                ('FONTSIZE', (0, 0), (-1, -1), 8),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('ALIGN', (3, 1), (6, -1), 'RIGHT'),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dee2e6')),
-                ('TOPPADDING', (0, 0), (-1, -1), 0.2*cm),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 0.2*cm),
-            ]))
-            content.append(table)
-            content.append(Spacer(1, 0.5*cm))
-        
-        # Totali
-        totale_netto = offerta.totale_netto or 0
-        iva_percentuale = offerta.iva or 22
-        iva_importo = totale_netto * iva_percentuale / 100
-        totale_lordo = totale_netto + iva_importo
-        
-        totali_data = [
-            ['Totale Netto:', f"€ {totale_netto:.2f}"],
-            [f'IVA ({iva_percentuale}%):', f"€ {iva_importo:.2f}"],
-            ['TOTALE LORDO:', f"€ {totale_lordo:.2f}"]
-        ]
-        
-        totali_table = Table(totali_data, colWidths=[4*cm, 3*cm])
-        totali_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-            ('LINEBELOW', (0, -1), (-1, -1), 1, colors.HexColor('#007bff')),
-            ('TOPPADDING', (0, 0), (-1, -1), 0.2*cm),
-        ]))
-        content.append(totali_table)
-        
-        # Note
-        if offerta.note:
-            content.append(Spacer(1, 0.5*cm))
-            content.append(Paragraph("<b>Note:</b>", styles['Heading4']))
-            content.append(Paragraph(offerta.note, normal_style))
-        
-        # Valutazione
-        if hasattr(offerta, 'valutazione') and offerta.valutazione:
-            content.append(Spacer(1, 0.5*cm))
-            content.append(Paragraph("<b>Valutazione:</b>", ParagraphStyle('EvalHeader', parent=styles['Heading4'], textColor=colors.HexColor('#28a745'))))
-            content.append(Paragraph(offerta.valutazione, normal_style))
-        
-        # Cronologia se non è solo creata
-        if offerta.stato and offerta.stato != 'creata':
-            content.append(Spacer(1, 0.5*cm))
-            content.append(Paragraph("<b>Cronologia:</b>", styles['Heading4']))
-            
-            cronologia_data = [
-                ['Creata il:', offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta else '-']
-            ]
-            
-            if hasattr(offerta, 'data_valutazione') and offerta.data_valutazione:
-                cronologia_data.append(['Valutata il:', offerta.data_valutazione.strftime('%d/%m/%Y')])
-            
-            if hasattr(offerta, 'data_accettazione') and offerta.data_accettazione:
-                cronologia_data.append(['Accettata il:', offerta.data_accettazione.strftime('%d/%m/%Y')])
-            
-            cronologia_table = Table(cronologia_data, colWidths=[3*cm, 4*cm])
-            cronologia_table.setStyle(TableStyle([
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('TOPPADDING', (0, 0), (-1, -1), 0.1*cm),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 0.1*cm),
-            ]))
-            content.append(cronologia_table)
-        
-        # Footer
-        content.append(Spacer(1, 1*cm))
-        content.append(Paragraph(f"Documento generato automaticamente il {datetime.now().strftime('%d/%m/%Y alle %H:%M')}", 
-                                ParagraphStyle('Footer', parent=normal_style, fontSize=8, textColor=colors.grey, alignment=TA_CENTER)))
-        content.append(Paragraph("ACG CLIMA SERVICE S.R.L. - Sistema Gestione Offerte v2.1", 
-                                ParagraphStyle('FooterSub', parent=normal_style, fontSize=8, textColor=colors.grey, alignment=TA_CENTER)))
-        
-        # Genera PDF
-        doc.build(content)
-        buffer.seek(0)
-        
-        # Risposta con download forzato
-        response = make_response(buffer.getvalue())
-        response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'attachment; filename="offerta_{offerta.numero_offerta or offerta.id}.pdf"'
-        
-        return response
-            
     except Exception as e:
-        print(f"Errore PDF offerta: {e}")
+        print(f"Errore PDF richiesta offerta v2: {e}")
+        import traceback
+        traceback.print_exc()
         return f"Errore PDF: {e}", 500
 
 @app.route('/offerte/confronta')
