@@ -66,10 +66,15 @@ class EmailMonitor:
         while self.running:
             try:
                 if self.is_active():
+                    start_time = time.time()
+                    self.logger.info(f"[EMAIL] Starting email check at {datetime.now().strftime('%H:%M:%S')}")
                     self._check_emails()
+                    elapsed = time.time() - start_time
+                    self.logger.info(f"[EMAIL] Email check completed in {elapsed:.2f} seconds")
                 
                 # Attendi l'intervallo configurato
                 interval = int(self.get_config('email_check_interval', '5'))
+                self.logger.debug(f"[EMAIL] Waiting {interval} minutes until next check")
                 time.sleep(interval * 60)  # Converti in secondi
                 
             except Exception as e:
@@ -107,9 +112,13 @@ class EmailMonitor:
             email_ids = messages[0].split()
             self.logger.info(f"📬 Trovate {len(email_ids)} nuove email")
             
-            for email_id in email_ids[:10]:  # Processa max 10 email per volta
+            for i, email_id in enumerate(email_ids[:10]):  # Processa max 10 email per volta
                 try:
+                    start_time = time.time()
+                    self.logger.info(f"[EMAIL] Processing email {i+1}/{len(email_ids[:10])} (ID: {email_id})")
                     self._process_email(mail, email_id, max_attachments)
+                    elapsed = time.time() - start_time
+                    self.logger.info(f"[EMAIL] Email {email_id} processed in {elapsed:.2f} seconds")
                 except Exception as e:
                     self.logger.error(f"Errore processando email {email_id}: {e}")
             
@@ -202,9 +211,11 @@ class EmailMonitor:
         db.session.commit()
         
         # Avvia processing in background (riutilizza sistema esistente)
+        self.logger.info(f"[EMAIL] Starting background processing for job {job.id} with {len(pdf_files)} files")
         from app import process_batch_files
         thread = threading.Thread(target=process_batch_files, args=(job.id,), daemon=True)
         thread.start()
+        self.logger.info(f"[EMAIL] Background processing started for job {job.id}")
         
         return job.id
     

@@ -112,6 +112,7 @@ onclick @ nuovo:130
 Nessuna offerta presente
 Inizia registrando la tua prima offerta
 + Registra Prima Offerta dalla pagina https://acgclimaservice.pythonanywhere.com/offerte
-77 
+77 mi da questo e non funziona niente offerte:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
+78 
 
 
