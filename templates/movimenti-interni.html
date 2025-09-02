@@ -74,6 +74,14 @@
                             <button class="btn btn-sm" onclick="window.location.href='/movimenti-interni/{{ movimento.id }}'">
                                 👁️ Visualizza
                             </button>
+                            {% if movimento.stato == 'bozza' %}
+                                <button class="btn btn-sm btn-warning" onclick="window.location.href='/movimenti-interni/{{ movimento.id }}/modifica'">
+                                    ✏️ Modifica
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="eliminaMovimento({{ movimento.id }})">
+                                    🗑️ Elimina
+                                </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}
@@ -85,5 +93,31 @@
             </table>
         </div>
     </div>
+
+    <script>
+        function eliminaMovimento(movimentoId) {
+            if (confirm('Sei sicuro di voler eliminare questo movimento interno?\n\nQuesta azione non può essere annullata.')) {
+                fetch(`/movimenti-interni/${movimentoId}/elimina`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Movimento eliminato con successo');
+                        window.location.reload();
+                    } else {
+                        alert('Errore: ' + (data.error || 'Errore sconosciuto'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Errore di rete: ' + error.message);
+                });
+            }
+        }
+    </script>
 </body>
 </html>

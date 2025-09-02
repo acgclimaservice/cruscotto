@@ -7685,6 +7685,95 @@ def conferma_movimento_interno(id):
         print(f"Errore conferma movimento interno: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/movimenti-interni/<int:id>/modifica')
+def modifica_movimento_interno(id):
+    """Modifica movimento interno (solo se in bozza)"""
+    movimento = MovimentoInterno.query.get_or_404(id)
+    
+    if movimento.stato != 'bozza':
+        flash('Solo i movimenti in bozza possono essere modificati', 'error')
+        return redirect('/movimenti-interni')
+    
+    # Riutilizziamo il template di creazione per la modifica
+    magazzini = Magazzino.query.filter_by(attivo=True).all()
+    return render_template('nuovo-movimento-interno.html', 
+                         movimento=movimento,
+                         magazzini=magazzini,
+                         modalita='modifica')
+
+@app.route('/movimenti-interni/<int:id>/modifica', methods=['POST'])
+def aggiorna_movimento_interno(id):
+    """Aggiorna movimento interno"""
+    try:
+        movimento = MovimentoInterno.query.get_or_404(id)
+        
+        if movimento.stato != 'bozza':
+            return jsonify({'success': False, 'error': 'Solo i movimenti in bozza possono essere modificati'}), 400
+        
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        
+        # Aggiorna dati movimento
+        movimento.data_movimento = datetime.strptime(data.get('data_movimento'), '%Y-%m-%d').date()
+        movimento.magazzino_partenza = data.get('magazzino_partenza')
+        movimento.magazzino_destinazione = data.get('magazzino_destinazione')
+        movimento.causale = data.get('causale', '')
+        movimento.note = data.get('note', '')
+        
+        # Elimina articoli esistenti
+        ArticoloMovimentoInterno.query.filter_by(movimento_id=id).delete()
+        
+        # Aggiungi nuovi articoli
+        articoli_data = data.get('articoli', [])
+        for articolo_data in articoli_data:
+            if articolo_data.get('codice_articolo') and articolo_data.get('quantita'):
+                articolo = ArticoloMovimentoInterno(
+                    movimento_id=id,
+                    codice_articolo=articolo_data.get('codice_articolo'),
+                    descrizione_articolo=articolo_data.get('descrizione_articolo', ''),
+                    quantita=float(articolo_data.get('quantita', 0))
+                )
+                db.session.add(articolo)
+        
+        db.session.commit()
+        
+        if request.is_json:
+            return jsonify({'success': True, 'message': 'Movimento aggiornato con successo'})
+        else:
+            flash('Movimento aggiornato con successo', 'success')
+            return redirect(f'/movimenti-interni/{id}')
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore aggiornamento movimento interno: {e}")
+        if request.is_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        else:
+            flash(f'Errore: {str(e)}', 'error')
+            return redirect('/movimenti-interni')
+
+@app.route('/movimenti-interni/<int:id>/elimina', methods=['POST'])
+def elimina_movimento_interno(id):
+    """Elimina movimento interno (solo se in bozza)"""
+    try:
+        movimento = MovimentoInterno.query.get_or_404(id)
+        
+        if movimento.stato != 'bozza':
+            return jsonify({'success': False, 'error': 'Solo i movimenti in bozza possono essere eliminati'}), 400
+        
+        # Elimina prima gli articoli collegati
+        ArticoloMovimentoInterno.query.filter_by(movimento_id=id).delete()
+        
+        # Elimina il movimento
+        db.session.delete(movimento)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Movimento eliminato con successo'})
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore eliminazione movimento interno: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ========== API AUTOCOMPLETAMENTO AGGIUNTIVE ==========
 
 @app.route('/api/magazzini/search')

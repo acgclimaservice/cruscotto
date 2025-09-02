@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Nuovo Movimento Interno</title>
+    <title>{{ 'Modifica' if modalita == 'modifica' else 'Nuovo' }} Movimento Interno</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
         .form-group {
@@ -56,19 +56,19 @@
         </nav>
 
         <div class="page-header">
-            <h1>➕ Nuovo Movimento Interno</h1>
+            <h1>{{ '✏️ Modifica' if modalita == 'modifica' else '➕ Nuovo' }} Movimento Interno</h1>
             <button class="btn btn-secondary" onclick="window.location.href='/movimenti-interni'">
                 ← Torna ai Movimenti
             </button>
         </div>
 
-        <form method="post" id="movimentoForm">
+        <form method="post" id="movimentoForm" action="{{ '/movimenti-interni/' + movimento.id|string + '/modifica' if modalita == 'modifica' else '/movimenti-interni/nuovo' }}">
             <div class="form-section">
                 <h3>📋 Informazioni Generali</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Data Movimento</label>
-                        <input type="date" name="data_movimento" required>
+                        <input type="date" name="data_movimento" value="{{ movimento.data_movimento.strftime('%Y-%m-%d') if modalita == 'modifica' and movimento.data_movimento else '' }}" required>
                     </div>
                     <div class="form-group">
                         <label>Numero Documento</label>
@@ -84,23 +84,24 @@
                         <label>Magazzino di Partenza</label>
                         <input type="text" name="magazzino_partenza" required 
                                placeholder="Cerca magazzino..." autocomplete="off"
-                               value="{% if magazzino_predefinito %}{{ magazzino_predefinito.descrizione }}{% endif %}">
+                               value="{{ movimento.nome_magazzino_partenza if modalita == 'modifica' else (magazzino_predefinito.descrizione if magazzino_predefinito else '') }}">
                         <div class="autocomplete-results" id="magazzino-partenza-results"></div>
                     </div>
                     <div class="form-group">
                         <label>Magazzino di Destinazione</label>
                         <input type="text" name="magazzino_destinazione" required 
-                               placeholder="Cerca magazzino..." autocomplete="off">
+                               placeholder="Cerca magazzino..." autocomplete="off"
+                               value="{{ movimento.nome_magazzino_destinazione if modalita == 'modifica' else '' }}">
                         <div class="autocomplete-results" id="magazzino-destinazione-results"></div>
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Causale</label>
-                    <input type="text" name="causale" placeholder="Motivo del movimento">
+                    <input type="text" name="causale" placeholder="Motivo del movimento" value="{{ movimento.causale if modalita == 'modifica' else '' }}">
                 </div>
                 <div class="form-group">
                     <label>Note</label>
-                    <textarea name="note" rows="3" placeholder="Note aggiuntive..."></textarea>
+                    <textarea name="note" rows="3" placeholder="Note aggiuntive...">{{ movimento.note if modalita == 'modifica' else '' }}</textarea>
                 </div>
             </div>
 
@@ -146,7 +147,7 @@
             </div>
 
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">💾 Salva Movimento</button>
+                <button type="submit" class="btn btn-primary">💾 {{ 'Aggiorna' if modalita == 'modifica' else 'Salva' }} Movimento</button>
                 <button type="button" class="btn btn-secondary" onclick="window.location.href='/movimenti-interni'">
                     ❌ Annulla
                 </button>

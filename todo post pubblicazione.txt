@@ -74,5 +74,16 @@ vedi questa schermata? è corretta. poi quando premo conferma ddt in va tutto a 
 48 dalla sezione offerte nascondi il tasto Valuta offerta
 49 all'interno di un offerta devo avere la possibilità di accettarla, rifiutarla o metterla in valutazione, che sono tre stati che devo poter modificare successivamente
 50 per l'invio delle mail di richiesta offerta al fornitore non utilizzare mail l'endpoint ma usa sempre Outlook aprendo una nuova mail e allegando fisicamente al messaggio du Outlook gli allegati
-51 
+51  aggiungere modifica e elimina nei movimenti interni ancora in bozza
+52 anche quando l'offerta è accettata deve essere possibile modificarla
+53 da questa pagina https://acgclimaservice.pythonanywhere.com/offerte nascondi il tasto accetta e il tasto valuta, lascia solo il tasto elimina e modifica che mi deve permettere di modificare l'offerta 
+54 quando accetto un offerta esce questo testo: {
+  "message": "Offerta accettata con successo",
+  "redirect_url": "/offerte/1",
+  "success": true
+}
+55 
+
+52 inserendo un nuovo DDT IN se il fornitore non è esistente aggiungimi la possibilità di creare direttamente una nuova anagrafica fornitore
+
 
