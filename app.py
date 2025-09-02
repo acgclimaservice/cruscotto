@@ -6151,6 +6151,86 @@ def nuova_offerta():
                 flash(f'Errore nella creazione dell\'offerta: {str(e)}', 'error')
                 return redirect('/offerte')
 
+@app.route('/offerte/<int:id>/modifica')
+def modifica_offerta(id):
+    """Modifica offerta (permesso per tutti gli stati)"""
+    offerta = OffertaFornitore.query.get_or_404(id)
+    
+    # Carica fornitori per il dropdown
+    fornitori = Fornitore.query.filter_by(attivo=True).order_by(Fornitore.ragione_sociale).all()
+    
+    # Riutilizziamo il template di creazione per la modifica
+    return render_template('nuova-offerta.html', 
+                         offerta=offerta,
+                         fornitori=fornitori,
+                         modalita='modifica')
+
+@app.route('/offerte/<int:id>/modifica', methods=['POST'])
+def aggiorna_offerta(id):
+    """Aggiorna offerta"""
+    try:
+        offerta = OffertaFornitore.query.get_or_404(id)
+        
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        
+        # Aggiorna dati offerta
+        offerta.numero_offerta = data.get('numero_offerta', offerta.numero_offerta)
+        offerta.fornitore_nome = data.get('fornitore_nome', '')
+        offerta.oggetto = data.get('oggetto', '')
+        offerta.priorita = data.get('priorita', 'media')
+        offerta.note = data.get('note', '')
+        
+        # Aggiorna date se fornite
+        if data.get('data_offerta'):
+            offerta.data_offerta = datetime.strptime(data.get('data_offerta'), '%Y-%m-%d').date()
+        if data.get('data_scadenza'):
+            offerta.data_scadenza = datetime.strptime(data.get('data_scadenza'), '%Y-%m-%d').date()
+        
+        # Aggiorna fornitore_id se fornito
+        fornitore_id = data.get('fornitore_id')
+        if fornitore_id:
+            offerta.fornitore_id = int(fornitore_id)
+        
+        # Elimina dettagli esistenti
+        DettaglioOfferta.query.filter_by(offerta_id=id).delete()
+        
+        # Aggiungi nuovi dettagli
+        articoli_data = data.get('articoli', [])
+        for articolo_data in articoli_data:
+            if articolo_data.get('descrizione'):
+                dettaglio = DettaglioOfferta(
+                    offerta_id=id,
+                    codice_articolo=articolo_data.get('codice_articolo', ''),
+                    codice_fornitore=articolo_data.get('codice_fornitore', ''),
+                    descrizione=articolo_data.get('descrizione'),
+                    quantita=float(articolo_data.get('quantita', 0)),
+                    unita_misura=articolo_data.get('unita_misura', 'PZ'),
+                    prezzo_unitario=float(articolo_data.get('prezzo_unitario', 0)) if articolo_data.get('prezzo_unitario') else None,
+                    sconto_percentuale=float(articolo_data.get('sconto_percentuale', 0)) if articolo_data.get('sconto_percentuale') else None,
+                    totale_riga=float(articolo_data.get('totale_riga', 0)) if articolo_data.get('totale_riga') else None,
+                    disponibilita=articolo_data.get('disponibilita', ''),
+                    tempo_consegna=articolo_data.get('tempo_consegna', ''),
+                    note=articolo_data.get('note', '')
+                )
+                db.session.add(dettaglio)
+        
+        db.session.commit()
+        
+        if request.is_json:
+            return jsonify({'success': True, 'message': 'Offerta aggiornata con successo'})
+        else:
+            flash('Offerta aggiornata con successo', 'success')
+            return redirect(f'/offerte/{id}')
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore aggiornamento offerta: {e}")
+        if request.is_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        else:
+            flash(f'Errore: {str(e)}', 'error')
+            return redirect('/offerte')
+
 @app.route('/offerte/<int:id>/valuta', methods=['POST'])
 def valuta_offerta(id):
     """Valuta un'offerta"""

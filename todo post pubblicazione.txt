@@ -82,7 +82,8 @@ vedi questa schermata? è corretta. poi quando premo conferma ddt in va tutto a 
   "redirect_url": "/offerte/1",
   "success": true
 }
-55 
+55 non riesci ad aggiungere automaticamente gli allegati alla mail su Outlook?
+
 
 52 inserendo un nuovo DDT IN se il fornitore non è esistente aggiungimi la possibilità di creare direttamente una nuova anagrafica fornitore
 

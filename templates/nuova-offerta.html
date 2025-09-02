@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuova Richiesta Offerta a Fornitore - Sistema DDT</title>
+    <title>{{ 'Modifica' if modalita == 'modifica' else 'Nuova' }} Richiesta Offerta a Fornitore - Sistema DDT</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
     <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
     <script src="{{ url_for('static', filename='autocompletamento.js') }}"></script>
@@ -22,55 +22,56 @@
         </nav>
 
         <div class="ddt-header">
-            <h1>💰 Nuova Richiesta Offerta a Fornitore</h1>
-            <p style="color: #8492a6; margin-top: 8px;">Registra una nuova richiesta di offerta da inviare a un fornitore</p>
+            <h1>💰 {{ 'Modifica' if modalita == 'modifica' else 'Nuova' }} Richiesta Offerta a Fornitore</h1>
+            <p style="color: #8492a6; margin-top: 8px;">{{ 'Modifica richiesta di offerta esistente' if modalita == 'modifica' else 'Registra una nuova richiesta di offerta da inviare a un fornitore' }}</p>
         </div>
 
-        <form method="POST" enctype="multipart/form-data" class="form-container">
+        <form method="POST" enctype="multipart/form-data" class="form-container" action="{{ '/offerte/' + offerta.id|string + '/modifica' if modalita == 'modifica' else '/offerte/nuova' }}">
             <!-- Dati testata offerta -->
             <div class="card">
                 <h3>📨 Informazioni Generali</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="fornitore_nome">Fornitore *</label>
-                        <input type="text" id="fornitore_nome" name="fornitore_nome" placeholder="Digita per cercare fornitore..." required>
-                        <input type="hidden" id="fornitore_id" name="fornitore_id">
+                        <input type="text" id="fornitore_nome" name="fornitore_nome" placeholder="Digita per cercare fornitore..." required
+                               value="{{ offerta.fornitore_nome if modalita == 'modifica' else '' }}">
+                        <input type="hidden" id="fornitore_id" name="fornitore_id" value="{{ offerta.fornitore_id if modalita == 'modifica' else '' }}">
                     </div>
                     
                     <div class="form-group">
                         <label for="oggetto">Oggetto *</label>
                         <input type="text" id="oggetto" name="oggetto" required
-                               placeholder="Descrizione offerta">
+                               placeholder="Descrizione offerta" value="{{ offerta.oggetto if modalita == 'modifica' else '' }}">
                     </div>
                     
                     <div class="form-group">
                         <label for="data_offerta">Data Richiesta Offerta</label>
-                        <input type="date" id="data_offerta" name="data_offerta" value="{{ today|default('') }}">
+                        <input type="date" id="data_offerta" name="data_offerta" value="{{ offerta.data_ricevuta.strftime('%Y-%m-%d') if modalita == 'modifica' and offerta.data_ricevuta else today|default('') }}">
                     </div>
                     
                     <div class="form-group">
                         <label for="data_scadenza">Data Scadenza</label>
-                        <input type="date" id="data_scadenza" name="data_scadenza">
+                        <input type="date" id="data_scadenza" name="data_scadenza" value="{{ offerta.data_scadenza.strftime('%Y-%m-%d') if modalita == 'modifica' and offerta.data_scadenza else '' }}">
                     </div>
                     
                     <div class="form-group">
                         <label for="priorita">Priorità</label>
                         <select id="priorita" name="priorita">
-                            <option value="bassa">🟢 Bassa</option>
-                            <option value="media" selected>🟡 Media</option>
-                            <option value="alta">🔴 Alta</option>
+                            <option value="bassa" {{ 'selected' if modalita == 'modifica' and offerta.priorita == 'bassa' else '' }}>🟢 Bassa</option>
+                            <option value="media" {{ 'selected' if (modalita == 'modifica' and offerta.priorita == 'media') or (modalita != 'modifica') else '' }}>🟡 Media</option>
+                            <option value="alta" {{ 'selected' if modalita == 'modifica' and offerta.priorita == 'alta' else '' }}>🔴 Alta</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
                         <label for="iva">IVA (%)</label>
-                        <input type="number" id="iva" name="iva" value="22" min="0" max="100" step="0.01">
+                        <input type="number" id="iva" name="iva" value="{{ offerta.iva or 22 if modalita == 'modifica' else '22' }}" min="0" max="100" step="0.01">
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="note">Note</label>
-                    <textarea id="note" name="note" rows="3" placeholder="Note sull'offerta..."></textarea>
+                    <textarea id="note" name="note" rows="3" placeholder="Note sull'offerta...">{{ offerta.note if modalita == 'modifica' else '' }}</textarea>
                 </div>
                 
                 <div class="form-group">
@@ -175,7 +176,7 @@
             <!-- Pulsanti azione -->
             <div class="form-actions">
                 <a href="/offerte" class="btn btn-secondary">⬅️ Annulla</a>
-                <button type="submit" class="btn btn-success">💾 Salva Richiesta</button>
+                <button type="submit" class="btn btn-success">💾 {{ 'Aggiorna' if modalita == 'modifica' else 'Salva' }} Richiesta</button>
             </div>
         </form>
     </div>

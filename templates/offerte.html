@@ -110,16 +110,8 @@
                             <td>
                                 <div class="action-buttons">
                                     <a href="/offerte/{{ offerta.id }}" class="btn btn-sm">👁️ Visualizza</a>
-                                    {% if offerta.stato == 'creata' %}
-                                        <button class="btn btn-sm btn-warning" onclick="mostraModalValutazione({{ offerta.id }})">🔍 Valuta</button>
-                                        <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
-                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Accettare questa offerta?')">✅ Accetta</button>
-                                        </form>
-                                    {% elif offerta.stato == 'valutata' %}
-                                        <form method="POST" action="/offerte/{{ offerta.id }}/accetta" style="display: inline;">
-                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Accettare questa offerta?')">✅ Accetta</button>
-                                        </form>
-                                    {% elif offerta.stato == 'accettata' %}
+                                    <a href="/offerte/{{ offerta.id }}/modifica" class="btn btn-sm btn-warning">✏️ Modifica</a>
+                                    {% if offerta.stato == 'accettata' %}
                                         <button class="btn btn-sm btn-primary" onclick="convertiInDDTIn({{ offerta.id }}, '{{ offerta.numero_offerta }}')">📥 Converti in DDT IN</button>
                                     {% endif %}
                                     <button class="btn btn-sm btn-danger" onclick="eliminaOfferta({{ offerta.id }}, '{{ offerta.numero_offerta }}')">🗑️ Elimina</button>
