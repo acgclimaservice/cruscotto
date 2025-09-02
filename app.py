@@ -7808,8 +7808,8 @@ def nuovo_movimento_interno():
         
         nuovo_movimento = MovimentoInterno()
         nuovo_movimento.data_movimento = datetime.strptime(data.get('data_movimento'), '%Y-%m-%d').date()
-        nuovo_movimento.magazzino_partenza = data.get('magazzino_partenza', '')
-        nuovo_movimento.magazzino_destinazione = data.get('magazzino_destinazione', '')
+        nuovo_movimento.magazzino_partenza = data.get('magazzino_partenza_codice', '') or data.get('magazzino_partenza', '')
+        nuovo_movimento.magazzino_destinazione = data.get('magazzino_destinazione_codice', '') or data.get('magazzino_destinazione', '')
         nuovo_movimento.causale = data.get('causale', '')
         nuovo_movimento.note = data.get('note', '')
         nuovo_movimento.stato = 'bozza'
@@ -8064,8 +8064,8 @@ def aggiorna_movimento_interno(id):
         
         # Aggiorna dati movimento
         movimento.data_movimento = datetime.strptime(data.get('data_movimento'), '%Y-%m-%d').date()
-        movimento.magazzino_partenza = data.get('magazzino_partenza')
-        movimento.magazzino_destinazione = data.get('magazzino_destinazione')
+        movimento.magazzino_partenza = data.get('magazzino_partenza_codice', '') or data.get('magazzino_partenza')
+        movimento.magazzino_destinazione = data.get('magazzino_destinazione_codice', '') or data.get('magazzino_destinazione')
         movimento.causale = data.get('causale', '')
         movimento.note = data.get('note', '')
         

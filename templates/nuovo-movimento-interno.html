@@ -63,6 +63,9 @@
         </div>
 
         <form method="post" id="movimentoForm" action="{{ '/movimenti-interni/' + movimento.id|string + '/modifica' if modalita == 'modifica' else '/movimenti-interni/nuovo' }}">
+            <!-- Campi nascosti per i codici magazzino -->
+            <input type="hidden" name="magazzino_partenza_codice" id="magazzino_partenza_codice">
+            <input type="hidden" name="magazzino_destinazione_codice" id="magazzino_destinazione_codice">
             <div class="form-section">
                 <h3>📋 Informazioni Generali</h3>
                 <div class="form-grid">
@@ -84,14 +87,16 @@
                         <label>Magazzino di Partenza</label>
                         <input type="text" name="magazzino_partenza" required 
                                placeholder="Cerca magazzino..." autocomplete="off"
-                               value="{{ movimento.nome_magazzino_partenza if modalita == 'modifica' else (magazzino_predefinito.descrizione if magazzino_predefinito else '') }}">
+                               value="{{ movimento.nome_magazzino_partenza if modalita == 'modifica' else (magazzino_predefinito.descrizione if magazzino_predefinito else '') }}"
+                               data-codice="{{ movimento.magazzino_partenza if modalita == 'modifica' else (magazzino_predefinito.codice if magazzino_predefinito else '') }}">
                         <div class="autocomplete-results" id="magazzino-partenza-results"></div>
                     </div>
                     <div class="form-group">
                         <label>Magazzino di Destinazione</label>
                         <input type="text" name="magazzino_destinazione" required 
                                placeholder="Cerca magazzino..." autocomplete="off"
-                               value="{{ movimento.nome_magazzino_destinazione if modalita == 'modifica' else '' }}">
+                               value="{{ movimento.nome_magazzino_destinazione if modalita == 'modifica' else '' }}"
+                               data-codice="{{ movimento.magazzino_destinazione if modalita == 'modifica' else '' }}">
                         <div class="autocomplete-results" id="magazzino-destinazione-results"></div>
                     </div>
                 </div>
@@ -196,9 +201,22 @@
                     div.className = 'autocomplete-item';
                     div.textContent = `${magazzino.codice} - ${magazzino.descrizione}`;
                     div.onclick = function() {
-                        document.querySelector(`input[name="${inputName}"]`).value = magazzino.codice;
+                        document.querySelector(`input[name="${inputName}"]`).value = magazzino.descrizione;
+                        document.querySelector(`input[name="${inputName}"]`).dataset.codice = magazzino.codice;
+                        
+                        // Popola anche il campo nascosto corrispondente
+                        if (inputName === 'magazzino_partenza') {
+                            document.getElementById('magazzino_partenza_codice').value = magazzino.codice;
+                        } else if (inputName === 'magazzino_destinazione') {
+                            document.getElementById('magazzino_destinazione_codice').value = magazzino.codice;
+                        }
+                        
                         resultsDiv.innerHTML = '';
                         resultsDiv.classList.remove('show');
+                        // Aggiorna giacenze quando cambia magazzino partenza
+                        if (inputName === 'magazzino_partenza') {
+                            aggiornaGiacenzePerMagazzino();
+                        }
                     };
                     resultsDiv.appendChild(div);
                 });
@@ -308,21 +326,23 @@
     // Funzione per aggiornare giacenza articolo
     function aggiornaGiacenza(index) {
         const codiceArticolo = document.querySelector(`input[name="codice_${index}"]`).value;
-        const magazzinoPartenza = document.querySelector('input[name="magazzino_partenza"]').value;
+        const magazzinoPartenzaField = document.querySelector('input[name="magazzino_partenza"]');
+        const codiceMagazzino = magazzinoPartenzaField.dataset.codice || magazzinoPartenzaField.value;
+        const descrizione = magazzinoPartenzaField.value;
         
-        if (!codiceArticolo || !magazzinoPartenza) {
+        if (!codiceArticolo || !codiceMagazzino) {
             document.getElementById(`giacenza_${index}`).value = '0.00';
             document.getElementById(`magazzino_giacenza_${index}`).textContent = 'Seleziona magazzino e articolo';
             return;
         }
         
-        // Chiamata API per ottenere giacenza
-        fetch(`/api/giacenza?codice=${encodeURIComponent(codiceArticolo)}&magazzino=${encodeURIComponent(magazzinoPartenza)}`)
+        // Chiamata API per ottenere giacenza usando il codice magazzino
+        fetch(`/api/giacenza?codice=${encodeURIComponent(codiceArticolo)}&magazzino=${encodeURIComponent(codiceMagazzino)}`)
             .then(response => response.json())
             .then(data => {
                 const giacenza = data.giacenza || 0;
                 document.getElementById(`giacenza_${index}`).value = giacenza.toFixed(2);
-                document.getElementById(`magazzino_giacenza_${index}`).textContent = `Magazzino: ${magazzinoPartenza}`;
+                document.getElementById(`magazzino_giacenza_${index}`).textContent = `Magazzino: ${descrizione}`;
                 
                 // Valida subito se c'è già una quantità inserita
                 validaGiacenza(index);
@@ -378,8 +398,18 @@
         const today = new Date().toISOString().split('T')[0];
         document.querySelector('input[name="data_movimento"]').value = today;
         
-        // Aggiungi listener per aggiornare giacenze quando cambia magazzino partenza
+        // Inizializza i campi nascosti con i valori esistenti (per modifica)
         const magazzinoPartenzaInput = document.querySelector('input[name="magazzino_partenza"]');
+        const magazzinoDestinazioneInput = document.querySelector('input[name="magazzino_destinazione"]');
+        
+        if (magazzinoPartenzaInput && magazzinoPartenzaInput.dataset.codice) {
+            document.getElementById('magazzino_partenza_codice').value = magazzinoPartenzaInput.dataset.codice;
+        }
+        if (magazzinoDestinazioneInput && magazzinoDestinazioneInput.dataset.codice) {
+            document.getElementById('magazzino_destinazione_codice').value = magazzinoDestinazioneInput.dataset.codice;
+        }
+        
+        // Aggiungi listener per aggiornare giacenze quando cambia magazzino partenza
         if (magazzinoPartenzaInput) {
             magazzinoPartenzaInput.addEventListener('change', aggiornaGiacenzePerMagazzino);
             magazzinoPartenzaInput.addEventListener('blur', aggiornaGiacenzePerMagazzino);
