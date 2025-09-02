@@ -65,36 +65,88 @@
             color: #991b1b;
             border: 1px solid #ef4444;
         }
-        .loading-animation {
+        .parsing-progress {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .progress-header {
             display: flex;
-            justify-content: center;
             align-items: center;
-            margin: 0 auto 20px;
-            gap: 8px;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
         }
         
-        .loading-dots {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #3b82f6;
+        .progress-icon {
+            font-size: 32px;
+            animation: pulse 2s infinite;
         }
         
-        .loading-dots:nth-child(2) {
-            background: #10b981;
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
         
-        .loading-dots:nth-child(3) {
-            background: #f59e0b;
+        .progress-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
         }
         
-        .loading-dots:nth-child(4) {
-            background: #ef4444;
+        .progress-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
         }
         
-        .loading-text {
+        .progress-bar {
+            flex: 1;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .progress-percentage {
+            font-weight: 600;
             font-size: 16px;
-            margin-left: 15px;
+            color: #3b82f6;
+            min-width: 50px;
+        }
+        
+        .progress-details {
+            font-size: 14px;
+            color: #6b7280;
+            font-style: italic;
         }
         
         .ordine-form {
@@ -223,10 +275,19 @@
 
         <!-- Status Parsing -->
         <div class="parsing-status" id="parsingStatus" style="display: none;">
-            <div class="loading-animation" id="loadingAnimation">
-                <div class="loading-text" id="statusMessage">Analizzando il PDF con AI...</div>
+            <div class="parsing-progress" id="parsingProgress">
+                <div class="progress-header">
+                    <div class="progress-icon" id="progressIcon">🤖</div>
+                    <div class="progress-text" id="statusMessage">Analizzando il PDF con AI...</div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-percentage" id="progressPercentage">0%</div>
+                </div>
+                <div class="progress-details" id="statusDetail">Preparazione parsing...</div>
             </div>
-            <div id="statusDetail" style="font-size: 12px; margin-top: 10px;"></div>
         </div>
 
         <!-- Form Ordine -->
@@ -302,6 +363,8 @@
     <script>
         let currentPdfData = null;
         let articoliCounter = 0;
+        let progressInterval = null;
+        let currentProgress = 0;
 
         // Funzione per mostrare errori copiabili invece di alert()
         function showCopyableError(title, message) {
@@ -464,15 +527,121 @@
             
             console.log('Trying to display PDF:', dataUrl);
         }
+        
+        function startProgressAnimation(aiService) {
+            currentProgress = 0;
+            const progressFill = document.getElementById('progressFill');
+            const progressPercentage = document.getElementById('progressPercentage');
+            const statusMessage = document.getElementById('statusMessage');
+            const statusDetail = document.getElementById('statusDetail');
+            const progressIcon = document.getElementById('progressIcon');
+            
+            // Reset progress bar
+            progressFill.style.width = '0%';
+            progressPercentage.textContent = '0%';
+            
+            // Fasi del parsing con icone e messaggi
+            const phases = [
+                { icon: '📄', message: 'Caricamento PDF...', detail: 'Preparazione documento', progress: 15 },
+                { icon: '👁️', message: 'Estrazione contenuto...', detail: `Utilizzando ${aiService.toUpperCase()} AI per leggere il documento`, progress: 35 },
+                { icon: '🤖', message: 'Analisi intelligente...', detail: 'Identificazione dati fornitore e articoli', progress: 60 },
+                { icon: '🔍', message: 'Verifica informazioni...', detail: 'Controllo validità dati estratti', progress: 80 },
+                { icon: '📊', message: 'Finalizzazione...', detail: 'Preparazione risultati per revisione', progress: 95 }
+            ];
+            
+            let phaseIndex = 0;
+            
+            progressInterval = setInterval(() => {
+                if (phaseIndex < phases.length) {
+                    const phase = phases[phaseIndex];
+                    
+                    // Aggiorna UI
+                    progressIcon.textContent = phase.icon;
+                    statusMessage.textContent = phase.message;
+                    statusDetail.textContent = phase.detail;
+                    
+                    // Anima progress bar
+                    animateProgressTo(phase.progress);
+                    
+                    phaseIndex++;
+                } else {
+                    // Mantieni l'ultimo stato
+                    clearInterval(progressInterval);
+                }
+            }, 1500);
+        }
+        
+        function animateProgressTo(targetProgress) {
+            const progressFill = document.getElementById('progressFill');
+            const progressPercentage = document.getElementById('progressPercentage');
+            
+            const startProgress = currentProgress;
+            const progressDiff = targetProgress - startProgress;
+            const duration = 800;
+            const startTime = Date.now();
+            
+            function updateProgress() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Easing function per animazione fluida
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                currentProgress = startProgress + (progressDiff * easeProgress);
+                progressFill.style.width = currentProgress + '%';
+                progressPercentage.textContent = Math.round(currentProgress) + '%';
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateProgress);
+                }
+            }
+            
+            requestAnimationFrame(updateProgress);
+        }
+        
+        function completeProgress() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
+            const progressIcon = document.getElementById('progressIcon');
+            const statusMessage = document.getElementById('statusMessage');
+            const statusDetail = document.getElementById('statusDetail');
+            
+            progressIcon.textContent = '✅';
+            statusMessage.textContent = 'Parsing completato!';
+            statusDetail.textContent = 'Dati estratti con successo dal PDF';
+            
+            animateProgressTo(100);
+        }
+        
+        function errorProgress(error) {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
+            const progressIcon = document.getElementById('progressIcon');
+            const statusMessage = document.getElementById('statusMessage');
+            const statusDetail = document.getElementById('statusDetail');
+            const progressFill = document.getElementById('progressFill');
+            
+            progressIcon.textContent = '❌';
+            statusMessage.textContent = 'Errore durante il parsing';
+            statusDetail.textContent = error;
+            
+            // Progress bar rossa per errore
+            progressFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+        }
 
         function uploadPDF(file) {
             const aiService = document.querySelector('input[name="ai_service"]:checked').value;
             
-            // Mostra stato parsing
+            // Mostra stato parsing con progress bar
             document.getElementById('parsingStatus').style.display = 'block';
             document.getElementById('parsingStatus').className = 'parsing-status loading';
-            document.getElementById('statusMessage').textContent = 'Analizzando l\'offerta fornitore con AI...';
-            document.getElementById('statusDetail').textContent = `Utilizzando ${aiService.toUpperCase()} AI per estrarre dati`;
+            
+            // Avvia animazione progress bar
+            startProgressAnimation(aiService);
 
             console.log('Uploading PDF for parsing with:', aiService.toUpperCase());
 
@@ -506,16 +675,22 @@
         }
 
         function showParsingSuccess(data) {
-            const status = document.getElementById('parsingStatus');
-            status.className = 'parsing-status success';
-            status.innerHTML = `
-                <div style="font-size: 24px; margin-bottom: 10px;">✅</div>
-                <div><strong>Parsing completato con successo!</strong></div>
-                <div style="font-size: 12px; margin-top: 10px;">
-                    Fornitore: ${data.data.fornitore || 'Non rilevato'} • 
-                    Articoli: ${data.data.articoli ? data.data.articoli.length : 0}
-                </div>
-            `;
+            completeProgress();
+            
+            setTimeout(() => {
+                const status = document.getElementById('parsingStatus');
+                status.className = 'parsing-status success';
+                status.innerHTML = `
+                    <div style="font-size: 32px; margin-bottom: 10px;">✅</div>
+                    <div><strong>Parsing completato con successo!</strong></div>
+                    <div style="font-size: 14px; margin-top: 15px; padding: 10px; background: rgba(16,185,129,0.1); border-radius: 8px;">
+                        <strong>Dati estratti:</strong><br>
+                        📋 Fornitore: <strong>${data.data.fornitore || 'Non rilevato'}</strong><br>
+                        📦 Articoli: <strong>${data.data.articoli ? data.data.articoli.length : 0}</strong><br>
+                        📅 Data offerta: <strong>${data.data.data_offerta || 'Non rilevata'}</strong>
+                    </div>
+                `;
+            }, 1000);
         }
 
         function showParsingWarning(data) {
@@ -535,14 +710,21 @@
         }
 
         function showParsingError(error) {
-            const status = document.getElementById('parsingStatus');
-            status.className = 'parsing-status error';
-            status.innerHTML = `
-                <div style="font-size: 24px; margin-bottom: 10px;">❌</div>
-                <div><strong>Errore durante il parsing</strong></div>
-                <div style="font-size: 12px; margin-top: 10px;">${error}</div>
-                <button class="btn btn-sm btn-primary" onclick="uploadPDF(document.getElementById('pdfInput').files[0])" style="margin-top: 15px;">🔄 Riprova</button>
-            `;
+            errorProgress(error);
+            
+            setTimeout(() => {
+                const status = document.getElementById('parsingStatus');
+                status.className = 'parsing-status error';
+                status.innerHTML = `
+                    <div style="font-size: 32px; margin-bottom: 10px;">❌</div>
+                    <div><strong>Errore durante il parsing</strong></div>
+                    <div style="font-size: 14px; margin-top: 15px; padding: 10px; background: rgba(239,68,68,0.1); border-radius: 8px;">
+                        <strong>Dettagli errore:</strong><br>
+                        ${error}
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="uploadPDF(document.getElementById('pdfInput').files[0])" style="margin-top: 20px;">🔄 Riprova Parsing</button>
+                `;
+            }, 1000);
         }
 
         function populateForm(data) {
