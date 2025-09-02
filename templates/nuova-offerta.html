@@ -88,11 +88,26 @@
                                     <strong>Allegati esistenti:</strong>
                                     {% for allegato in allegati_esistenti %}
                                     <div class="allegato-esistente" style="padding: 5px; margin: 2px 0; background: #f5f5f5; border-radius: 3px;">
-                                        📎 {{ allegato }}
-                                        <button type="button" onclick="rimuoviAllegato('{{ allegato }}')" 
-                                                style="margin-left: 10px; padding: 2px 6px; font-size: 12px; background: #dc3545; color: white; border: none; border-radius: 2px;">
-                                            ✕
-                                        </button>
+                                        {% if allegato is string %}
+                                            📎 {{ allegato }}
+                                            <button type="button" onclick="rimuoviAllegato('{{ allegato }}')" 
+                                                    style="margin-left: 10px; padding: 2px 6px; font-size: 12px; background: #dc3545; color: white; border: none; border-radius: 2px;">
+                                                ✕
+                                            </button>
+                                        {% else %}
+                                            📎 {{ allegato.nome_originale or allegato.nome_file or 'File senza nome' }}
+                                            {% if allegato.dimensione %}
+                                                <small style="color: #666;">({{ "%.1f"|format(allegato.dimensione / 1024) }} KB)</small>
+                                            {% endif %}
+                                            <a href="/offerte/{{ offerta.id }}/allegati/{{ allegato.nome_file or allegato }}" target="_blank" 
+                                               style="margin-left: 10px; padding: 2px 6px; font-size: 12px; background: #007bff; color: white; text-decoration: none; border-radius: 2px;">
+                                                📥
+                                            </a>
+                                            <button type="button" onclick="rimuoviAllegato('{{ allegato.nome_file or allegato }}')" 
+                                                    style="margin-left: 5px; padding: 2px 6px; font-size: 12px; background: #dc3545; color: white; border: none; border-radius: 2px;">
+                                                ✕
+                                            </button>
+                                        {% endif %}
                                     </div>
                                     {% endfor %}
                                 </div>
@@ -106,6 +121,7 @@
             <div class="card">
                 <h3>📦 Dettagli Offerta</h3>
                 <div id="dettagli-container">
+                    <!-- DEBUG: modalita={{ modalita }}, dettagli_count={{ offerta.dettagli|length if offerta.dettagli else 'None' }} -->
                     {% if modalita == 'modifica' and offerta.dettagli %}
                         <!-- Carica dettagli esistenti in modalità modifica -->
                         {% for dettaglio in offerta.dettagli %}
@@ -627,9 +643,9 @@
     document.addEventListener('DOMContentLoaded', function() {
         const fornitoreInput = document.getElementById('fornitore_nome');
         if (fornitoreInput && window.AutocompleteHelpers) {
-            // Salva il valore originale prima di inizializzare l'autocompletamento
-            const originalValue = fornitoreInput.value;
+            console.log('Valore fornitore al caricamento:', fornitoreInput.value);
             
+            // Inizializza sempre l'autocompletamento
             const autocomplete = window.AutocompleteHelpers.setupFornitoriAutocomplete(fornitoreInput, {
                 onSelect: function(item) {
                     document.getElementById('fornitore_id').value = item.id;
@@ -637,10 +653,7 @@
                 }
             });
             
-            // Ripristina il valore originale se era presente (modalità modifica)
-            if (originalValue) {
-                fornitoreInput.value = originalValue;
-            }
+            console.log('Valore fornitore dopo autocompletamento:', fornitoreInput.value);
         }
     });
         // Modal rifiuto offerta
