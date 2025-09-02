@@ -99,7 +99,7 @@ vedi questa schermata? è corretta. poi quando premo conferma ddt in va tutto a 
 aggiungiDettaglio @ nuovo:304
 onclick @ nuovo:130
 66. nei preventivi togli come campo obbligatorio il costo unitario. FATTO - CONTROLLATO OK
-67. nella sezione impostazioni nella parte relativa all'Importazione Automatica DDT via Email ho impostato come Intervallo controllo (minuti): 1, ma noto che per processare una mail ci mette circa 15 minuti. riusciamo a controllare il monitoraggio automatico della mail.
+67. nella sezione impostazioni nella parte relativa all'Importazione Automatica DDT via Email ho impostato come Intervallo controllo (minuti): 1, ma noto che per processare una mail ci mette circa 15 minuti. riusciamo a controllare il monitoraggio automatico della mail. FATTO - CONTROLLATO OK
 68 se nelle offerte faccio rifiuto mi da questo {"message":"Offerta rifiutata con successo","redirect_url":"/offerte/1","success":true} FATTO - CONTROLLATO OK
 69 voglio avere la possibilità di modificare sempre lo stato di un'offerta in creata, richiesta, in valutazione, accettata, rifiutata. devo avere sempre la possibilità di passare da uno stato all'altro
 70 se modifico un'offerta mi deve ricaricare i dati dell'offerta da modificare adesso invece vedo solo campi vuoti
@@ -112,7 +112,9 @@ onclick @ nuovo:130
 Nessuna offerta presente
 Inizia registrando la tua prima offerta
 + Registra Prima Offerta dalla pagina https://acgclimaservice.pythonanywhere.com/offerte
-77 mi da questo e non funziona niente offerte:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
-78 
+77 mi da questo e non funziona niente offerte:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) FATTO - CONTROLLATO OK
+78 https://acgclimaservice.pythonanywhere.com/offerte/nuova nuova:1  Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
+79 
+
 
 

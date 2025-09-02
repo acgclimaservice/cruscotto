@@ -26,7 +26,7 @@
             <p style="color: #8492a6; margin-top: 8px;">{{ 'Modifica richiesta di offerta esistente' if modalita == 'modifica' else 'Registra una nuova richiesta di offerta da inviare a un fornitore' }}</p>
         </div>
 
-        <form method="POST" enctype="multipart/form-data" class="form-container" action="{{ '/offerte/' + offerta.id|string + '/modifica' if modalita == 'modifica' else '/offerte/nuova' }}">
+        <form method="POST" enctype="multipart/form-data" class="form-container" action="{{ '/offerte/' + offerta.id|string + '/modifica' if modalita == 'modifica' and offerta else '/offerte/nuova' }}">
             <!-- Dati testata offerta -->
             <div class="card">
                 <h3>📨 Informazioni Generali</h3>
@@ -34,27 +34,27 @@
                     <div class="form-group">
                         <label for="fornitore_nome">Fornitore *</label>
                         <input type="text" id="fornitore_nome" name="fornitore_nome" placeholder="Digita per cercare fornitore..." required
-                               value="{{ offerta.fornitore_nome if modalita == 'modifica' else '' }}">
-                        <input type="hidden" id="fornitore_id" name="fornitore_id" value="{{ offerta.fornitore_id if modalita == 'modifica' else '' }}">
+                               value="{{ offerta.fornitore_nome if modalita == 'modifica' and offerta else '' }}">
+                        <input type="hidden" id="fornitore_id" name="fornitore_id" value="{{ offerta.fornitore_id if modalita == 'modifica' and offerta else '' }}">
                     </div>
                     
                     <div class="form-group">
                         <label for="cliente_nome">Cliente</label>
                         <input type="text" id="cliente_nome" name="cliente_nome" placeholder="Digita per cercare cliente..."
-                               value="{{ offerta.cliente_nome if modalita == 'modifica' else '' }}">
-                        <input type="hidden" id="cliente_id" name="cliente_id" value="{{ offerta.cliente_id if modalita == 'modifica' else '' }}">
+                               value="{{ offerta.cliente_nome if modalita == 'modifica' and offerta else '' }}">
+                        <input type="hidden" id="cliente_id" name="cliente_id" value="{{ offerta.cliente_id if modalita == 'modifica' and offerta else '' }}">
                     </div>
                     
                     <div class="form-group">
                         <label for="commessa">Riferimento Commessa</label>
                         <input type="text" id="commessa" name="commessa" placeholder="Digita numero o descrizione commessa..."
-                               value="{{ offerta.commessa if modalita == 'modifica' else '' }}">
+                               value="{{ offerta.commessa if modalita == 'modifica' and offerta else '' }}">
                     </div>
                     
                     <div class="form-group">
                         <label for="oggetto">Oggetto *</label>
                         <input type="text" id="oggetto" name="oggetto" required
-                               placeholder="Descrizione offerta" value="{{ offerta.oggetto if modalita == 'modifica' else '' }}">
+                               placeholder="Descrizione offerta" value="{{ offerta.oggetto if modalita == 'modifica' and offerta else '' }}">
                     </div>
                     
                     <div class="form-group">
@@ -70,21 +70,21 @@
                     <div class="form-group">
                         <label for="priorita">Priorità</label>
                         <select id="priorita" name="priorita">
-                            <option value="bassa" {{ 'selected' if modalita == 'modifica' and offerta.priorita == 'bassa' else '' }}>🟢 Bassa</option>
-                            <option value="media" {{ 'selected' if (modalita == 'modifica' and offerta.priorita == 'media') or (modalita != 'modifica') else '' }}>🟡 Media</option>
-                            <option value="alta" {{ 'selected' if modalita == 'modifica' and offerta.priorita == 'alta' else '' }}>🔴 Alta</option>
+                            <option value="bassa" {{ 'selected' if modalita == 'modifica' and offerta and offerta.priorita == 'bassa' else '' }}>🟢 Bassa</option>
+                            <option value="media" {{ 'selected' if (modalita == 'modifica' and offerta and offerta.priorita == 'media') or (modalita != 'modifica') else '' }}>🟡 Media</option>
+                            <option value="alta" {{ 'selected' if modalita == 'modifica' and offerta and offerta.priorita == 'alta' else '' }}>🔴 Alta</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
                         <label for="iva">IVA (%)</label>
-                        <input type="number" id="iva" name="iva" value="{{ offerta.iva or 22 if modalita == 'modifica' else '22' }}" min="0" max="100" step="0.01">
+                        <input type="number" id="iva" name="iva" value="{{ offerta.iva or 22 if modalita == 'modifica' and offerta else '22' }}" min="0" max="100" step="0.01">
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="note">Note</label>
-                    <textarea id="note" name="note" rows="3" placeholder="Note sull'offerta...">{{ offerta.note if modalita == 'modifica' else '' }}</textarea>
+                    <textarea id="note" name="note" rows="3" placeholder="Note sull'offerta...">{{ offerta.note if modalita == 'modifica' and offerta else '' }}</textarea>
                 </div>
                 
                 <div class="form-group">
@@ -135,7 +135,7 @@
                 <h3>📦 Dettagli Offerta</h3>
                 <div id="dettagli-container">
                     <!-- DEBUG: modalita={{ modalita }}, dettagli_count={{ offerta.dettagli|length if offerta.dettagli else 'None' }} -->
-                    {% if modalita == 'modifica' and offerta.dettagli %}
+                    {% if modalita == 'modifica' and offerta and offerta.dettagli %}
                         <!-- Carica dettagli esistenti in modalità modifica -->
                         {% for dettaglio in offerta.dettagli %}
                         <div class="dettaglio-row" data-index="{{ loop.index0 }}">
@@ -306,11 +306,11 @@
                             <label for="cambio-stato" style="font-weight: 500; margin: 0;">Cambia Stato:</label>
                             <select id="cambio-stato" class="form-control" style="width: auto; min-width: 150px;">
                                 <option value="">Seleziona nuovo stato...</option>
-                                <option value="creata" {{ 'disabled' if offerta.stato == 'creata' else '' }}>📝 Creata</option>
-                                <option value="richiesta" {{ 'disabled' if offerta.stato == 'richiesta' else '' }}>📧 Richiesta</option>
-                                <option value="valutata" {{ 'disabled' if offerta.stato == 'valutata' else '' }}>🔍 In Valutazione</option>
-                                <option value="accettata" {{ 'disabled' if offerta.stato == 'accettata' else '' }}>✅ Accettata</option>
-                                <option value="rifiutata" {{ 'disabled' if offerta.stato == 'rifiutata' else '' }}>❌ Rifiutata</option>
+                                <option value="creata" {{ 'disabled' if offerta and offerta.stato == 'creata' else '' }}>📝 Creata</option>
+                                <option value="richiesta" {{ 'disabled' if offerta and offerta.stato == 'richiesta' else '' }}>📧 Richiesta</option>
+                                <option value="valutata" {{ 'disabled' if offerta and offerta.stato == 'valutata' else '' }}>🔍 In Valutazione</option>
+                                <option value="accettata" {{ 'disabled' if offerta and offerta.stato == 'accettata' else '' }}>✅ Accettata</option>
+                                <option value="rifiutata" {{ 'disabled' if offerta and offerta.stato == 'rifiutata' else '' }}>❌ Rifiutata</option>
                             </select>
                             <button type="button" class="btn btn-primary btn-sm" onclick="mostraModalCambioStato()">🔄 Cambia</button>
                         </div>
@@ -388,7 +388,7 @@
     </style>
 
     <script>
-        let dettaglioIndex = {% if modalita == 'modifica' and offerta.dettagli %}{{ offerta.dettagli|length }}{% else %}1{% endif %};
+        let dettaglioIndex = {% if modalita == 'modifica' and offerta and offerta.dettagli %}{{ offerta.dettagli|length }}{% else %}1{% endif %};
 
         function updateFornitoreNome() {
             const select = document.getElementById('fornitore_id');
