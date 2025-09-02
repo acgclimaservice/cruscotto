@@ -50,11 +50,6 @@
             margin: 20px 0;
             text-align: center;
         }
-        .parsing-status.loading {
-            background: #fef3c7;
-            color: #92400e;
-            border: 1px solid #fbbf24;
-        }
         .parsing-status.success {
             background: #d1fae5;
             color: #065f46;
@@ -468,11 +463,11 @@
         function uploadPDF(file) {
             const aiService = document.querySelector('input[name="ai_service"]:checked').value;
             
-            // Mostra stato parsing con progress bar
+            // Mostra stato parsing semplice
             document.getElementById('parsingStatus').style.display = 'block';
-            document.getElementById('parsingStatus').className = 'parsing-status loading';
+            document.getElementById('parsingStatus').className = 'parsing-status';
             
-            // Avvia animazione progress bar
+            // Avvia messaggio di parsing
             startProgressAnimation(aiService);
 
             console.log('Uploading PDF for parsing with:', aiService.toUpperCase());
