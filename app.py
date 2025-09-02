@@ -5282,19 +5282,36 @@ def preventivi_pdf(id):
         from document_templates import PreventivoTemplate
         
         preventivo = Preventivo.query.get_or_404(id)
+        dettagli = DettaglioPreventivo.query.filter_by(preventivo_id=id).all()
         
-        # Prepara dati per il template v2
+        # Prepara dati per il template v2 - correzione nomi campi
         preventivo_data = {
-            'numero': preventivo.numero or f'PREV-{preventivo.id}',
-            'cliente': preventivo.cliente or 'N/A',
-            'data_creazione': preventivo.data_creazione.strftime('%d/%m/%Y') if preventivo.data_creazione else 'N/A',
+            'numero': preventivo.numero_preventivo or f'PREV-{preventivo.id}',
+            'cliente': preventivo.cliente_nome or getattr(preventivo.cliente, 'ragione_sociale', 'N/A') if preventivo.cliente else 'N/A',
+            'data_creazione': preventivo.data_preventivo.strftime('%d/%m/%Y') if preventivo.data_preventivo else 'N/A',
             'oggetto': preventivo.oggetto or 'Preventivo per fornitura e installazione',
-            'stato': preventivo.stato or 'BOZZA',
+            'stato': preventivo.stato.upper() if preventivo.stato else 'BOZZA',
             'validita_giorni': 30,  # Default
             'totale_netto': preventivo.totale_netto or 0,
-            'iva_percentuale': preventivo.iva_percentuale or 22,
-            'totale_lordo': preventivo.totale_lordo or 0
+            'iva_percentuale': preventivo.iva or 22,
+            'totale_lordo': preventivo.totale_lordo or 0,
+            'note': preventivo.note or '',
+            'data_scadenza': preventivo.data_scadenza.strftime('%d/%m/%Y') if preventivo.data_scadenza else '',
+            'articoli': []
         }
+        
+        # Aggiungi articoli del preventivo
+        for dettaglio in dettagli:
+            preventivo_data['articoli'].append({
+                'codice': dettaglio.codice_articolo or 'N/A',
+                'descrizione': dettaglio.descrizione or 'N/A',
+                'quantita': dettaglio.quantita or 1,
+                'unita_misura': dettaglio.unita_misura or 'PZ',
+                'prezzo_unitario': dettaglio.prezzo_unitario or 0,
+                'sconto_percentuale': dettaglio.sconto_percentuale or 0,
+                'totale': dettaglio.totale_riga or 0,
+                'note': getattr(dettaglio, 'note', '') or ''
+            })
         
         # Genera HTML professionale
         html_content = PreventivoTemplate.generate_html(preventivo_data)
