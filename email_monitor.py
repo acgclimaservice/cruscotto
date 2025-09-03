@@ -41,7 +41,16 @@ class EmailMonitor:
     
     def is_active(self):
         """Controlla se il monitoraggio è attivo"""
-        return self.get_config('email_monitor_active') == 'true'
+        try:
+            active_config = self.get_config('email_monitor_active')
+            self.logger.info(f"🔍 [EMAIL DEBUG] is_active() - config value: '{active_config}'")
+            return active_config == 'true'
+        except Exception as e:
+            self.logger.error(f"🔍 [EMAIL DEBUG] is_active() - Errore accesso config: {e}")
+            # Fallback: se c'è errore durante l'avvio, assumiamo attivo se .env lo dice
+            env_active = os.getenv('EMAIL_MONITOR_ACTIVE', '').lower()
+            self.logger.info(f"🔍 [EMAIL DEBUG] is_active() - fallback ENV: '{env_active}'")
+            return env_active == 'true'
     
     def start_monitoring(self):
         """Avvia il thread di monitoraggio"""
