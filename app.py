@@ -8803,8 +8803,21 @@ def api_giacenza():
         articoli_con_codice = CatalogoArticolo.query.filter_by(codice_interno=codice).all()
         if articoli_con_codice:
             print(f"DEBUG API giacenza: Articolo '{codice}' trovato in ubicazioni: {[a.ubicazione for a in articoli_con_codice]}")
+            # Mostra dettagli degli articoli trovati
+            for a in articoli_con_codice[:3]:  # Solo primi 3 per non intasare i log
+                print(f"DEBUG API giacenza: - ID:{a.id}, Codice:'{a.codice_interno}', Ubicazione:'{a.ubicazione}', Giacenza:{a.giacenza_attuale}")
         else:
             print(f"DEBUG API giacenza: Articolo '{codice}' NON ESISTE in nessuna ubicazione")
+            # Debug: cerchiamo articoli con codici simili
+            articoli_simili = CatalogoArticolo.query.filter(
+                CatalogoArticolo.codice_interno.like(f"%{codice}%")
+            ).limit(5).all()
+            if articoli_simili:
+                print(f"DEBUG API giacenza: Articoli con codice simile a '{codice}':")
+                for a in articoli_simili:
+                    print(f"DEBUG API giacenza: - Codice:'{a.codice_interno}', Desc:'{a.descrizione[:50]}...', Ubicazione:'{a.ubicazione}'")
+            else:
+                print(f"DEBUG API giacenza: Nessun articolo con codice simile a '{codice}'")
         
         # Prima: cerca per CODICE magazzino esatto (il campo ubicazione contiene codici)
         articolo = CatalogoArticolo.query.filter_by(
