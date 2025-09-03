@@ -3826,14 +3826,10 @@ def inventario_page():
         
         # Se c'è un filtro data, calcola giacenze alla data specifica
         if data_inventario:
-            articoli_con_giacenza_data = []
             for articolo in articoli:
                 giacenza_alla_data = calcola_giacenza_alla_data(articolo.codice_interno, data_inventario)
-                if giacenza_alla_data > 0:  # Mostra solo articoli con giacenza positiva a quella data
-                    # Temporaneamente sovrascrive la giacenza attuale per la visualizzazione
-                    articolo.giacenza_alla_data = giacenza_alla_data
-                    articoli_con_giacenza_data.append(articolo)
-            articoli = articoli_con_giacenza_data
+                # Assegna sempre la giacenza alla data per la visualizzazione
+                articolo.giacenza_alla_data = giacenza_alla_data
         
         # Filtro per stato scorta (post-query perché dipende dal calcolo)
         if stato_scorta:
