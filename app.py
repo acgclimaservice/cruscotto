@@ -1630,27 +1630,15 @@ def pdf_unificato_ddt(id):
         print(f"[PDF_UNIFICATO] Traceback: {traceback.format_exc()}")
         return f"Errore generazione PDF Unificato: {str(e)}", 500
 
-            styles = getSampleStyleSheet()
-            
-            # Crea stili personalizzati
-            title_style = ParagraphStyle(
-                'CustomTitle',
-                parent=styles['Title'],
-                fontSize=18,
-                spaceAfter=0.5*cm,
-                textColor=colors.HexColor('#2c5282')
-            )
-            
-            header_style = ParagraphStyle(
-                'CustomHeader',
-                parent=styles['Heading2'],
-                fontSize=12,
-                spaceAfter=0.3*cm,
-                textColor=colors.HexColor('#2c5282')
-            )
-            
-            # Contenuto del PDF
-            content = []
+
+
+
+@app.route('/ddt-in/nuovo', methods=['GET', 'POST'])
+def nuovo_ddt_in():
+    """Redirect to real nuovo_ddt_in function"""
+    # Temporary redirect to avoid duplicate function error
+    from flask import redirect, url_for
+    return redirect('/ddt-in/nuovo-real')
             
             # Header con logo e titolo
             try:
