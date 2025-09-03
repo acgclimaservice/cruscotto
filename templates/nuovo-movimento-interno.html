@@ -346,9 +346,17 @@
         console.log(`DEBUG aggiornaGiacenza: magazzinoPartenzaField.dataset.codice = "${magazzinoPartenzaField.dataset.codice}"`);
         console.log(`DEBUG aggiornaGiacenza: magazzinoPartenzaField.value = "${magazzinoPartenzaField.value}"`);
         
-        if (!codiceArticolo || !codiceMagazzino) {
+        if (!codiceArticolo) {
+            console.log('DEBUG aggiornaGiacenza: Codice articolo mancante');
             document.getElementById(`giacenza_${index}`).value = '0.00';
-            document.getElementById(`magazzino_giacenza_${index}`).textContent = 'Seleziona magazzino e articolo';
+            document.getElementById(`magazzino_giacenza_${index}`).textContent = 'Seleziona articolo';
+            return;
+        }
+        
+        if (!codiceMagazzino) {
+            console.log('DEBUG aggiornaGiacenza: Codice magazzino mancante');
+            document.getElementById(`giacenza_${index}`).value = '0.00';
+            document.getElementById(`magazzino_giacenza_${index}`).textContent = 'Seleziona magazzino di partenza';
             return;
         }
         
@@ -356,9 +364,26 @@
         fetch(`/api/giacenza?codice=${encodeURIComponent(codiceArticolo)}&magazzino=${encodeURIComponent(codiceMagazzino)}`)
             .then(response => response.json())
             .then(data => {
+                if (data.error) {
+                    console.error('API Error:', data.error);
+                    document.getElementById(`giacenza_${index}`).value = '0.00';
+                    document.getElementById(`magazzino_giacenza_${index}`).textContent = `Errore: ${data.error}`;
+                    return;
+                }
+                
                 const giacenza = data.giacenza || 0;
                 document.getElementById(`giacenza_${index}`).value = giacenza.toFixed(2);
-                document.getElementById(`magazzino_giacenza_${index}`).textContent = `Magazzino: ${descrizioneMagazzino}`;
+                
+                // Usa il magazzino trovato dall'API se diverso da quello richiesto
+                const magazzinoTrovato = data.magazzino_trovato || data.magazzino;
+                let messaggioMagazzino = `Magazzino: ${descrizioneMagazzino}`;
+                
+                // Se il magazzino trovato è diverso, mostra un avviso
+                if (magazzinoTrovato !== codiceMagazzino) {
+                    messaggioMagazzino = `⚠️ Trovato in: ${magazzinoTrovato} (richiesto: ${codiceMagazzino})`;
+                }
+                
+                document.getElementById(`magazzino_giacenza_${index}`).textContent = messaggioMagazzino;
                 
                 // Valida subito se c'è già una quantità inserita
                 validaGiacenza(index);
@@ -366,7 +391,7 @@
             .catch(error => {
                 console.error('Errore recupero giacenza:', error);
                 document.getElementById(`giacenza_${index}`).value = '0.00';
-                document.getElementById(`magazzino_giacenza_${index}`).textContent = 'Errore recupero giacenza';
+                document.getElementById(`magazzino_giacenza_${index}`).textContent = 'Errore di rete recuperando giacenza';
             });
     }
 

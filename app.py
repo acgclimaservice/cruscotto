@@ -8792,9 +8792,9 @@ def api_giacenza():
         return jsonify({'error': 'Parametri mancanti'}), 400
     
     try:
-        print(f"DEBUG API giacenza: Ricerca articolo {codice} in magazzino {magazzino}")
+        print(f"DEBUG API giacenza: Ricerca articolo '{codice}' in magazzino '{magazzino}'")
         
-        # Prima: cerca per CODICE magazzino (il campo ubicazione contiene codici)
+        # Prima: cerca per CODICE magazzino esatto (il campo ubicazione contiene codici)
         articolo = CatalogoArticolo.query.filter_by(
             codice_interno=codice,
             ubicazione=magazzino
@@ -8812,14 +8812,41 @@ def api_giacenza():
                     ubicazione=magazzino_obj.codice
                 ).first()
         
+        # Terza: se ancora non trovato, prova con ricerca case-insensitive sui codici magazzino
+        if not articolo:
+            print(f"DEBUG API giacenza: Provo ricerca case-insensitive per magazzino '{magazzino}'...")
+            magazzini_simili = Magazzino.query.filter(
+                func.lower(Magazzino.codice).like(f"%{magazzino.lower()}%")
+            ).all()
+            
+            for mag_simile in magazzini_simili:
+                print(f"DEBUG API giacenza: Provo magazzino simile: {mag_simile.codice}")
+                articolo = CatalogoArticolo.query.filter_by(
+                    codice_interno=codice,
+                    ubicazione=mag_simile.codice
+                ).first()
+                if articolo:
+                    print(f"DEBUG API giacenza: Trovato con magazzino simile: {mag_simile.codice}")
+                    break
+        
+        # Quarta: se ancora non trovato, prova con il primo magazzino in cui esiste l'articolo
+        if not articolo:
+            print(f"DEBUG API giacenza: Cerco l'articolo in qualsiasi magazzino...")
+            articolo = CatalogoArticolo.query.filter_by(codice_interno=codice).first()
+            if articolo:
+                print(f"DEBUG API giacenza: Trovato articolo in magazzino '{articolo.ubicazione}' invece di '{magazzino}'")
+        
         giacenza = 0
+        magazzino_trovato = magazzino
+        
         if articolo:
             giacenza = articolo.giacenza_attuale or 0
-            print(f"DEBUG API giacenza: Trovato articolo {codice} con giacenza {giacenza} in magazzino {magazzino}")
+            magazzino_trovato = articolo.ubicazione
+            print(f"DEBUG API giacenza: Trovato articolo {codice} con giacenza {giacenza} in magazzino {magazzino_trovato}")
         else:
-            print(f"DEBUG API giacenza: Articolo {codice} NON trovato in magazzino {magazzino}")
+            print(f"DEBUG API giacenza: Articolo {codice} NON trovato in nessun magazzino")
             
-            # Fallback: cerca se esiste l'articolo in altri magazzini per debug
+            # Debug: mostra tutti gli articoli con questo codice
             articoli_esistenti = CatalogoArticolo.query.filter_by(codice_interno=codice).all()
             if articoli_esistenti:
                 ubicazioni = [a.ubicazione for a in articoli_esistenti]
@@ -8834,12 +8861,17 @@ def api_giacenza():
                     else:
                         magazzini_debug.append(f"{ubicazione}(sconosciuto)")
                 print(f"DEBUG API giacenza: Magazzini disponibili: {magazzini_debug}")
+                
+                # Mostra anche tutti i magazzini nel sistema per debug
+                tutti_magazzini = Magazzino.query.all()
+                print(f"DEBUG API giacenza: Tutti i magazzini nel sistema: {[f'{m.codice}({m.descrizione})' for m in tutti_magazzini]}")
             else:
                 print(f"DEBUG API giacenza: Articolo {codice} non esiste in nessun magazzino")
         
         return jsonify({
             'giacenza': float(giacenza),
             'magazzino': magazzino,
+            'magazzino_trovato': magazzino_trovato,
             'codice': codice
         })
         
