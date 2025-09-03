@@ -8829,13 +8829,7 @@ def api_giacenza():
                     print(f"DEBUG API giacenza: Trovato con magazzino simile: {mag_simile.codice}")
                     break
         
-        # Quarta: se ancora non trovato, prova con il primo magazzino in cui esiste l'articolo
-        if not articolo:
-            print(f"DEBUG API giacenza: Cerco l'articolo in qualsiasi magazzino...")
-            articolo = CatalogoArticolo.query.filter_by(codice_interno=codice).first()
-            if articolo:
-                print(f"DEBUG API giacenza: Trovato articolo in magazzino '{articolo.ubicazione}' invece di '{magazzino}'")
-        
+        # Se ancora non trovato, NON cercare in altri magazzini - la giacenza deve essere specifica per il magazzino richiesto
         giacenza = 0
         magazzino_trovato = magazzino
         
@@ -8844,7 +8838,7 @@ def api_giacenza():
             magazzino_trovato = articolo.ubicazione
             print(f"DEBUG API giacenza: Trovato articolo {codice} con giacenza {giacenza} in magazzino {magazzino_trovato}")
         else:
-            print(f"DEBUG API giacenza: Articolo {codice} NON trovato in nessun magazzino")
+            print(f"DEBUG API giacenza: Articolo {codice} NON trovato nel magazzino {magazzino} - giacenza = 0")
             
             # Debug: mostra tutti gli articoli con questo codice
             articoli_esistenti = CatalogoArticolo.query.filter_by(codice_interno=codice).all()

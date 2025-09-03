@@ -374,13 +374,12 @@
                 const giacenza = data.giacenza || 0;
                 document.getElementById(`giacenza_${index}`).value = giacenza.toFixed(2);
                 
-                // Usa il magazzino trovato dall'API se diverso da quello richiesto
-                const magazzinoTrovato = data.magazzino_trovato || data.magazzino;
+                // Mostra sempre il magazzino richiesto
                 let messaggioMagazzino = `Magazzino: ${descrizioneMagazzino}`;
                 
-                // Se il magazzino trovato è diverso, mostra un avviso
-                if (magazzinoTrovato !== codiceMagazzino) {
-                    messaggioMagazzino = `⚠️ Trovato in: ${magazzinoTrovato} (richiesto: ${codiceMagazzino})`;
+                // Se giacenza è 0, potrebbe significare che l'articolo non esiste in questo magazzino
+                if (giacenza === 0) {
+                    messaggioMagazzino = `Magazzino: ${descrizioneMagazzino} (giacenza: 0)`;
                 }
                 
                 document.getElementById(`magazzino_giacenza_${index}`).textContent = messaggioMagazzino;
