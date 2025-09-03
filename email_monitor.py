@@ -45,12 +45,21 @@ class EmailMonitor:
     
     def start_monitoring(self):
         """Avvia il thread di monitoraggio"""
-        if self.running or not self.is_active():
+        self.logger.info(f"🔍 [EMAIL DEBUG] start_monitoring called - running: {self.running}, is_active: {self.is_active()}")
+        
+        if self.running:
+            self.logger.info("🔍 [EMAIL DEBUG] Monitor già running - return False")
             return False
             
+        if not self.is_active():
+            self.logger.info("🔍 [EMAIL DEBUG] Monitor non attivo - return False")
+            return False
+            
+        self.logger.info("🔍 [EMAIL DEBUG] Avvio thread monitor...")
         self.running = True
         self.thread = threading.Thread(target=self._monitor_loop, daemon=True)
         self.thread.start()
+        self.logger.info(f"🔍 [EMAIL DEBUG] Thread creato e avviato - alive: {self.thread.is_alive()}")
         self.logger.info("[EMAIL] Email monitor started")
         return True
     
@@ -63,14 +72,17 @@ class EmailMonitor:
     
     def _monitor_loop(self):
         """Loop principale di monitoraggio"""
+        self.logger.info("[EMAIL] Monitor loop started!")
+        self.logger.info("🔍 [EMAIL DEBUG] Monitor thread loop INIZIATO - running={self.running}")
         while self.running:
             try:
+                self.logger.info(f"[EMAIL] Loop iteration - running={self.running}, active={self.is_active()}")
                 if self.is_active():
                     start_time = time.time()
-                    self.logger.info(f"[EMAIL] Starting email check at {datetime.now().strftime('%H:%M:%S')}")
+                    self.logger.info(f"[EMAIL] Starting automatic email check at {datetime.now().strftime('%H:%M:%S')}")
                     self._check_emails()
                     elapsed = time.time() - start_time
-                    self.logger.info(f"[EMAIL] Email check completed in {elapsed:.2f} seconds")
+                    self.logger.info(f"[EMAIL] Automatic email check completed in {elapsed:.2f} seconds")
                 
                 # Attendi l'intervallo configurato
                 interval = int(self.get_config('email_check_interval', '5'))
