@@ -218,9 +218,12 @@
                         
                         resultsDiv.innerHTML = '';
                         resultsDiv.classList.remove('show');
-                        // Aggiorna giacenze quando cambia magazzino partenza
+                        // Aggiorna giacenze quando cambia magazzino partenza - con ritardo per permettere l'aggiornamento DOM
                         if (inputName === 'magazzino_partenza') {
-                            aggiornaGiacenzePerMagazzino();
+                            setTimeout(() => {
+                                console.log('DEBUG: Chiamando aggiornaGiacenzePerMagazzino con ritardo...');
+                                aggiornaGiacenzePerMagazzino();
+                            }, 50); // 50ms di ritardo per permettere l'aggiornamento del DOM
                         }
                     };
                     resultsDiv.appendChild(div);
