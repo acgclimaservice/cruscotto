@@ -82,7 +82,7 @@ class EmailMonitor:
     def _monitor_loop(self):
         """Loop principale di monitoraggio"""
         self.logger.info("[EMAIL] Monitor loop started!")
-        self.logger.info("🔍 [EMAIL DEBUG] Monitor thread loop INIZIATO - running={self.running}")
+        self.logger.info(f"🔍 [EMAIL DEBUG] Monitor thread loop INIZIATO - running={self.running}")
         while self.running:
             try:
                 self.logger.info(f"[EMAIL] Loop iteration - running={self.running}, active={self.is_active()}")
@@ -99,8 +99,13 @@ class EmailMonitor:
                 time.sleep(interval * 60)  # Converti in secondi
                 
             except Exception as e:
-                self.logger.error(f"Errore nel loop di monitoraggio: {e}")
+                import traceback
+                self.logger.error(f"🔍 [EMAIL DEBUG] Errore nel loop di monitoraggio: {e}")
+                self.logger.error(f"🔍 [EMAIL DEBUG] Traceback: {traceback.format_exc()}")
+                # Continua il loop anche in caso di errore
                 time.sleep(60)  # Attendi 1 minuto prima di riprovare
+                
+        self.logger.info("🔍 [EMAIL DEBUG] Monitor loop TERMINATO")
     
     def _check_emails(self):
         """Controlla nuove email e processa allegati PDF"""
