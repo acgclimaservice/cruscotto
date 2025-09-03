@@ -67,6 +67,18 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+        }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
         
         /* Stili per indicatore AI */
         .ai-indicator {
@@ -142,10 +154,26 @@
         </div>
 
         <!-- Loading AI -->
-        <div id="loading-ai" class="loading-ai">
-            <div class="claude-loader"></div>
-            <h3 style="margin-top: 20px;">Claude AI sta analizzando il documento...</h3>
-            <p>Estrazione dati in corso, attendere...</p>
+        <div id="loading-ai" class="loading-ai" style="display: none; text-align: center; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+            <div style="font-size: 56px; margin-bottom: 20px; animation: pulse 2s infinite;">🤖</div>
+            <h3 id="ai-loading-title" style="margin-bottom: 10px; font-weight: 600;">Analisi del documento in corso</h3>
+            <p style="margin-bottom: 25px; opacity: 0.9;">Utilizzando AI per estrarre i dati del DDT</p>
+            
+            <!-- Barra di progresso professionale -->
+            <div style="background: rgba(255,255,255,0.2); border-radius: 25px; padding: 4px; margin: 20px 0; position: relative; overflow: hidden;">
+                <div id="ddt-progressBar" style="background: linear-gradient(90deg, #4CAF50, #81C784); height: 12px; border-radius: 20px; width: 0%; transition: width 0.8s ease-in-out; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; left: -100%; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 2s infinite;"></div>
+                </div>
+            </div>
+            
+            <div id="ddt-progressText" style="font-size: 14px; opacity: 0.8; margin-top: 10px;">Inizializzazione...</div>
+            
+            <!-- Punti animati -->
+            <div style="margin-top: 15px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: rgba(255,255,255,0.6); border-radius: 50%; margin: 0 4px; animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0s;"></span>
+                <span style="display: inline-block; width: 8px; height: 8px; background: rgba(255,255,255,0.6); border-radius: 50%; margin: 0 4px; animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0.2s;"></span>
+                <span style="display: inline-block; width: 8px; height: 8px; background: rgba(255,255,255,0.6); border-radius: 50%; margin: 0 4px; animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0.4s;"></span>
+            </div>
         </div>
 
         <!-- Layout principale con PDF e dati affiancati -->
@@ -399,11 +427,8 @@
         
         console.log('Uploading PDF for parsing with:', selectedAI.toUpperCase(), 'AI');
         
-        // Aggiorna il messaggio di caricamento basato sull'AI selezionata
-        const loadingTitle = document.querySelector('#loading-ai h3');
-        loadingTitle.textContent = selectedAI === 'gemini' ? 
-            'Gemini AI sta analizzando il documento...' : 
-            'Claude AI sta analizzando il documento...';
+        // Avvia animazione barra di progresso
+        startDDTProgressAnimation(selectedAI);
         
         // USA IL PARSER MULTI-AI
         fetch('/ddt-import/parse-pdf-claude', {
@@ -417,22 +442,33 @@
         .then(result => {
             console.log('Claude AI Result:', result);
             
-            document.getElementById('loading-ai').style.display = 'none';
+            // Completa animazione di progresso
+            completeDDTProgress();
             
-            if (result.success && result.data) {
-                console.log('Real data from Claude AI');
-                showResults(result.data);
-            } else {
-                console.log('Claude AI Error:', result.error);
-                showCopyableError('Errore parsing Claude AI', result.error || 'Analisi fallita');
-                resetForm();
-            }
+            setTimeout(() => {
+                document.getElementById('loading-ai').style.display = 'none';
+                
+                if (result.success && result.data) {
+                    console.log('Real data from Claude AI');
+                    showResults(result.data);
+                } else {
+                    console.log('Claude AI Error:', result.error);
+                    showCopyableError('Errore parsing Claude AI', result.error || 'Analisi fallita');
+                    resetForm();
+                }
+            }, 1000); // Aspetta 1 secondo per mostrare il completamento
         })
         .catch(err => {
             console.error('💥 Error:', err);
-            document.getElementById('loading-ai').style.display = 'none';
-            showCopyableError('Errore connessione', err.toString());
-            resetForm();
+            
+            // Mostra errore nella barra di progresso
+            errorDDTProgress();
+            
+            setTimeout(() => {
+                document.getElementById('loading-ai').style.display = 'none';
+                showCopyableError('Errore connessione', err.toString());
+                resetForm();
+            }, 1000); // Aspetta 1 secondo per mostrare l'errore
         });
     }
 
@@ -956,6 +992,91 @@
                 badge.style.transform = 'scale(1)';
             }, 200);
         }, 100);
+    }
+    
+    // Funzioni per animazione barra di progresso DDT
+    let ddtCurrentProgress = 0;
+    let ddtProgressInterval;
+    
+    function startDDTProgressAnimation(selectedAI) {
+        // Avvia animazione progresso simulato
+        ddtAnimateProgressTo(20);
+        
+        // Aggiorna il titolo con l'AI selezionata
+        const loadingTitle = document.getElementById('ai-loading-title');
+        if (loadingTitle) {
+            loadingTitle.textContent = selectedAI === 'gemini' ? 
+                'Gemini AI sta analizzando il documento...' : 
+                'Claude AI sta analizzando il documento...';
+        }
+    }
+    
+    function ddtAnimateProgressTo(targetProgress) {
+        clearInterval(ddtProgressInterval);
+        const progressBar = document.getElementById('ddt-progressBar');
+        const progressText = document.getElementById('ddt-progressText');
+        
+        if (!progressBar) return;
+        
+        // Aggiorna messaggio in base al progresso
+        const messages = {
+            20: "📄 Caricamento documento...",
+            40: "🔍 Analisi contenuto DDT...", 
+            60: "🤖 Elaborazione AI in corso...",
+            80: "📊 Estrazione articoli e dati...",
+            90: "✅ Finalizzazione..."
+        };
+        
+        ddtProgressInterval = setInterval(() => {
+            if (ddtCurrentProgress < targetProgress) {
+                ddtCurrentProgress += 2;
+                progressBar.style.width = ddtCurrentProgress + '%';
+                
+                // Aggiorna messaggio quando raggiungiamo certi milestone
+                if (messages[ddtCurrentProgress]) {
+                    progressText.textContent = messages[ddtCurrentProgress];
+                }
+            } else {
+                clearInterval(ddtProgressInterval);
+            }
+        }, 50);
+        
+        // Programma il prossimo step automaticamente
+        if (targetProgress < 90) {
+            setTimeout(() => {
+                ddtAnimateProgressTo(Math.min(targetProgress + 20, 90));
+            }, 1000 + Math.random() * 1000); // Tra 1-2 secondi
+        }
+    }
+    
+    function completeDDTProgress() {
+        clearInterval(ddtProgressInterval);
+        ddtCurrentProgress = 100;
+        const progressBar = document.getElementById('ddt-progressBar');
+        const progressText = document.getElementById('ddt-progressText');
+        
+        if (progressBar) {
+            progressBar.style.width = '100%';
+            progressBar.style.background = 'linear-gradient(90deg, #4CAF50, #81C784)';
+        }
+        if (progressText) {
+            progressText.textContent = "🎉 Parsing completato!";
+        }
+    }
+    
+    function errorDDTProgress() {
+        clearInterval(ddtProgressInterval);
+        
+        const progressBar = document.getElementById('ddt-progressBar');
+        const progressText = document.getElementById('ddt-progressText');
+        
+        if (progressBar) {
+            progressBar.style.width = '100%';
+            progressBar.style.background = 'linear-gradient(90deg, #ef4444, #f87171)';
+        }
+        if (progressText) {
+            progressText.textContent = "❌ Errore durante il parsing";
+        }
     }
     
     // Inizializza magazzino predefinito

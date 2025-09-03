@@ -429,35 +429,122 @@
         }
         
         function startProgressAnimation(aiService) {
-            // Semplice messaggio senza progress bar
+            // Barra di progresso professionale e animata
             const statusDiv = document.getElementById('parsingStatus');
             statusDiv.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <div style="font-size: 48px; margin-bottom: 15px;">🤖</div>
-                    <h3>Parsing in corso...</h3>
-                    <p>Utilizzando ${aiService.toUpperCase()} AI per analizzare il documento</p>
+                <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+                    <div style="font-size: 56px; margin-bottom: 20px; animation: pulse 2s infinite;">🤖</div>
+                    <h3 style="margin-bottom: 10px; font-weight: 600;">Analisi del documento in corso</h3>
+                    <p style="margin-bottom: 25px; opacity: 0.9;">Utilizzando ${aiService.toUpperCase()} AI per estrarre i dati</p>
+                    
+                    <!-- Barra di progresso professionale -->
+                    <div style="background: rgba(255,255,255,0.2); border-radius: 25px; padding: 4px; margin: 20px 0; position: relative; overflow: hidden;">
+                        <div id="progressBar" style="background: linear-gradient(90deg, #4CAF50, #81C784); height: 12px; border-radius: 20px; width: 0%; transition: width 0.8s ease-in-out; position: relative; overflow: hidden;">
+                            <div style="position: absolute; top: 0; left: -100%; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 2s infinite;"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="progressText" style="font-size: 14px; opacity: 0.8; margin-top: 10px;">Inizializzazione...</div>
+                    
+                    <!-- Punti animati -->
+                    <div style="margin-top: 15px;">
+                        <span style="display: inline-block; width: 8px; height: 8px; background: rgba(255,255,255,0.6); border-radius: 50%; margin: 0 4px; animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0s;"></span>
+                        <span style="display: inline-block; width: 8px; height: 8px; background: rgba(255,255,255,0.6); border-radius: 50%; margin: 0 4px; animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0.2s;"></span>
+                        <span style="display: inline-block; width: 8px; height: 8px; background: rgba(255,255,255,0.6); border-radius: 50%; margin: 0 4px; animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0.4s;"></span>
+                    </div>
                 </div>
+                
+                <style>
+                    @keyframes pulse {
+                        0%, 100% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                    }
+                    @keyframes shimmer {
+                        0% { transform: translateX(-100%); }
+                        100% { transform: translateX(200%); }
+                    }
+                    @keyframes bounce {
+                        0%, 80%, 100% { transform: scale(0); }
+                        40% { transform: scale(1); }
+                    }
+                </style>
             `;
+            
+            // Avvia animazione progresso simulato
+            animateProgressTo(20);
         }
         
+        let currentProgress = 0;
+        let progressInterval;
+        
         function animateProgressTo(targetProgress) {
-            // Funzione vuota - non più utilizzata
+            clearInterval(progressInterval);
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            if (!progressBar) return;
+            
+            // Aggiorna messaggio in base al progresso
+            const messages = {
+                20: "📄 Caricamento documento...",
+                40: "🔍 Analisi contenuto...", 
+                60: "🤖 Elaborazione AI in corso...",
+                80: "📊 Estrazione dati...",
+                90: "✅ Finalizzazione..."
+            };
+            
+            progressInterval = setInterval(() => {
+                if (currentProgress < targetProgress) {
+                    currentProgress += 2;
+                    progressBar.style.width = currentProgress + '%';
+                    
+                    // Aggiorna messaggio quando raggiungiamo certi milestone
+                    if (messages[currentProgress]) {
+                        progressText.textContent = messages[currentProgress];
+                    }
+                } else {
+                    clearInterval(progressInterval);
+                }
+            }, 50);
+            
+            // Programma il prossimo step automaticamente
+            if (targetProgress < 90) {
+                setTimeout(() => {
+                    animateProgressTo(Math.min(targetProgress + 20, 90));
+                }, 1000 + Math.random() * 1000); // Tra 1-2 secondi
+            }
         }
         
         function completeProgress() {
-            // Nessuna animazione progress da completare
+            clearInterval(progressInterval);
+            currentProgress = 100;
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            if (progressBar) {
+                progressBar.style.width = '100%';
+                progressBar.style.background = 'linear-gradient(90deg, #4CAF50, #81C784)';
+            }
+            if (progressText) {
+                progressText.textContent = "🎉 Parsing completato!";
+            }
         }
         
         function errorProgress(error) {
-            // Mostra solo messaggio di errore semplice
-            const statusDiv = document.getElementById('parsingStatus');
-            statusDiv.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
-                    <h3>Errore durante il parsing</h3>
-                    <p>${error}</p>
-                </div>
-            `;
+            // Ferma l'animazione della barra di progresso
+            clearInterval(progressInterval);
+            
+            // Aggiorna la barra per mostrare errore
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            if (progressBar) {
+                progressBar.style.width = '100%';
+                progressBar.style.background = 'linear-gradient(90deg, #ef4444, #f87171)';
+            }
+            if (progressText) {
+                progressText.textContent = "❌ Errore durante il parsing";
+            }
         }
 
         function uploadPDF(file) {
