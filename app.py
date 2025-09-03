@@ -3761,8 +3761,8 @@ def calcola_giacenza_alla_data(codice_articolo, data_riferimento):
             return giacenza_attuale
         
         # Calcola movimenti dopo la data di riferimento (per andare indietro nel tempo)
-        # Converte data_riferimento in datetime per il confronto
-        data_riferimento_dt = datetime.combine(data_riferimento, datetime.min.time())
+        # Converte data_riferimento in datetime per il confronto - fine giornata per includere movimenti della stessa data
+        data_riferimento_dt = datetime.combine(data_riferimento, datetime.max.time())
         
         movimenti_successivi = Movimento.query.filter(
             Movimento.codice_articolo == codice_articolo,
