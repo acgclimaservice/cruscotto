@@ -10388,52 +10388,52 @@ if __name__ == '__main__':
     
     # Avvia il monitor email se configurato
     try:
-        print("🔍 [EMAIL MONITOR DEBUG] Inizio controlli avvio automatico...")
+        print("[EMAIL MONITOR DEBUG] Inizio controlli avvio automatico...")
         
         # Debug dettagliato stato monitor
         is_active = app.email_monitor.is_active()
-        print(f"🔍 [EMAIL MONITOR DEBUG] is_active() result: {is_active}")
+        print(f"[EMAIL MONITOR DEBUG] is_active() result: {is_active}")
         
         # Debug configurazioni email
         config_active = app.email_monitor.get_config('email_monitor_active')
-        print(f"🔍 [EMAIL MONITOR DEBUG] email_monitor_active config: '{config_active}'")
+        print(f"[EMAIL MONITOR DEBUG] email_monitor_active config: '{config_active}'")
         
         interval = app.email_monitor.get_config('email_check_interval', '5')
-        print(f"🔍 [EMAIL MONITOR DEBUG] email_check_interval: {interval} minuti")
+        print(f"[EMAIL MONITOR DEBUG] email_check_interval: {interval} minuti")
         
         email_address = app.email_monitor.get_config('email_address')
         email_password = app.email_monitor.get_config('email_password')
-        print(f"🔍 [EMAIL MONITOR DEBUG] email_address: {email_address}")
-        print(f"🔍 [EMAIL MONITOR DEBUG] email_password presente: {bool(email_password)}")
+        print(f"[EMAIL MONITOR DEBUG] email_address: {email_address}")
+        print(f"[EMAIL MONITOR DEBUG] email_password presente: {bool(email_password)}")
         
         # Debug stato thread
-        print(f"🔍 [EMAIL MONITOR DEBUG] Monitor running: {app.email_monitor.running}")
-        print(f"🔍 [EMAIL MONITOR DEBUG] Monitor thread: {app.email_monitor.thread}")
+        print(f"[EMAIL MONITOR DEBUG] Monitor running: {app.email_monitor.running}")
+        print(f"[EMAIL MONITOR DEBUG] Monitor thread: {app.email_monitor.thread}")
         
         print(f"Email Monitor Status: {'Active' if is_active else 'Inactive'}")
         
         if is_active:
-            print("🔍 [EMAIL MONITOR DEBUG] Tentativo avvio monitor...")
+            print("[EMAIL MONITOR DEBUG] Tentativo avvio monitor...")
             success = app.email_monitor.start_monitoring()
-            print(f"🔍 [EMAIL MONITOR DEBUG] start_monitoring() result: {success}")
+            print(f"[EMAIL MONITOR DEBUG] start_monitoring() result: {success}")
             
             if success:
-                print("✅ Email Monitor: Avviato con successo")
+                print("Email Monitor: Avviato con successo")
                 # Verifica che il thread sia realmente partito
                 import time
                 time.sleep(0.5)  # Piccola attesa
-                print(f"🔍 [EMAIL MONITOR DEBUG] Dopo avvio - running: {app.email_monitor.running}")
-                print(f"🔍 [EMAIL MONITOR DEBUG] Dopo avvio - thread alive: {app.email_monitor.thread.is_alive() if app.email_monitor.thread else False}")
+                print(f"[EMAIL MONITOR DEBUG] Dopo avvio - running: {app.email_monitor.running}")
+                print(f"[EMAIL MONITOR DEBUG] Dopo avvio - thread alive: {app.email_monitor.thread.is_alive() if app.email_monitor.thread else False}")
             else:
-                print("⚠️ Email Monitor: Già in esecuzione o non attivo")
+                print("Email Monitor: Già in esecuzione o non attivo")
         else:
-            print("❌ Email Monitor: Disattivato (configurare nelle impostazioni)")
+            print("Email Monitor: Disattivato (configurare nelle impostazioni)")
             
-        print("🔍 [EMAIL MONITOR DEBUG] Fine controlli avvio automatico.")
+        print("[EMAIL MONITOR DEBUG] Fine controlli avvio automatico.")
         
     except Exception as e:
         import traceback
-        print(f"❌ Email Monitor: Errore - {e}")
+        print(f"Email Monitor: Errore - {e}")
         print(f"Traceback: {traceback.format_exc()}")
     
     logger.info("[STARTING] Flask server with detailed logging...")
