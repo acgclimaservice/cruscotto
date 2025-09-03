@@ -265,6 +265,7 @@
         let articoliCounter = 0;
         let progressInterval = null;
         let currentProgress = 0;
+        let currentPdfFile = null;
 
         // Funzione per mostrare errori copiabili invece di alert()
         function showCopyableError(title, message) {
@@ -359,7 +360,14 @@
             const uploadArea = document.getElementById('uploadArea');
             const pdfInput = document.getElementById('pdfInput');
 
-            uploadArea.addEventListener('click', () => pdfInput.click());
+            // Event handler con preventDefault per evitare conflitti
+            uploadArea.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('DEBUG: uploadArea clicked, opening file picker');
+                pdfInput.click();
+            });
+            
             uploadArea.addEventListener('dragover', handleDragOver);
             uploadArea.addEventListener('dragleave', handleDragLeave);
             uploadArea.addEventListener('drop', handleDrop);
@@ -409,12 +417,16 @@
                 return;
             }
 
+            // Memorizza il file nella variabile globale
+            currentPdfFile = file;
+            console.log('DEBUG: File memorizzato:', file.name, 'Size:', file.size);
+
             // Mostra preview PDF
             const reader = new FileReader();
             reader.onload = function(e) {
                 displayPDF(file.name, e.target.result);
                 // Avvia parsing automaticamente
-                setTimeout(() => uploadPDF(file), 1000);
+                setTimeout(() => uploadPDF(currentPdfFile), 1000);
             };
             reader.readAsDataURL(file);
         }
@@ -422,10 +434,18 @@
         function displayPDF(fileName, dataUrl) {
             document.getElementById('uploadArea').style.display = 'none';
             document.getElementById('pdfFileName').textContent = `📄 ${fileName}`;
-            document.getElementById('pdfViewer').src = dataUrl;
-            document.getElementById('pdfPreview').style.display = 'block';
             
-            console.log('Trying to display PDF:', dataUrl);
+            // Configura iframe per evitare apertura in nuova finestra
+            const iframe = document.getElementById('pdfViewer');
+            iframe.src = dataUrl;
+            
+            // Previeni l'apertura in nuova finestra
+            iframe.addEventListener('load', function() {
+                console.log('DEBUG: PDF iframe loaded successfully');
+            });
+            
+            document.getElementById('pdfPreview').style.display = 'block';
+            console.log('DEBUG: Displaying PDF:', fileName);
         }
         
         function startProgressAnimation(aiService) {
@@ -473,9 +493,6 @@
             // Avvia animazione progresso simulato
             animateProgressTo(20);
         }
-        
-        let currentProgress = 0;
-        let progressInterval;
         
         function animateProgressTo(targetProgress) {
             clearInterval(progressInterval);
@@ -548,6 +565,15 @@
         }
 
         function uploadPDF(file) {
+            // Usa la variabile globale se il parametro non è valido
+            const pdfFile = file || currentPdfFile;
+            
+            if (!pdfFile) {
+                console.error('DEBUG: Nessun file disponibile per l\'upload');
+                showParsingError('Nessun file selezionato');
+                return;
+            }
+            
             const aiService = document.querySelector('input[name="ai_service"]:checked').value;
             
             // Mostra stato parsing semplice
@@ -558,9 +584,10 @@
             startProgressAnimation(aiService);
 
             console.log('Uploading PDF for parsing with:', aiService.toUpperCase());
+            console.log('DEBUG: File to upload:', pdfFile.name, 'Size:', pdfFile.size);
 
             const formData = new FormData();
-            formData.append('pdf', file);
+            formData.append('pdf', pdfFile);
             formData.append('ai_service', aiService);
 
             fetch('/ordini/parse-pdf', {
@@ -663,9 +690,17 @@
         }
 
         function populateForm(data) {
+            console.log('DEBUG populateForm - Dati ricevuti:', data);
+            console.log('DEBUG populateForm - data_offerta raw:', data.data_offerta);
+            
             // Popola campi fornitore e ordine
             document.getElementById('fornitore').value = data.fornitore || '';
-            document.getElementById('dataOfferta').value = convertDateToISO(data.data_offerta);
+            
+            // Debug per data offerta
+            const dataOffertaConverted = convertDateToISO(data.data_offerta);
+            console.log('DEBUG populateForm - data_offerta convertita:', dataOffertaConverted);
+            document.getElementById('dataOfferta').value = dataOffertaConverted;
+            
             document.getElementById('numeroOfferta').value = data.numero_offerta || '';
             document.getElementById('validitaOfferta').value = data.validita_offerta || '';
             document.getElementById('oggetto').value = data.oggetto || 'Ordine da offerta fornitore';
