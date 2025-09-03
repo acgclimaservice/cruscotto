@@ -360,12 +360,15 @@
             const uploadArea = document.getElementById('uploadArea');
             const pdfInput = document.getElementById('pdfInput');
 
-            // Event handler con preventDefault per evitare conflitti
+            // Event handler per aprire file picker
             uploadArea.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
                 console.log('DEBUG: uploadArea clicked, opening file picker');
-                pdfInput.click();
+                try {
+                    pdfInput.click();
+                    console.log('DEBUG: pdfInput.click() chiamato');
+                } catch (error) {
+                    console.error('DEBUG: Errore nell\'aprire file picker:', error);
+                }
             });
             
             uploadArea.addEventListener('dragover', handleDragOver);
