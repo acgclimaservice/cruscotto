@@ -332,12 +332,14 @@
     function aggiornaGiacenza(index) {
         const codiceArticolo = document.querySelector(`input[name="codice_${index}"]`).value;
         const magazzinoPartenzaField = document.querySelector('input[name="magazzino_partenza"]');
+        const magazzinoPartenzaCodiceField = document.getElementById('magazzino_partenza_codice');
         
-        // Preferisci il codice dal dataset, ma fallback al valore del campo se necessario
-        const codiceMagazzino = magazzinoPartenzaField.dataset.codice || magazzinoPartenzaField.value;
+        // USA IL CAMPO NASCOSTO che viene aggiornato correttamente, fallback al dataset e poi al value
+        const codiceMagazzino = magazzinoPartenzaCodiceField.value || magazzinoPartenzaField.dataset.codice || magazzinoPartenzaField.value;
         const descrizioneMagazzino = magazzinoPartenzaField.value;
         
         console.log(`DEBUG aggiornaGiacenza: articolo=${codiceArticolo}, codiceMagazzino=${codiceMagazzino}, descrizioneMagazzino=${descrizioneMagazzino}`);
+        console.log(`DEBUG aggiornaGiacenza: magazzinoPartenzaCodiceField.value = "${magazzinoPartenzaCodiceField.value}"`);
         console.log(`DEBUG aggiornaGiacenza: magazzinoPartenzaField.dataset.codice = "${magazzinoPartenzaField.dataset.codice}"`);
         console.log(`DEBUG aggiornaGiacenza: magazzinoPartenzaField.value = "${magazzinoPartenzaField.value}"`);
         
