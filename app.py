@@ -8793,12 +8793,25 @@ def api_giacenza():
     
     try:
         print(f"DEBUG API giacenza: Ricerca articolo '{codice}' in magazzino '{magazzino}'")
+        print(f"DEBUG API giacenza: Tipo codice: {type(codice)}, Tipo magazzino: {type(magazzino)}")
+        
+        # Debug: mostra tutti i magazzini disponibili
+        tutti_magazzini = Magazzino.query.all()
+        print(f"DEBUG API giacenza: Magazzini nel sistema: {[(m.codice, m.descrizione) for m in tutti_magazzini[:5]]}...")
+        
+        # Debug: mostra tutti gli articoli con questo codice
+        articoli_con_codice = CatalogoArticolo.query.filter_by(codice_interno=codice).all()
+        if articoli_con_codice:
+            print(f"DEBUG API giacenza: Articolo '{codice}' trovato in ubicazioni: {[a.ubicazione for a in articoli_con_codice]}")
+        else:
+            print(f"DEBUG API giacenza: Articolo '{codice}' NON ESISTE in nessuna ubicazione")
         
         # Prima: cerca per CODICE magazzino esatto (il campo ubicazione contiene codici)
         articolo = CatalogoArticolo.query.filter_by(
             codice_interno=codice,
             ubicazione=magazzino
         ).first()
+        print(f"DEBUG API giacenza: Ricerca esatta - articolo trovato: {articolo is not None}")
         
         # Seconda: se non trovato, prova a cercare per DESCRIZIONE magazzino
         if not articolo:
