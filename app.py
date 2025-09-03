@@ -8826,17 +8826,29 @@ def api_giacenza():
         ).first()
         print(f"DEBUG API giacenza: Ricerca esatta - articolo trovato: {articolo is not None}")
         
-        # Seconda: se non trovato, prova a cercare per DESCRIZIONE magazzino
+        # Seconda: se non trovato, prova a cercare per DESCRIZIONE magazzino nell'ubicazione
         if not articolo:
             print(f"DEBUG API giacenza: Non trovato con codice '{magazzino}', provo con descrizione...")
-            # Cerca il codice magazzino dalla descrizione
-            magazzino_obj = Magazzino.query.filter_by(descrizione=magazzino).first()
+            # Prima prova: cerca direttamente con la descrizione del magazzino nell'ubicazione
+            magazzino_obj = Magazzino.query.filter_by(codice=magazzino).first()
             if magazzino_obj:
-                print(f"DEBUG API giacenza: Trovato magazzino {magazzino_obj.codice} per descrizione '{magazzino}'")
+                print(f"DEBUG API giacenza: Cercando con descrizione magazzino '{magazzino_obj.descrizione}' nell'ubicazione...")
                 articolo = CatalogoArticolo.query.filter_by(
                     codice_interno=codice,
-                    ubicazione=magazzino_obj.codice
+                    ubicazione=magazzino_obj.descrizione
                 ).first()
+                if articolo:
+                    print(f"DEBUG API giacenza: Trovato con descrizione magazzino nell'ubicazione!")
+            
+            # Seconda prova: cerca il codice magazzino dalla descrizione ricevuta
+            if not articolo:
+                magazzino_obj2 = Magazzino.query.filter_by(descrizione=magazzino).first()
+                if magazzino_obj2:
+                    print(f"DEBUG API giacenza: Trovato magazzino {magazzino_obj2.codice} per descrizione '{magazzino}'")
+                    articolo = CatalogoArticolo.query.filter_by(
+                        codice_interno=codice,
+                        ubicazione=magazzino_obj2.codice
+                    ).first()
         
         # Terza: se ancora non trovato, prova con ricerca case-insensitive sui codici magazzino
         if not articolo:
