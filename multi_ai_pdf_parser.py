@@ -104,6 +104,7 @@ TESTO DEL DDT:
             message = self.claude_client.messages.create(
                 model="claude-3-haiku-20240307",
                 max_tokens=4000,
+                temperature=0,
                 messages=[{
                     "role": "user",
                     "content": prompt
@@ -119,6 +120,7 @@ TESTO DEL DDT:
             return {'success': True, 'data': parsed_data}
             
         except Exception as e:
+            print(f"DEBUG Multi-AI Claude ERROR: {type(e).__name__}: {str(e)}")
             return {'success': False, 'error': f'Claude error: {str(e)}'}
     
     def _extract_pdf_text(self, file_obj):
@@ -474,6 +476,7 @@ TESTO DA ANALIZZARE:
             message = self.claude_client.messages.create(
                 model='claude-3-haiku-20240307',
                 max_tokens=4000,
+                temperature=0,
                 messages=[{"role": "user", "content": prompt}]
             )
             
