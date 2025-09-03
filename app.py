@@ -1601,58 +1601,35 @@ def pdf_unificato_ddt(id):
             # Se non c'è PDF allegato, reindirizza alla stampa normale
             return redirect(url_for('stampa_ddt_completa', id=id))
         
-        # Usa il template v2 professionale invece del vecchio
-        from document_templates import DDTInTemplate
-    
-        # Prepara dati per il template v2
-        ddt_data = {
-            'numero_ddt': ddt.numero_ddt or f'DDT-{ddt.id}',
-            'data_ddt': ddt.data_ddt.strftime('%d/%m/%Y') if ddt.data_ddt else '-',
-            'data_ddt_origine': ddt.data_ddt_origine.strftime('%d/%m/%Y') if ddt.data_ddt_origine else '-',
-            'numero_ddt_origine': ddt.riferimento or '-',
-            'fornitore': ddt.fornitore or '-',
-            'destinazione': ddt.destinazione or '-',
-            'riferimento': ddt.riferimento or '-',
-            'commessa': ddt.commessa or '-',
-            'stato': ddt.stato or 'bozza',
-            'mastrino_ddt': ddt.mastrino_ddt or '-',
-            'totale_costo': ddt.totale_costo or 0,
-            'articoli': []
-        }
+        # Usa direttamente il template HTML professionale unificato
+        import base64
+        print(f"[PDF_UNIFICATO] Creando template HTML unificato professionale...")
         
-        # Aggiungi articoli
-        for articolo in articoli:
-            ddt_data['articoli'].append({
-                'codice_interno': articolo.codice_interno or '-',
-                'codice_fornitore': articolo.codice_fornitore or '-',
-                'descrizione': articolo.descrizione or '-',
-                'quantita': articolo.quantita or 0,
-                'unita_misura': articolo.unita_misura or 'PZ',
-                'costo_unitario': articolo.costo_unitario or 0,
-                'totale': (articolo.quantita or 0) * (articolo.costo_unitario or 0),
-                'mastrino_riga': articolo.mastrino_riga or '-'
-            })
+        # Decodifica PDF allegato per includerlo nell'HTML
+        pdf_allegato_bytes = base64.b64decode(ddt.pdf_allegato)
+        pdf_base64 = base64.b64encode(pdf_allegato_bytes).decode('utf-8')
         
-        # Genera HTML del DDT con template v2
-        print(f"[PDF_UNIFICATO] Generando HTML con DDTInTemplate...")
-        html_ddt = DDTInTemplate.generate_html(ddt_data)
-        print(f"[PDF_UNIFICATO] HTML generato con successo, lunghezza: {len(html_ddt)}")
+        # Crea template unificato con PDF embedded usando il formato moderno
+        html_unificato = render_template('pdf/ddt-unificato-fallback.html', 
+                                       ddt=ddt, 
+                                       articoli=articoli,
+                                       pdf_base64=pdf_base64,
+                                       pdf_filename=ddt.pdf_filename or 'documento_fornitore.pdf')
         
-        try:
-            # Usa reportlab per generare PDF del DDT (funziona su Windows senza GTK)
-            from reportlab.lib.pagesizes import A4
-            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-            from reportlab.lib.units import cm
-            from reportlab.lib import colors
-            import io
-            import base64
-            from datetime import datetime
-            import os
-            
-            # Crea PDF del DDT sistema usando reportlab
-            buffer = io.BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=2*cm)
+        print(f"[PDF_UNIFICATO] Template HTML unificato generato con successo")
+        
+        response = make_response(html_unificato)
+        response.headers['Content-Type'] = 'text/html; charset=utf-8'
+        response.headers['Content-Disposition'] = f'inline; filename="DDT_Unificato_{ddt.numero_ddt or ddt.id}.html"'
+        
+        return response
+        
+    except Exception as e:
+        import traceback
+        print(f"[PDF_UNIFICATO] Errore: {e}")
+        print(f"[PDF_UNIFICATO] Traceback: {traceback.format_exc()}")
+        return f"Errore generazione PDF Unificato: {str(e)}", 500
+
             styles = getSampleStyleSheet()
             
             # Crea stili personalizzati
