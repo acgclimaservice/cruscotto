@@ -10,11 +10,15 @@ class MultiAIPDFParser:
     def __init__(self):
         """Inizializza il parser multi-AI con le API keys dall'ambiente"""
         # Carica variabili d'ambiente dal file .env
-        load_dotenv()
+        env_loaded = load_dotenv()
+        print(f"DEBUG Multi-AI: .env file loaded: {env_loaded}")
+        print(f"DEBUG Multi-AI: Current working directory: {os.getcwd()}")
+        print(f"DEBUG Multi-AI: Checking for .env file: {os.path.exists('.env')}")
         
         # Claude API
         self.claude_client = None
         self.claude_api_key = os.getenv('CLAUDE_API_KEY') or os.getenv('ANTHROPIC_API_KEY')
+        print(f"DEBUG Multi-AI: Claude API key loaded: {bool(self.claude_api_key)} (length: {len(self.claude_api_key) if self.claude_api_key else 0})")
         
         if self.claude_api_key:
             try:
@@ -28,6 +32,7 @@ class MultiAIPDFParser:
         # Gemini API
         self.gemini_model = None
         self.gemini_api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
+        print(f"DEBUG Multi-AI: Gemini API key loaded: {bool(self.gemini_api_key)} (length: {len(self.gemini_api_key) if self.gemini_api_key else 0})")
         
         if self.gemini_api_key:
             try:
