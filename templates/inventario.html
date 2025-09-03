@@ -62,6 +62,13 @@
                 <button type="button" class="btn btn-secondary" onclick="location.href='/inventario'">🔄 Reset</button>
             </form>
             
+            {% if data_inventario %}
+            <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border: 1px solid #2196f3; border-radius: 5px;">
+                <strong>📅 Inventario filtrato per data:</strong> {{ data_inventario.strftime('%d/%m/%Y') }}
+                <small>(Mostra solo articoli con giacenza positiva a questa data)</small>
+            </div>
+            {% endif %}
+            
             <div class="info-grid" style="margin-top: 20px;">
                 <div class="info-item">
                     <span class="info-label">Valore Totale</span>
@@ -129,7 +136,13 @@
                                 {% endif %}
                             </td>
                             <td>{{ articolo.unita_misura|default('PZ') }}</td>
-                            <td>{{ "{:.2f}".format(articolo.giacenza_attuale|default(0)) }}</td>
+                            <td>
+                                {% if articolo.giacenza_alla_data is defined %}
+                                    <span title="Giacenza alla data {{ data_inventario }}">{{ "{:.2f}".format(articolo.giacenza_alla_data|default(0)) }}</span>
+                                {% else %}
+                                    {{ "{:.2f}".format(articolo.giacenza_attuale|default(0)) }}
+                                {% endif %}
+                            </td>
                             <td>{{ "{:.2f}".format(articolo.scorta_minima|default(0)) }}</td>
                             <td>€ {{ "{:.2f}".format(articolo.costo_medio or 0) }}</td>
                             <td>€ {{ "{:.2f}".format((articolo.giacenza_attuale or 0) * (articolo.costo_medio or 0)) }}</td>

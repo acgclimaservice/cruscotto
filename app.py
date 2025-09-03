@@ -3761,19 +3761,22 @@ def calcola_giacenza_alla_data(codice_articolo, data_riferimento):
             return giacenza_attuale
         
         # Calcola movimenti dopo la data di riferimento (per andare indietro nel tempo)
-        movimenti_successivi = MovimentoInventario.query.filter(
-            MovimentoInventario.codice_articolo == codice_articolo,
-            MovimentoInventario.data_movimento > data_riferimento
+        # Converte data_riferimento in datetime per il confronto
+        data_riferimento_dt = datetime.combine(data_riferimento, datetime.min.time())
+        
+        movimenti_successivi = Movimento.query.filter(
+            Movimento.codice_articolo == codice_articolo,
+            Movimento.data_movimento > data_riferimento_dt
         ).all()
         
         # Sottrai/aggiungi movimenti per ricostruire giacenza passata
         giacenza_alla_data = giacenza_attuale
         for movimento in movimenti_successivi:
             quantita = movimento.quantita or 0
-            if movimento.tipo_movimento == 'IN':
+            if movimento.tipo == 'entrata':
                 # Se era entrato dopo la data, lo sottraggo dalla giacenza attuale
                 giacenza_alla_data -= quantita
-            elif movimento.tipo_movimento == 'OUT':
+            elif movimento.tipo == 'uscita':
                 # Se era uscito dopo la data, lo riaggiugo alla giacenza attuale
                 giacenza_alla_data += quantita
         

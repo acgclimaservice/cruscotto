@@ -24,7 +24,8 @@
       "WebFetch(domain:github.com)",
       "Bash(git tag:*)",
       "Read(\\/**)",
-      "WebFetch(domain:127.0.0.1)"
+      "WebFetch(domain:127.0.0.1)",
+      "Bash(git config:*)"
     ],
     "deny": [],
     "ask": []
