@@ -1630,7 +1630,7 @@ def pdf_unificato_ddt(id):
                 'unita_misura': articolo.unita_misura or 'PZ',
                 'costo_unitario': articolo.costo_unitario or 0,
                 'totale': (articolo.quantita or 0) * (articolo.costo_unitario or 0),
-                'ubicazione': articolo.ubicazione or '-'
+                'mastrino_riga': articolo.mastrino_riga or '-'
             })
         
         # Genera HTML del DDT con template v2
