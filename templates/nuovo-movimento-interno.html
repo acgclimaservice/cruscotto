@@ -327,8 +327,12 @@
     function aggiornaGiacenza(index) {
         const codiceArticolo = document.querySelector(`input[name="codice_${index}"]`).value;
         const magazzinoPartenzaField = document.querySelector('input[name="magazzino_partenza"]');
-        const codiceMagazzino = magazzinoPartenzaField.dataset.codice;
+        
+        // Preferisci il codice dal dataset, ma fallback al valore del campo se necessario
+        const codiceMagazzino = magazzinoPartenzaField.dataset.codice || magazzinoPartenzaField.value;
         const descrizioneMagazzino = magazzinoPartenzaField.value;
+        
+        console.log(`DEBUG aggiornaGiacenza: articolo=${codiceArticolo}, codiceMagazzino=${codiceMagazzino}, descrizioneMagazzino=${descrizioneMagazzino}`);
         
         if (!codiceArticolo || !codiceMagazzino) {
             document.getElementById(`giacenza_${index}`).value = '0.00';
@@ -336,7 +340,7 @@
             return;
         }
         
-        // Chiamata API per ottenere giacenza usando SEMPRE il codice magazzino
+        // Chiamata API per ottenere giacenza - preferisce codice magazzino ma accetta anche descrizione
         fetch(`/api/giacenza?codice=${encodeURIComponent(codiceArticolo)}&magazzino=${encodeURIComponent(codiceMagazzino)}`)
             .then(response => response.json())
             .then(data => {

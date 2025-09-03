@@ -8794,12 +8794,23 @@ def api_giacenza():
     try:
         print(f"DEBUG API giacenza: Ricerca articolo {codice} in magazzino {magazzino}")
         
-        # Cerca l'articolo nel catalogo per il magazzino specificato
-        # Il campo ubicazione contiene il CODICE del magazzino
+        # Prima: cerca per CODICE magazzino (il campo ubicazione contiene codici)
         articolo = CatalogoArticolo.query.filter_by(
             codice_interno=codice,
             ubicazione=magazzino
         ).first()
+        
+        # Seconda: se non trovato, prova a cercare per DESCRIZIONE magazzino
+        if not articolo:
+            print(f"DEBUG API giacenza: Non trovato con codice '{magazzino}', provo con descrizione...")
+            # Cerca il codice magazzino dalla descrizione
+            magazzino_obj = Magazzino.query.filter_by(descrizione=magazzino).first()
+            if magazzino_obj:
+                print(f"DEBUG API giacenza: Trovato magazzino {magazzino_obj.codice} per descrizione '{magazzino}'")
+                articolo = CatalogoArticolo.query.filter_by(
+                    codice_interno=codice,
+                    ubicazione=magazzino_obj.codice
+                ).first()
         
         giacenza = 0
         if articolo:
@@ -8813,6 +8824,16 @@ def api_giacenza():
             if articoli_esistenti:
                 ubicazioni = [a.ubicazione for a in articoli_esistenti]
                 print(f"DEBUG API giacenza: Articolo {codice} esiste in magazzini: {ubicazioni}")
+                
+                # Mostra anche le descrizioni dei magazzini per debug
+                magazzini_debug = []
+                for ubicazione in ubicazioni:
+                    mag = Magazzino.query.filter_by(codice=ubicazione).first()
+                    if mag:
+                        magazzini_debug.append(f"{mag.codice}({mag.descrizione})")
+                    else:
+                        magazzini_debug.append(f"{ubicazione}(sconosciuto)")
+                print(f"DEBUG API giacenza: Magazzini disponibili: {magazzini_debug}")
             else:
                 print(f"DEBUG API giacenza: Articolo {codice} non esiste in nessun magazzino")
         
