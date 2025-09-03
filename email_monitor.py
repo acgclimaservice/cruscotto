@@ -103,27 +103,60 @@ class EmailMonitor:
             # Cerca email non lette
             status, messages = mail.search(None, 'UNSEEN')
             
+            # DEBUG: Log dettagliato
+            self.logger.info(f"DEBUG: IMAP search status: {status}")
+            self.logger.info(f"DEBUG: IMAP messages result: {messages}")
+            
             if not messages[0]:
-                self.logger.debug("Nessuna nuova email trovata")
+                self.logger.info("DEBUG: Nessuna nuova email trovata - controllando tutte le email")
+                # DEBUG: Controlla tutte le email per debug
+                status_all, messages_all = mail.search(None, 'ALL')
+                total_emails = len(messages_all[0].split()) if messages_all[0] else 0
+                self.logger.info(f"DEBUG: Totale email: {total_emails}")
                 mail.close()
                 mail.logout()
-                return
+                return {
+                    'processed': 0,
+                    'total_found': 0,
+                    'message': f'Nessuna email non letta trovata (totale in casella: {total_emails})'
+                }
             
             email_ids = messages[0].split()
-            self.logger.info(f"📬 Trovate {len(email_ids)} nuove email")
+            self.logger.info(f"📬 Trovate {len(email_ids)} email totali")
+            self.logger.info(f"DEBUG: Processing prime 10 email: {email_ids[:10]}")
             
+            processed_count = 0
             for i, email_id in enumerate(email_ids[:10]):  # Processa max 10 email per volta
                 try:
                     start_time = time.time()
                     self.logger.info(f"[EMAIL] Processing email {i+1}/{len(email_ids[:10])} (ID: {email_id})")
-                    self._process_email(mail, email_id, max_attachments)
+                    
+                    # Prova il processing
+                    result = self._process_email(mail, email_id, max_attachments)
+                    if result:
+                        processed_count += 1
+                        self.logger.info(f"[EMAIL] Email {email_id} processed successfully")
+                    else:
+                        self.logger.info(f"[EMAIL] Email {email_id} skipped (no valid PDFs)")
+                        
                     elapsed = time.time() - start_time
-                    self.logger.info(f"[EMAIL] Email {email_id} processed in {elapsed:.2f} seconds")
+                    self.logger.info(f"[EMAIL] Email {email_id} completed in {elapsed:.2f} seconds")
                 except Exception as e:
                     self.logger.error(f"Errore processando email {email_id}: {e}")
+                    import traceback
+                    self.logger.error(f"Stack trace: {traceback.format_exc()}")
+            
+            self.logger.info(f"[EMAIL] Total emails processed: {processed_count}/{len(email_ids[:10])}")
             
             mail.close()
             mail.logout()
+            
+            # Restituisce il risultato per il feedback
+            return {
+                'processed': processed_count,
+                'total_found': len(email_ids),
+                'message': f'Processate {processed_count} email su {len(email_ids)} trovate'
+            }
             
         except Exception as e:
             self.logger.error(f"Errore controllo email: {e}")
@@ -141,12 +174,19 @@ class EmailMonitor:
             date = email_message.get('Date', '')
             
             self.logger.info(f"📧 Processando: {subject} da {from_addr}")
+            self.logger.info(f"DEBUG: Email ID: {email_id}, Subject: '{subject}'")
             
             # Estrai allegati PDF
             pdf_files = []
+            self.logger.info(f"DEBUG: Starting attachment scan...")
+            attachment_count = 0
+            total_parts = 0
             for part in email_message.walk():
+                total_parts += 1
                 if part.get_content_disposition() == 'attachment':
+                    attachment_count += 1
                     filename = part.get_filename()
+                    self.logger.info(f"DEBUG: Found attachment {attachment_count}: '{filename}' (PDF: {filename and filename.lower().endswith('.pdf') if filename else False})")
                     if filename and filename.lower().endswith('.pdf'):
                         if len(pdf_files) >= max_attachments:
                             self.logger.warning(f"Raggiunti max {max_attachments} allegati per email")
@@ -169,6 +209,8 @@ class EmailMonitor:
                         
                         self.logger.info(f"📎 Allegato salvato: {filename} ({pdf_files[-1]['size']} bytes)")
             
+            self.logger.info(f"DEBUG: Email scan complete - Total parts: {total_parts}, Attachments: {attachment_count}, PDF files: {len(pdf_files)}")
+            
             if pdf_files:
                 # Crea job batch per processare i PDF
                 job_id = self._create_batch_job(pdf_files, subject, from_addr)
@@ -180,10 +222,12 @@ class EmailMonitor:
                 self._send_confirmation_email(from_addr, subject, len(pdf_files), job_id)
                 
                 self.logger.info(f"✅ Creato job batch {job_id} con {len(pdf_files)} file")
+                return True  # Email processata con successo
             else:
-                # Segna comunque come letta se non ci sono PDF
+                # Segna comunque come letta se non ci sono PDF  
                 mail.store(email_id, '+FLAGS', '\\Seen')
                 self.logger.info(f"📧 Nessun PDF trovato in: {subject}")
+                return False  # Email senza PDF validi
     
     def _create_batch_job(self, pdf_files, subject, from_addr):
         """Crea un job batch per processare i PDF"""
