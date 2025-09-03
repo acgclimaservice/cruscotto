@@ -327,8 +327,8 @@
     function aggiornaGiacenza(index) {
         const codiceArticolo = document.querySelector(`input[name="codice_${index}"]`).value;
         const magazzinoPartenzaField = document.querySelector('input[name="magazzino_partenza"]');
-        const codiceMagazzino = magazzinoPartenzaField.dataset.codice || magazzinoPartenzaField.value;
-        const descrizione = magazzinoPartenzaField.value;
+        const codiceMagazzino = magazzinoPartenzaField.dataset.codice;
+        const descrizioneMagazzino = magazzinoPartenzaField.value;
         
         if (!codiceArticolo || !codiceMagazzino) {
             document.getElementById(`giacenza_${index}`).value = '0.00';
@@ -336,13 +336,13 @@
             return;
         }
         
-        // Chiamata API per ottenere giacenza usando il codice magazzino
+        // Chiamata API per ottenere giacenza usando SEMPRE il codice magazzino
         fetch(`/api/giacenza?codice=${encodeURIComponent(codiceArticolo)}&magazzino=${encodeURIComponent(codiceMagazzino)}`)
             .then(response => response.json())
             .then(data => {
                 const giacenza = data.giacenza || 0;
                 document.getElementById(`giacenza_${index}`).value = giacenza.toFixed(2);
-                document.getElementById(`magazzino_giacenza_${index}`).textContent = `Magazzino: ${descrizione}`;
+                document.getElementById(`magazzino_giacenza_${index}`).textContent = `Magazzino: ${descrizioneMagazzino}`;
                 
                 // Valida subito se c'è già una quantità inserita
                 validaGiacenza(index);

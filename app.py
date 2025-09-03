@@ -8792,7 +8792,10 @@ def api_giacenza():
         return jsonify({'error': 'Parametri mancanti'}), 400
     
     try:
+        print(f"DEBUG API giacenza: Ricerca articolo {codice} in magazzino {magazzino}")
+        
         # Cerca l'articolo nel catalogo per il magazzino specificato
+        # Il campo ubicazione contiene il CODICE del magazzino
         articolo = CatalogoArticolo.query.filter_by(
             codice_interno=codice,
             ubicazione=magazzino
@@ -8801,6 +8804,17 @@ def api_giacenza():
         giacenza = 0
         if articolo:
             giacenza = articolo.giacenza_attuale or 0
+            print(f"DEBUG API giacenza: Trovato articolo {codice} con giacenza {giacenza} in magazzino {magazzino}")
+        else:
+            print(f"DEBUG API giacenza: Articolo {codice} NON trovato in magazzino {magazzino}")
+            
+            # Fallback: cerca se esiste l'articolo in altri magazzini per debug
+            articoli_esistenti = CatalogoArticolo.query.filter_by(codice_interno=codice).all()
+            if articoli_esistenti:
+                ubicazioni = [a.ubicazione for a in articoli_esistenti]
+                print(f"DEBUG API giacenza: Articolo {codice} esiste in magazzini: {ubicazioni}")
+            else:
+                print(f"DEBUG API giacenza: Articolo {codice} non esiste in nessun magazzino")
         
         return jsonify({
             'giacenza': float(giacenza),
@@ -8810,6 +8824,8 @@ def api_giacenza():
         
     except Exception as e:
         print(f"Errore API giacenza: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/movimenti-interni/<int:id>/conferma', methods=['POST'])
