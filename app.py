@@ -2508,6 +2508,24 @@ def process_batch_files(job_id):
                     with open(batch_file.filename, 'rb') as file_obj:
                         # Usa Claude come default per batch
                         result = parser.parse_ddt_with_ai(file_obj, preferred_ai='claude')
+                        
+                        # Se Multi-AI Parser fallisce, prova WorkingClaudeParser
+                        if not result.get('success'):
+                            print(f"Multi-AI Parser fallito: {result.get('error')}")
+                            print("Batch fallback: provo WorkingClaudeParser...")
+                            try:
+                                from working_claude_parser import WorkingClaudeParser
+                                working_parser = WorkingClaudeParser()
+                                file_obj.seek(0)  # Reset file pointer
+                                working_result = working_parser.parse_pdf_with_claude(file_obj)
+                                
+                                if 'error' not in working_result:
+                                    print(f"WorkingClaudeParser success per batch: {working_result.get('numero_ddt', 'NO_NUMBER')}")
+                                    result = {'success': True, 'data': working_result}
+                                else:
+                                    print(f"WorkingClaudeParser fallito: {working_result.get('error')}")
+                            except Exception as e:
+                                print(f"Errore WorkingClaudeParser fallback: {e}")
                     
                     if result.get('success') and 'data' in result:
                         data = result['data']

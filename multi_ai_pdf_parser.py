@@ -333,21 +333,58 @@ IMPORTANTE: quantità come numero puro (2 non 2,000), prezzi come decimali."""
     def parse_with_basic_fallback(self, file_obj):
         """Parser basico di fallback quando le AI non funzionano"""
         try:
-            # Simulazione parsing basico con dati template
-            print("Parser basico: creazione dati template")
+            print("Parser basico: tentativo estrazione dati da PDF...")
             
             current_date = datetime.now().strftime('%Y-%m-%d')
             
+            # Prova a estrarre testo dal PDF per trovare informazioni base
+            try:
+                import fitz  # PyMuPDF
+                file_obj.seek(0)
+                pdf_data = file_obj.read()
+                doc = fitz.open(stream=pdf_data, filetype="pdf")
+                
+                full_text = ""
+                for page in doc:
+                    full_text += page.get_text()
+                doc.close()
+                
+                print(f"Testo estratto dal PDF: {len(full_text)} caratteri")
+                
+                # Cerca pattern di base nel testo
+                import re
+                
+                # Cerca numero documento/DDT/fattura
+                numero_pattern = r'(?:DDT|DOCUMENTO|FATTURA|N[°.])\s*(\d+[/-]?\d*)'
+                numero_match = re.search(numero_pattern, full_text, re.IGNORECASE)
+                numero_ddt = numero_match.group(1) if numero_match else f"TEMP-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                
+                # Cerca nome fornitore nelle prime righe
+                lines = full_text.split('\n')[:15]  # Prime 15 righe
+                fornitore_name = "Fornitore da completare manualmente"
+                for line in lines:
+                    line = line.strip()
+                    if len(line) > 10 and any(word in line.upper() for word in ['SRL', 'SPA', 'S.R.L.', 'S.P.A.', 'SNCI']):
+                        fornitore_name = line[:50]  # Limita lunghezza
+                        break
+                
+                print(f"Parser basico trovato - DDT: {numero_ddt}, Fornitore: {fornitore_name}")
+                
+            except Exception as e:
+                print(f"Errore estrazione testo PDF: {e}")
+                numero_ddt = f"TEMP-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                fornitore_name = "Fornitore da completare manualmente"
+            
             template_data = {
-                "numero_ddt": f"TEMP-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                "numero_ddt": numero_ddt,
                 "data_ddt": current_date,
                 "fornitore": {
-                    "ragione_sociale": "Fornitore da completare manualmente",
+                    "ragione_sociale": fornitore_name,
                     "partita_iva": ""
                 },
                 "articoli": [{
                     "codice": "ART001",
-                    "descrizione": "Articolo da completare manualmente", 
+                    "descrizione": "Articolo da completare manualmente (AI non disponibile)", 
                     "quantita": 1,
                     "prezzo_unitario": 0.0
                 }]
