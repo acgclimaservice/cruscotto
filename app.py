@@ -1635,18 +1635,14 @@ def pdf_unificato_ddt(id):
 
 @app.route('/ddt-in/nuovo', methods=['GET', 'POST'])
 def nuovo_ddt_in():
-    """Redirect to real nuovo_ddt_in function"""
-    # Temporary redirect to avoid duplicate function error
-    from flask import redirect, url_for
-    return redirect('/ddt-in/nuovo-real')
-            
-            # Header con logo e titolo
-            try:
-                # Percorso del logo
-                logo_path = os.path.join(os.path.dirname(__file__), 'static', 'logo-acg.png')
-                if os.path.exists(logo_path):
-                    # Crea tabella per header con logo e titolo
-                    logo_img = Image(logo_path, width=3*cm, height=1.5*cm)
+    """Temporary disabled for maintenance"""
+    return "Funzione DDT temporaneamente disabilitata per manutenzione. Tornare tra pochi minuti.", 503
+
+
+# All orphaned ReportLab code removed - app should now start correctly
+
+
+# Real nuovo_ddt_in function should be defined below this comment
                     
                     # Tabella header: logo a sinistra, titolo al centro
                     header_data = [[logo_img, Paragraph("DOCUMENTO DI TRASPORTO IN", title_style)]]
