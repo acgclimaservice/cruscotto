@@ -128,10 +128,15 @@ def salva_configurazioni():
     try:
         data = request.json
         aggiornate = 0
+        email_config_changed = False
         
         for chiave, valore in data.items():
             if len(chiave) > 100 or len(str(valore)) > 1000:
                 continue
+            
+            # Verifica se è una configurazione email
+            if chiave.startswith('email_'):
+                email_config_changed = True
                 
             config = ConfigurazioneSistema.query.filter_by(chiave=chiave).first()
             if config:
@@ -147,6 +152,24 @@ def salva_configurazioni():
             aggiornate += 1
         
         db.session.commit()
+        
+        # Se configurazioni email sono cambiate, riavvia il monitor
+        if email_config_changed:
+            try:
+                email_monitor = getattr(current_app, 'email_monitor', None)
+                if email_monitor and email_monitor.is_active():
+                    # Ferma il monitor attuale
+                    if email_monitor.running:
+                        email_monitor.stop_monitoring()
+                        time.sleep(1)  # Piccola attesa
+                    
+                    # Riavvia con nuove configurazioni
+                    email_monitor.start_monitoring()
+                    current_app.logger.info("Monitor email riavviato automaticamente dopo cambio configurazioni")
+            except Exception as monitor_error:
+                current_app.logger.error(f"Errore riavvio automatico monitor email: {monitor_error}")
+                # Non fallire la richiesta se il monitor non si riavvia
+        
         return jsonify({'success': True, 'aggiornate': aggiornate})
     except Exception as e:
         db.session.rollback()

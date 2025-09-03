@@ -26,7 +26,8 @@
       "Read(\\/**)",
       "WebFetch(domain:127.0.0.1)",
       "Bash(git config:*)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(set)"
     ],
     "deny": [],
     "ask": []
