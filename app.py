@@ -101,259 +101,259 @@ def get_app_version():
 APP_VERSION = get_app_version()
 RELEASE_NOTES = {
     "4.21": [
-        "✅ OFFERTE: Cambiato stato 'ricevuta' in 'creata' per maggiore chiarezza",
-        "📎 ALLEGATI: Aggiunta possibilità di allegare file alle offerte con gestione completa",
-        "🏷️ TESTI: Aggiornati tutti i testi da 'Gestione Offerte' a 'Gestione Richieste offerte al fornitore'", 
-        "💾 UI: Cambiato pulsante 'Salva Offerta' in 'Salva Richiesta' per coerenza",
-        "🔍 VISUALIZZA: Nuova sezione allegati nel dettaglio offerte con download e anteprima",
-        "🎨 DESIGN: Migliorato stile e usabilità sezione offerte"
+        "OFFERTE: Cambiato stato 'ricevuta' in 'creata' per maggiore chiarezza",
+        "ALLEGATI: Aggiunta possibilità di allegare file alle offerte con gestione completa",
+        "TESTI: Aggiornati tutti i testi da 'Gestione Offerte' a 'Gestione Richieste offerte al fornitore'", 
+        "UI: Cambiato pulsante 'Salva Offerta' in 'Salva Richiesta' per coerenza",
+        "VISUALIZZA: Nuova sezione allegati nel dettaglio offerte con download e anteprima",
+        "DESIGN: Migliorato stile e usabilità sezione offerte"
     ],
     "4.20": [
-        "✅ MASTRINI: Risolto calcolo totali nella sezione collegamenti mastrini",
-        "🔒 DDT: Prevenuta modifica involontaria codice fornitore durante conferma",
-        "📱 QR CODE: Migliorata gestione errori e diagnostica per catalogo articoli",
-        "💰 OFFERTE: Aggiornati testi da 'Nuova Offerta' a 'Nuova Richiesta Offerta a Fornitore'",
-        "📝 OFFERTE: Impostata data odierna come default per richieste offerta",
-        "🏭 MOVIMENTI: Corretti nomi magazzini estesi nei movimenti interni",
-        "🔍 DDT: Migliorata leggibilità codici prodotto nelle stampe PDF",
-        "⚡ SISTEMA: Ottimizzazioni generali e correzioni bug minori"
+        "MASTRINI: Risolto calcolo totali nella sezione collegamenti mastrini",
+        "DDT: Prevenuta modifica involontaria codice fornitore durante conferma",
+        "QR CODE: Migliorata gestione errori e diagnostica per catalogo articoli",
+        "OFFERTE: Aggiornati testi da 'Nuova Offerta' a 'Nuova Richiesta Offerta a Fornitore'",
+        "OFFERTE: Impostata data odierna come default per richieste offerta",
+        "MOVIMENTI: Corretti nomi magazzini estesi nei movimenti interni",
+        "DDT: Migliorata leggibilità codici prodotto nelle stampe PDF",
+        "SISTEMA: Ottimizzazioni generali e correzioni bug minori"
     ],
     "4.17": [
-        "✅ COLLEGAMENTI: Risolto definitivamente problema totali non visibili nella tabella collegamenti", 
-        "📄 EXPORT PDF: Aggiunta esportazione PDF completa del report mastrini",
-        "📊 EXPORT EXCEL: Migliorato Excel con 4 fogli (Spese, Ricavi, Collegamenti, Riepilogo)",
-        "🔧 BACKEND: Calcolo totali spostato nel backend per prestazioni migliori",
-        "💰 EXCEL: Corretto calcolo ricavi (ora usa prezzo_unitario invece di costo_unitario)"
+        " COLLEGAMENTI: Risolto definitivamente problema totali non visibili nella tabella collegamenti", 
+        " EXPORT PDF: Aggiunta esportazione PDF completa del report mastrini",
+        " EXPORT EXCEL: Migliorato Excel con 4 fogli (Spese, Ricavi, Collegamenti, Riepilogo)",
+        " BACKEND: Calcolo totali spostato nel backend per prestazioni migliori",
+        " EXCEL: Corretto calcolo ricavi (ora usa prezzo_unitario invece di costo_unitario)"
     ],
     "4.16": [
-        "💰 REPORT MASTRINI: Aggiunti totali effettivi per ogni collegamento (spese e ricavi)",
-        "📊 COLLEGAMENTI: Visualizzazione importi reali per mastrino acquisto e ricavo",
-        "🎨 INTERFACCIA: Colori distintivi per totali spese (rosso) e ricavi (verde)"
+        " REPORT MASTRINI: Aggiunti totali effettivi per ogni collegamento (spese e ricavi)",
+        " COLLEGAMENTI: Visualizzazione importi reali per mastrino acquisto e ricavo",
+        " INTERFACCIA: Colori distintivi per totali spese (rosso) e ricavi (verde)"
     ],
     "4.15": [
         "🔗 COLLEGAMENTI: Risolto problema collegamenti mastrini che non apparivano nelle impostazioni",
-        "📊 REPORT MASTRINI: Aggiunta sezione dettagliata collegamenti configurati con status utilizzo",
-        "💰 REPORT MASTRINI: Sistemato calcolo ricavi (ora usa prezzo_unitario invece di costo_unitario)", 
-        "✅ REPORT MASTRINI: Risolti tutti gli errori di divisione per NoneType nel template",
-        "🎯 IMPOSTAZIONI: Le descrizioni complete dei mastrini ora visibili nei collegamenti"
+        " REPORT MASTRINI: Aggiunta sezione dettagliata collegamenti configurati con status utilizzo",
+        " REPORT MASTRINI: Sistemato calcolo ricavi (ora usa prezzo_unitario invece di costo_unitario)", 
+        " REPORT MASTRINI: Risolti tutti gli errori di divisione per NoneType nel template",
+        " IMPOSTAZIONI: Le descrizioni complete dei mastrini ora visibili nei collegamenti"
     ],
     "4.14": [
-        "📊 REPORT: Aggiunta barra filtri data a tutti i report (fornitori, clienti, commesse, articoli)",
-        "📊 REPORT: Report utilizzano sempre data origine documento (data_ddt_origine) per filtri",
-        "📊 REPORT: Export Excel include i filtri di data selezionati",
-        "✅ REPORT: Risolto errore export Excel commesse",
-        "✅ REPORT: Risolto errore filtri data report articoli",
-        "✅ REPORT: Risolto errore SQL nel report commesse (f-string)"
+        " REPORT: Aggiunta barra filtri data a tutti i report (fornitori, clienti, commesse, articoli)",
+        " REPORT: Report utilizzano sempre data origine documento (data_ddt_origine) per filtri",
+        " REPORT: Export Excel include i filtri di data selezionati",
+        " REPORT: Risolto errore export Excel commesse",
+        " REPORT: Risolto errore filtri data report articoli",
+        " REPORT: Risolto errore SQL nel report commesse (f-string)"
     ],
     "4.9": [
         "✨ DDT OUT: Aggiunto reindirizzamento automatico dopo salvataggio modifiche",
-        "🎯 UX: Migliorata esperienza utente con feedback visivo durante il salvataggio"
+        " UX: Migliorata esperienza utente con feedback visivo durante il salvataggio"
     ],
     "4.8": [
-        "🔧 PARSING ORDINI: Risolto problema parsing con estrazione testo da PDF", 
-        "✅ DDT OUT: Risolto bug modifica che cancellava i dati degli articoli",
-        "🆕 INVENTARIO: Risolto problema duplicazioni articoli durante conferma DDT IN"
+        " PARSING ORDINI: Risolto problema parsing con estrazione testo da PDF", 
+        " DDT OUT: Risolto bug modifica che cancellava i dati degli articoli",
+        " INVENTARIO: Risolto problema duplicazioni articoli durante conferma DDT IN"
     ],
     "4.3": [
-        "🔧 CLAUDE: Ripristinato modello claude-3-haiku-20240307 (stabile)", 
-        "✅ PARSING: Sistema parsing completamente funzionante su DDT IN e ordini"
+        " CLAUDE: Ripristinato modello claude-3-haiku-20240307 (stabile)", 
+        " PARSING: Sistema parsing completamente funzionante su DDT IN e ordini"
     ],
     "4.2": [
         "🤖 CLAUDE: Aggiornato modello a claude-3-5-sonnet-20241022",
-        "🔧 PARSING: Risolto errore 404 modello Claude non disponibile", 
-        "✅ AI: Sistema parsing DDT IN e ordini completamente funzionante"
+        " PARSING: Risolto errore 404 modello Claude non disponibile", 
+        " AI: Sistema parsing DDT IN e ordini completamente funzionante"
     ],
     "4.1": [
-        "🔧 RISOLTI 22 bug critici dal file todobarbara.txt",
-        "✅ DDT IN/OUT: Eliminazione, conferma, generazione e modifica corrette", 
+        " RISOLTI 22 bug critici dal file todobarbara.txt",
+        " DDT IN/OUT: Eliminazione, conferma, generazione e modifica corrette", 
         "📧 EMAIL: Aggiornate a info@acgclimaservice.com in tutti i PDF",
         "🔗 MASTRINI: Sistema mastrini per singola riga implementato",
-        "📦 INVENTARIO: Gestione codici interni esistenti e ubicazioni",
+        " INVENTARIO: Gestione codici interni esistenti e ubicazioni",
         "🤖 PARSING AI: Supporto simultaneo DDT IN e ordini con fallback",
-        "⚙️ SISTEMA: Scorta minima default = 0 per nuovi articoli"
+        " SISTEMA: Scorta minima default = 0 per nuovi articoli"
     ],
     "3.6": [
-        "🔍 NUOVO Tasto Confronta Ordini: Aggiunti modal confronto PDF/ordine e route eliminazione",
+        "NUOVO Tasto Confronta Ordini: Aggiunti modal confronto PDF/ordine e route eliminazione",
         "🗑️ RIPARATA Eliminazione: Aggiunta route /ordini/<id>/elimina mancante",
-        "📄 CONFRONTO PDF: Visualizzazione PDF allegato con zoom e lente d'ingrandimento",
-        "⚡ WORKFLOW Completo: Confronto, modifica e conferma ordini da PDF come nei DDT"
+        " CONFRONTO PDF: Visualizzazione PDF allegato con zoom e lente d'ingrandimento",
+        " WORKFLOW Completo: Confronto, modifica e conferma ordini da PDF come nei DDT"
     ],
     "3.5": [
         "🛒 NUOVA FUNZIONALITÀ Import Ordini da PDF: Implementato sistema completo per importare offerte fornitori",
-        "📄 PARSING AI Offerte: Integrato AI parsing per estrarre automaticamente dati da offerte PDF",
-        "⚡ WORKFLOW Ordini: Creazione automatica ordini da offerte con review e modifica dati",
-        "🔄 RIUTILIZZO Codice: Utilizzato stesso parser DDT per import ordini fornitori"
+        " PARSING AI Offerte: Integrato AI parsing per estrarre automaticamente dati da offerte PDF",
+        " WORKFLOW Ordini: Creazione automatica ordini da offerte con review e modifica dati",
+        " RIUTILIZZO Codice: Utilizzato stesso parser DDT per import ordini fornitori"
     ],
     "3.4": [
-        "🔧 RIPARATO Autocomplete Mastrini: Corretto CSS troppo aggressivo che impediva visualizzazione",
+        " RIPARATO Autocomplete Mastrini: Corretto CSS troppo aggressivo che impediva visualizzazione",
         "🐛 CORRETTO Funzionamento: Ripristinato autocomplete in modifica DDT con debug avanzato",
-        "⚡ OTTIMIZZATO Template: CSS bilanciato per visibilità senza interferenze"
+        " OTTIMIZZATO Template: CSS bilanciato per visibilità senza interferenze"
     ],
     "3.3": [
-        "📝 MIGLIORATO Autocomplete Mastrini: Visualizzazione ottimizzata per DDT con singolo articolo",
-        "🔧 CORRETTO Posizionamento: Dropdown intelligente sopra/sotto in base allo spazio disponibile",
+        " MIGLIORATO Autocomplete Mastrini: Visualizzazione ottimizzata per DDT con singolo articolo",
+        " CORRETTO Posizionamento: Dropdown intelligente sopra/sotto in base allo spazio disponibile",
         "✨ OTTIMIZZATO CSS: Rimossi conflitti e migliorato z-index per massima visibilità"
     ],
     "3.2": [
-        "✅ RIPARATO Import DDT Template: Codice fornitore e mastrini ora salvati correttamente",
-        "🔧 CORRETTO JavaScript Template: Dati inviati nel formato corretto all'API",
-        "🎯 COMPLETATO Sistema Conferma: DDT importati confermabili senza modifiche manuali"
+        " RIPARATO Import DDT Template: Codice fornitore e mastrini ora salvati correttamente",
+        " CORRETTO JavaScript Template: Dati inviati nel formato corretto all'API",
+        " COMPLETATO Sistema Conferma: DDT importati confermabili senza modifiche manuali"
     ],
     "3.1": [
-        "🔧 RIPARATO Batch Processing: Codice dal parsing PDF ora va correttamente in codice_fornitore",
-        "🆕 COMPLETATO Sistema Codici: Funziona sia per import manuale che automatico email",
-        "📝 CORRETTO Email Monitor: DDT da email ora generano codice interno automaticamente"
+        " RIPARATO Batch Processing: Codice dal parsing PDF ora va correttamente in codice_fornitore",
+        " COMPLETATO Sistema Codici: Funziona sia per import manuale che automatico email",
+        " CORRETTO Email Monitor: DDT da email ora generano codice interno automaticamente"
     ],
     "3.0": [
-        "🆕 NUOVO Sistema Codici Interni: Generazione automatica con prime 4 lettere fornitore + codice fornitore",
-        "🔧 AGGIORNATO Template DDT: Campi codice interno ora in sola lettura con indicazione automatica",
-        "📝 OTTIMIZZATO Workflow: Inserimento semplificato codice fornitore, codice interno automatico"
+        " NUOVO Sistema Codici Interni: Generazione automatica con prime 4 lettere fornitore + codice fornitore",
+        " AGGIORNATO Template DDT: Campi codice interno ora in sola lettura con indicazione automatica",
+        " OTTIMIZZATO Workflow: Inserimento semplificato codice fornitore, codice interno automatico"
     ],
     "2.9": [
-        "✅ RIPARATO Validazione DDT IN: Rimossa validazione obsoleta mastrino_ddt",
-        "🔧 IMPLEMENTATO Controllo mastrino articoli: Validazione a livello di singolo articolo",
-        "📝 CORRETTO Conferma DDT: Ora funziona correttamente con mastrini per articolo"
+        " RIPARATO Validazione DDT IN: Rimossa validazione obsoleta mastrino_ddt",
+        " IMPLEMENTATO Controllo mastrino articoli: Validazione a livello di singolo articolo",
+        " CORRETTO Conferma DDT: Ora funziona correttamente con mastrini per articolo"
     ],
     "2.8": [
-        "✅ RIPARATO Modifica DDT IN: Aggiunto tasto 'Copia Mastrino su Tutte le Righe'",
-        "🔧 RIPARATO Validazione DDT: Aggiunto campo Codice Fornitore obbligatorio in modifica",
-        "📝 MIGLIORAMENTO: Salvataggio completo dati articolo (mastrino_riga, codice_fornitore)"
+        " RIPARATO Modifica DDT IN: Aggiunto tasto 'Copia Mastrino su Tutte le Righe'",
+        " RIPARATO Validazione DDT: Aggiunto campo Codice Fornitore obbligatorio in modifica",
+        " MIGLIORAMENTO: Salvataggio completo dati articolo (mastrino_riga, codice_fornitore)"
     ],
     "2.7": [
-        "🎯 SISTEMA EMAIL MONITOR: Importazione automatica DDT via email con PDF attachment",
-        "🔧 DATABASE RIPARATO: Errori I/O risolti, sistema stabile e performante",
-        "✅ PUNTI 51-58 COMPLETATI: Versione corretta, selezione magazzini, autocomplete z-index",
-        "⚡ MASTRINI MIGLIORATI: Aggiunta funzione zero iniziale per codici (4→04, 5→05)",
+        " SISTEMA EMAIL MONITOR: Importazione automatica DDT via email con PDF attachment",
+        " DATABASE RIPARATO: Errori I/O risolti, sistema stabile e performante",
+        " PUNTI 51-58 COMPLETATI: Versione corretta, selezione magazzini, autocomplete z-index",
+        " MASTRINI MIGLIORATI: Aggiunta funzione zero iniziale per codici (4→04, 5→05)",
         "🐛 ERRORI JAVASCRIPT RISOLTI: PDF validation, selector autocomplete, campo magazzino",
         "📧 CONFIGURAZIONE EMAIL: UI completa per test connessione e monitoraggio automatico"
     ],
     "2.37": [
-        "✅ RISOLTI Bug #49-55: Archivio verificato, report inventario, commesse e magazzini",
-        "🔧 Bug #52: Redirect diretto alla lista commesse dopo creazione",
-        "🔧 Bug #53: Visualizzazione dettaglio commessa funzionante",
+        " RISOLTI Bug #49-55: Archivio verificato, report inventario, commesse e magazzini",
+        " Bug #52: Redirect diretto alla lista commesse dopo creazione",
+        " Bug #53: Visualizzazione dettaglio commessa funzionante",
         "➕ Bug #55: Route /impostazioni/magazzino/nuovo per creare nuovi magazzini"
     ],
     "2.36": [
-        "🔧 RISOLTO Bug #50: Report storico inventario ora funziona correttamente",
-        "📊 RIPRISTINATA ROUTE: /inventario/report-storico recuperata dai backup",
-        "✅ TESTATO: Report mostra correttamente articoli e calcoli inventario"
+        " RISOLTO Bug #50: Report storico inventario ora funziona correttamente",
+        " RIPRISTINATA ROUTE: /inventario/report-storico recuperata dai backup",
+        " TESTATO: Report mostra correttamente articoli e calcoli inventario"
     ],
     "2.35": [
-        "🔧 RISOLTO Bug #16: Route /fornitori/nuovo ora funziona correttamente",
+        " RISOLTO Bug #16: Route /fornitori/nuovo ora funziona correttamente",
         "➕ NUOVA FUNZIONALITÀ: Creazione nuovi fornitori con form completo",
-        "✅ TESTATO: Creazione, validazione e redirect automatico alla lista fornitori"
+        " TESTATO: Creazione, validazione e redirect automatico alla lista fornitori"
     ],
     "2.34": [
-        "🔧 RISOLTO Bug #30: Importazione Excel mastrini ora funziona correttamente",
-        "📤 NUOVA ROUTE: /impostazioni/mastrini/importa-excel per upload file Excel/CSV",
-        "✅ TESTATO: Importazione mastrini con formato Tipo, Codice, Descrizione"
+        " RISOLTO Bug #30: Importazione Excel mastrini ora funziona correttamente",
+        " NUOVA ROUTE: /impostazioni/mastrini/importa-excel per upload file Excel/CSV",
+        " TESTATO: Importazione mastrini con formato Tipo, Codice, Descrizione"
     ],
     "2.33": [
-        "✅ VERIFICATO: Tasto elimina mastrini in impostazioni funziona correttamente",
-        "🔧 TESTATO: Route eliminazione mastrini operativa (/impostazioni/mastrino/<id>/elimina)",
-        "📊 IMPORT: Mastrini acquisti e ricavi importati e visibili"
+        " VERIFICATO: Tasto elimina mastrini in impostazioni funziona correttamente",
+        " TESTATO: Route eliminazione mastrini operativa (/impostazioni/mastrino/<id>/elimina)",
+        " IMPORT: Mastrini acquisti e ricavi importati e visibili"
     ],
     "2.31": [
-        "🔧 RISOLTO DDT IN: I movimenti ora vengono creati anche quando il codice articolo è vuoto",
-        "📊 FUNZIONALE: Generazione automatica codici temporanei ART-{id} per articoli senza codice",
-        "✅ TESTATO: DDT IN ora alimenta correttamente la sezione movimenti"
+        " RISOLTO DDT IN: I movimenti ora vengono creati anche quando il codice articolo è vuoto",
+        " FUNZIONALE: Generazione automatica codici temporanei ART-{id} per articoli senza codice",
+        " TESTATO: DDT IN ora alimenta correttamente la sezione movimenti"
     ],
     "2.30": [
-        "🔧 RISOLTO: Correzione nomi campi form - costo_unitario e codice_interno ora salvati correttamente",
-        "📊 FUNZIONALE: I nuovi DDT ora creano automaticamente i movimenti di magazzino",
-        "💰 RISOLTO: I costi unitari non vengono più cancellati durante la creazione DDT"
+        " RISOLTO: Correzione nomi campi form - costo_unitario e codice_interno ora salvati correttamente",
+        " FUNZIONALE: I nuovi DDT ora creano automaticamente i movimenti di magazzino",
+        " RISOLTO: I costi unitari non vengono più cancellati durante la creazione DDT"
     ],
     "2.29": [
-        "🔧 RISOLTO: Metodi get_ddt_in() e get_ddt_out() aggiunti al modello Movimento",
-        "📊 FUNZIONALE: Template movimenti.html ora renderizza correttamente i dati", 
-        "✅ ATTIVO: Sezione Movimenti completamente operativa"
+        " RISOLTO: Metodi get_ddt_in() e get_ddt_out() aggiunti al modello Movimento",
+        " FUNZIONALE: Template movimenti.html ora renderizza correttamente i dati", 
+        " ATTIVO: Sezione Movimenti completamente operativa"
     ],
     "2.28": [
-        "🔧 RISOLTO DEFINITIVO: Sezione Movimenti funzionante - Database ricreato completamente",
-        "📊 ATTIVO: Tabella movimenti creata e popolata con DDT confermati di test",
-        "✅ TESTATO: Movimenti entrata/uscita funzionano correttamente", 
+        " RISOLTO DEFINITIVO: Sezione Movimenti funzionante - Database ricreato completamente",
+        " ATTIVO: Tabella movimenti creata e popolata con DDT confermati di test",
+        " TESTATO: Movimenti entrata/uscita funzionano correttamente", 
         "🗄️ CORRETTO: Percorso database assoluto per evitare conflitti di path",
-        "📋 DATI TEST: Creati DDT IN/OUT di esempio per mostrare funzionamento movimenti"
+        " DATI TEST: Creati DDT IN/OUT di esempio per mostrare funzionamento movimenti"
     ],
     "2.27": [
-        "🔧 RISOLTO: Errore 404 visualizzazione DDT OUT - Aggiunta route /ddt-out/<id>",
-        "✅ NUOVO: Dettaglio DDT OUT ora accessibile dalla lista DDT OUT",
+        " RISOLTO: Errore 404 visualizzazione DDT OUT - Aggiunta route /ddt-out/<id>",
+        " NUOVO: Dettaglio DDT OUT ora accessibile dalla lista DDT OUT",
         "🔗 COMPLETATO: Sistema DDT OUT completamente funzionante",
-        "📋 MIGLIORATO: Consistenza tra DDT IN e DDT OUT per visualizzazione dettagli"
+        " MIGLIORATO: Consistenza tra DDT IN e DDT OUT per visualizzazione dettagli"
     ],
     "2.26": [
         "🤖 RISOLTO Bug #45: Automazione creazione fornitore da import PDF con controllo duplicati",
         "🏢 RISOLTO Bug #46: Gestione Commesse completa con numeri progressivi e stati",
-        "📋 NUOVO: Sezione Commesse con filtri per stato, cliente e tipologia",
+        " NUOVO: Sezione Commesse con filtri per stato, cliente e tipologia",
         "🔗 CREATO: API per creazione automatica fornitori da dati AI estratti",
         "✨ COMPLETATI: Tutti i bug dal #42 al #46 del file bug.txt"
     ],
     "2.25": [
-        "✅ RISOLTO Bug #42: Errore 405 genera DDT OUT - Aggiunto metodo POST per salvare",
-        "📊 RISOLTO Bug #43: Sezione movimenti ora alimentata da DDT IN/OUT confermati", 
-        "🏷️ RISOLTO Bug #44: Inventario mostra mastrino acquisto per ogni articolo",
-        "🔄 MIGLIORATO: Inventario raggruppa giacenze per articolo + mastrino acquisto",
-        "📈 NUOVO: Ogni articolo con giacenze su mastrini diversi viene duplicato"
+        " RISOLTO Bug #42: Errore 405 genera DDT OUT - Aggiunto metodo POST per salvare",
+        " RISOLTO Bug #43: Sezione movimenti ora alimentata da DDT IN/OUT confermati", 
+        " RISOLTO Bug #44: Inventario mostra mastrino acquisto per ogni articolo",
+        " MIGLIORATO: Inventario raggruppa giacenze per articolo + mastrino acquisto",
+        " NUOVO: Ogni articolo con giacenze su mastrini diversi viene duplicato"
     ],
     "2.24": [
-        "🎯 MIGLIORATO: Prompt AI specifico per leggere esattamente i dati dalle tabelle PDF", 
-        "📋 CORRETTO: Claude ora deve usare SOLO i dati reali dal PDF, non inventarli",
-        "🔍 SPECIFICO: Cerca codici articolo, descrizioni, quantità e prezzi esatti",
-        "❌ BLOCCATO: Impedito a Claude di creare dati fittizi quando non trova informazioni",
-        "📊 TABELLE: Migliorata lettura tabelle DDT con colonne [Codice][Descrizione][Quantità][Prezzo]"
+        " MIGLIORATO: Prompt AI specifico per leggere esattamente i dati dalle tabelle PDF", 
+        " CORRETTO: Claude ora deve usare SOLO i dati reali dal PDF, non inventarli",
+        "SPECIFICO: Cerca codici articolo, descrizioni, quantità e prezzi esatti",
+        "BLOCCATO: Impedito a Claude di creare dati fittizi quando non trova informazioni",
+        " TABELLE: Migliorata lettura tabelle DDT con colonne [Codice][Descrizione][Quantità][Prezzo]"
     ],
     "2.23": [
-        "🔧 DEFINITIVO: Modello Claude corretto a claude-3-haiku-20240307 (testato funzionante)", 
-        "✅ RISOLTO: 404 model not found - ora usa modello realmente disponibile per la tua API key",
+        " DEFINITIVO: Modello Claude corretto a claude-3-haiku-20240307 (testato funzionante)", 
+        " RISOLTO: 404 model not found - ora usa modello realmente disponibile per la tua API key",
         "🤖 ATTIVATO: Parsing AI Claude 100% operativo (no più fallback con dati fittizi)",
-        "🎯 VERIFICATO: API keys configurate correttamente in .env per entrambi Claude e Gemini",
-        "⚠️ INFO: Gemini temporaneamente non disponibile (quota API esaurita)"
+        " VERIFICATO: API keys configurate correttamente in .env per entrambi Claude e Gemini",
+        " INFO: Gemini temporaneamente non disponibile (quota API esaurita)"
     ],
     "2.22": [
-        "🔧 CRITICO: Corretto modello Claude da claude-3-5-sonnet-20241022 a claude-3-5-sonnet-20240620", 
-        "✅ RISOLTO: Errore 404 'model not_found_error' che impediva chiamate AI reali",
+        " CRITICO: Corretto modello Claude da claude-3-5-sonnet-20241022 a claude-3-5-sonnet-20240620", 
+        " RISOLTO: Errore 404 'model not_found_error' che impediva chiamate AI reali",
         "🤖 ATTIVATO: AI Claude ora funziona veramente (non più fallback)",
-        "🎯 TESTATO: WorkingClaudeParser e parse_pdf_direct_claude_api operativi"
+        " TESTATO: WorkingClaudeParser e parse_pdf_direct_claude_api operativi"
     ],
     "2.21": [
-        "🔧 DEFINITIVO: Rimosse TUTTE le emoji dai console.log che causavano crash AI",
-        "✅ TESTATO: Chiamate AI Claude ora funzionano senza errori charset",
-        "🚀 STABILE: Import PDF completamente operativo", 
-        "🧹 PULIZIA: Console browser pulita senza errori di codifica Unicode"
+        " DEFINITIVO: Rimosse TUTTE le emoji dai console.log che causavano crash AI",
+        " TESTATO: Chiamate AI Claude ora funzionano senza errori charset",
+        " STABILE: Import PDF completamente operativo", 
+        " PULIZIA: Console browser pulita senza errori di codifica Unicode"
     ],
     "2.20": [
-        "🔧 RISOLTO: Errore 404 durante conferma DDT IN importati",
-        "📄 AGGIUNTO: Salvataggio PDF allegato nei DDT IN importati",
-        "✅ CORRETTO: Campo 'id' vs 'ddt_id' nel redirect dopo import",
-        "🛠️ MIGLIORATO: Gestione completa campi import (mastrino, commessa, magazzino)",
-        "🧹 PULITO: Rimosse emoji residue che causavano errori charset"
+        " RISOLTO: Errore 404 durante conferma DDT IN importati",
+        " AGGIUNTO: Salvataggio PDF allegato nei DDT IN importati",
+        " CORRETTO: Campo 'id' vs 'ddt_id' nel redirect dopo import",
+        " MIGLIORATO: Gestione completa campi import (mastrino, commessa, magazzino)",
+        " PULITO: Rimosse emoji residue che causavano errori charset"
     ],
     "2.19": [
-        "✅ COMPLETATO: Bug #41 - Autocompletamento nell'importazione DDT IN",
-        "🔍 AGGIUNTO: Ricerca fornitori nell'import PDF con P.IVA automatica",
+        " COMPLETATO: Bug #41 - Autocompletamento nell'importazione DDT IN",
+        "AGGIUNTO: Ricerca fornitori nell'import PDF con P.IVA automatica",
         "🏢 ATTIVATO: Autocompletamento magazzini destinazione nell'import",
-        "📋 MIGLIORATO: Autocompletamento mastrini acquisti nell'import PDF",
-        "🎯 INTEGRAZIONE: Collegamento automatico AI → Anagrafica fornitori"
+        " MIGLIORATO: Autocompletamento mastrini acquisti nell'import PDF",
+        " INTEGRAZIONE: Collegamento automatico AI → Anagrafica fornitori"
     ],
     "2.18": [
-        "🔧 RISOLTO: Errore charset nel parsing PDF (rimosse emoji che causavano crash)",
-        "✅ AGGIUNTO: API routes mancanti (/api/fornitori/search, /api/mastrini/search, /api/clienti/search)",
-        "🚀 MIGLIORATO: Autocompletamento completo per fornitori, mastrini e clienti",
-        "🛠️ CORRETTO: Crash di sistema durante import PDF risolto"
+        " RISOLTO: Errore charset nel parsing PDF (rimosse emoji che causavano crash)",
+        " AGGIUNTO: API routes mancanti (/api/fornitori/search, /api/mastrini/search, /api/clienti/search)",
+        " MIGLIORATO: Autocompletamento completo per fornitori, mastrini e clienti",
+        " CORRETTO: Crash di sistema durante import PDF risolto"
     ],
     "2.17": [
-        "🔧 VERIFICATO: Bug #36 - Movimenti alimentati correttamente da DDT IN/OUT confermati",
-        "✅ RISOLTO: Bug #37 - Funzione elimina mastrini implementata con controllo utilizzo",
+        " VERIFICATO: Bug #36 - Movimenti alimentati correttamente da DDT IN/OUT confermati",
+        " RISOLTO: Bug #37 - Funzione elimina mastrini implementata con controllo utilizzo",
         "🛡️ SICUREZZA: Prevenzione eliminazione mastrini in uso in DDT o movimenti",
-        "🔄 COMPLETO: Movimenti Interni completamente operativi dalla v2.16"
+        " COMPLETO: Movimenti Interni completamente operativi dalla v2.16"
     ],
     "2.16": [
-        "🔄 COMPLETO: Bug #40 - Movimenti Interni implementazione completa",
-        "✅ CREATI: Modelli MovimentoInterno + ArticoloMovimentoInterno", 
-        "✅ AGGIUNTE: Rotte complete per gestione movimenti interni",
-        "✅ IMPLEMENTATI: Template HTML per lista, creazione e dettagli",
-        "✅ ATTIVATO: Autocomplete magazzini e articoli nei movimenti interni",
-        "🏁 DISPONIBILE: Funzionalità movimenti magazzino-a-magazzino operativa"
+        " COMPLETO: Bug #40 - Movimenti Interni implementazione completa",
+        " CREATI: Modelli MovimentoInterno + ArticoloMovimentoInterno", 
+        " AGGIUNTE: Rotte complete per gestione movimenti interni",
+        " IMPLEMENTATI: Template HTML per lista, creazione e dettagli",
+        " ATTIVATO: Autocomplete magazzini e articoli nei movimenti interni",
+        " DISPONIBILE: Funzionalità movimenti magazzino-a-magazzino operativa"
     ]
 }
 
@@ -2506,8 +2506,12 @@ def process_batch_files(job_id):
                     
                     # Apri e processa il file
                     with open(batch_file.filename, 'rb') as file_obj:
+                        print(f"DEBUG PDF: File {batch_file.original_filename} - size: {len(file_obj.read())} bytes")
+                        file_obj.seek(0)  # Reset dopo lettura size
                         # Usa Claude come default per batch
+                        print("DEBUG PDF: Chiamando Multi-AI Parser con Claude...")
                         result = parser.parse_ddt_with_ai(file_obj, preferred_ai='claude')
+                        print(f"DEBUG PDF: Multi-AI result: {result.get('success', False)} - {result.get('error', 'OK')}")
                         
                         # Se Multi-AI Parser fallisce, prova WorkingClaudeParser
                         if not result.get('success'):
@@ -9204,7 +9208,7 @@ with app.app_context():
             # Column doesn't exist, add it
             db.session.execute(text("ALTER TABLE commessa ADD COLUMN data_scadenza DATE"))
             db.session.commit()
-            print("✅ Migration: Added data_scadenza column to commessa table")
+            print(" Migration: Added data_scadenza column to commessa table")
         
         # Migration: Add allegati to offerta_fornitore table if not exists
         try:
@@ -9213,7 +9217,7 @@ with app.app_context():
             # Column doesn't exist, add it
             db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN allegati TEXT"))
             db.session.commit()
-            print("✅ Migration: Added allegati column to offerta_fornitore table")
+            print(" Migration: Added allegati column to offerta_fornitore table")
         
         # Inizializzazione dati base se database vuoto
         if not Magazzino.query.first():
@@ -10134,7 +10138,7 @@ if __name__ == '__main__':
             # Column doesn't exist, add it
             db.session.execute(text("ALTER TABLE commessa ADD COLUMN data_scadenza DATE"))
             db.session.commit()
-            print("✅ Migration: Added data_scadenza column to commessa table")
+            print(" Migration: Added data_scadenza column to commessa table")
         
         # Migration: Add allegati to offerta_fornitore table if not exists
         try:
@@ -10143,7 +10147,7 @@ if __name__ == '__main__':
             # Column doesn't exist, add it
             db.session.execute(text("ALTER TABLE offerta_fornitore ADD COLUMN allegati TEXT"))
             db.session.commit()
-            print("✅ Migration: Added allegati column to offerta_fornitore table")
+            print(" Migration: Added allegati column to offerta_fornitore table")
         
         # Migration: Add disponibilita and tempo_consegna to dettaglio_offerta table if not exists
         try:
@@ -10152,7 +10156,7 @@ if __name__ == '__main__':
             # Column doesn't exist, add it
             db.session.execute(text("ALTER TABLE dettaglio_offerta ADD COLUMN disponibilita VARCHAR(50)"))
             db.session.commit()
-            print("✅ Migration: Added disponibilita column to dettaglio_offerta table")
+            print(" Migration: Added disponibilita column to dettaglio_offerta table")
             
         try:
             db.session.execute(text("SELECT tempo_consegna FROM dettaglio_offerta LIMIT 1"))
@@ -10160,7 +10164,7 @@ if __name__ == '__main__':
             # Column doesn't exist, add it
             db.session.execute(text("ALTER TABLE dettaglio_offerta ADD COLUMN tempo_consegna VARCHAR(50)"))
             db.session.commit()
-            print("✅ Migration: Added tempo_consegna column to dettaglio_offerta table")
+            print(" Migration: Added tempo_consegna column to dettaglio_offerta table")
         
         # Migration: Add cliente_nome and cliente_id to offerta_fornitore table if not exists
         try:
