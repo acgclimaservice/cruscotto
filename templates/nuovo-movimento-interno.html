@@ -204,9 +204,14 @@
                         document.querySelector(`input[name="${inputName}"]`).value = magazzino.descrizione;
                         document.querySelector(`input[name="${inputName}"]`).dataset.codice = magazzino.codice;
                         
+                        // DEBUG: Verifica che i valori vengano impostati correttamente
+                        console.log(`DEBUG: Magazzino selezionato - Codice: ${magazzino.codice}, Descrizione: ${magazzino.descrizione}`);
+                        console.log(`DEBUG: dataset.codice impostato a: ${document.querySelector(`input[name="${inputName}"]`).dataset.codice}`);
+                        
                         // Popola anche il campo nascosto corrispondente
                         if (inputName === 'magazzino_partenza') {
                             document.getElementById('magazzino_partenza_codice').value = magazzino.codice;
+                            console.log(`DEBUG: Campo nascosto magazzino_partenza_codice impostato a: ${magazzino.codice}`);
                         } else if (inputName === 'magazzino_destinazione') {
                             document.getElementById('magazzino_destinazione_codice').value = magazzino.codice;
                         }
@@ -333,6 +338,8 @@
         const descrizioneMagazzino = magazzinoPartenzaField.value;
         
         console.log(`DEBUG aggiornaGiacenza: articolo=${codiceArticolo}, codiceMagazzino=${codiceMagazzino}, descrizioneMagazzino=${descrizioneMagazzino}`);
+        console.log(`DEBUG aggiornaGiacenza: magazzinoPartenzaField.dataset.codice = "${magazzinoPartenzaField.dataset.codice}"`);
+        console.log(`DEBUG aggiornaGiacenza: magazzinoPartenzaField.value = "${magazzinoPartenzaField.value}"`);
         
         if (!codiceArticolo || !codiceMagazzino) {
             document.getElementById(`giacenza_${index}`).value = '0.00';
@@ -401,6 +408,28 @@
         // Set default date to today
         const today = new Date().toISOString().split('T')[0];
         document.querySelector('input[name="data_movimento"]').value = today;
+        
+        // DEBUG: Verifica valori iniziali magazzino
+        const magazzinoPartenzaField = document.querySelector('input[name="magazzino_partenza"]');
+        console.log(`DEBUG INIT: Magazzino partenza value = "${magazzinoPartenzaField.value}"`);
+        console.log(`DEBUG INIT: Magazzino partenza dataset.codice = "${magazzinoPartenzaField.dataset.codice}"`);
+        
+        // Se c'è un magazzino preimpostato ma manca il dataset.codice, proviamo a recuperarlo
+        if (magazzinoPartenzaField.value && !magazzinoPartenzaField.dataset.codice) {
+            console.log('DEBUG INIT: Magazzino preimpostato senza codice, cercando il codice...');
+            // Effettua una ricerca per ottenere il codice del magazzino preimpostato
+            fetch(`/api/magazzini/search?q=${encodeURIComponent(magazzinoPartenzaField.value)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const magazzino = data.find(m => m.descrizione === magazzinoPartenzaField.value);
+                    if (magazzino) {
+                        magazzinoPartenzaField.dataset.codice = magazzino.codice;
+                        document.getElementById('magazzino_partenza_codice').value = magazzino.codice;
+                        console.log(`DEBUG INIT: Codice magazzino trovato e impostato: ${magazzino.codice}`);
+                    }
+                })
+                .catch(error => console.error('Errore ricerca codice magazzino iniziale:', error));
+        }
         
         // Inizializza i campi nascosti con i valori esistenti (per modifica)
         const magazzinoPartenzaInput = document.querySelector('input[name="magazzino_partenza"]');
