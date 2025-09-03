@@ -41,8 +41,11 @@
             
             <!-- Filtri inventario -->
             <form method="GET" class="filters" style="margin: 20px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <input type="date" name="data_da" value="{{ request.args.get('data_da', '') }}" placeholder="Data da" title="Filtra per data movimento dal">
-                <input type="date" name="data_a" value="{{ request.args.get('data_a', '') }}" placeholder="Data a" title="Filtra per data movimento al">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label for="data_inventario" style="font-weight: bold; color: #333;">📅 Data Inventario:</label>
+                    <input type="date" id="data_inventario" name="data_da" value="{{ request.args.get('data_da', '') }}" title="Seleziona data per vedere giacenze a quella data specifica" style="border: 2px solid #2196f3;">
+                    <small style="color: #666;">(Opzionale)</small>
+                </div>
                 <select name="magazzino" title="Filtra per magazzino">
                     <option value="">Tutti i magazzini</option>
                     {% for magazzino in magazzini %}
@@ -64,8 +67,8 @@
             
             {% if data_inventario %}
             <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border: 1px solid #2196f3; border-radius: 5px;">
-                <strong>📅 Inventario filtrato per data:</strong> {{ data_inventario.strftime('%d/%m/%Y') }}
-                <small>(Mostra solo articoli con giacenza positiva a questa data)</small>
+                <strong>📅 Inventario alla data specifica:</strong> {{ data_inventario.strftime('%d/%m/%Y') }}
+                <small>(Le giacenze mostrate sono quelle che c'erano a questa data)</small>
             </div>
             {% endif %}
             

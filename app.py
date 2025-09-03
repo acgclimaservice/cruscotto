@@ -3791,8 +3791,8 @@ def inventario_page():
     """Pagina inventario - mostra articoli del catalogo con filtri"""
     try:
         # Ottieni parametri di filtro
-        data_da = request.args.get('data_da')
-        data_a = request.args.get('data_a') 
+        data_da = request.args.get('data_da')  # Data specifica per inventario storico
+        data_a = request.args.get('data_a')    # NON utilizzata in questa route (presente per compatibilità altri filtri)
         filtro_magazzino = request.args.get('magazzino', '').strip()
         filtro_articolo = request.args.get('articolo', '').strip()
         stato_scorta = request.args.get('stato_scorta', '').strip()
@@ -3800,10 +3800,10 @@ def inventario_page():
         # Query base per articoli attivi con giacenza > 0
         query = CatalogoArticolo.query.filter_by(attivo=True).filter(CatalogoArticolo.giacenza_attuale > 0)
         
-        # Filtro per data - se specificato, calcola giacenze disponibili a quella data
+        # FILTRO DATA INVENTARIO: usa solo data_da come data specifica per vedere inventario storico
+        # NOTA: data_a viene IGNORATA in questa funzionalità (non è un filtro periodo)
         data_inventario = None
         if data_da:
-            # Usa solo data_da come data di inventario (ignora data_a per questo filtro)
             try:
                 data_inventario = datetime.strptime(data_da, '%Y-%m-%d').date()
             except ValueError:
