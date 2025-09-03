@@ -368,6 +368,24 @@ CORS(app)
 from email_monitor import EmailMonitor
 app.email_monitor = EmailMonitor(app)
 
+# Avvia automaticamente il monitor email se configurato (compatibile con WSGI)
+def initialize_email_monitor():
+    """Inizializza il monitor email - chiamata automaticamente"""
+    try:
+        if app.email_monitor.is_active() and not app.email_monitor.running:
+            success = app.email_monitor.start_monitoring()
+            if success:
+                print("[EMAIL MONITOR] Auto-started successfully at app initialization")
+            else:
+                print("[EMAIL MONITOR] Failed to auto-start at app initialization")
+        else:
+            print(f"[EMAIL MONITOR] Not starting: active={app.email_monitor.is_active()}, running={app.email_monitor.running}")
+    except Exception as e:
+        print(f"[EMAIL MONITOR] Error during auto-start: {e}")
+
+# Esegui inizializzazione immediatamente (funziona con WSGI e development)
+initialize_email_monitor()
+
 # Import modelli - TUTTI insieme
 from models import (DDTIn, ArticoloIn, DDTOut, ArticoloOut, 
                     CatalogoArticolo, Movimento, Cliente, Fornitore, 

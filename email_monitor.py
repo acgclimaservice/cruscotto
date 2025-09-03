@@ -43,32 +43,32 @@ class EmailMonitor:
         """Controlla se il monitoraggio è attivo"""
         try:
             active_config = self.get_config('email_monitor_active')
-            self.logger.info(f"🔍 [EMAIL DEBUG] is_active() - config value: '{active_config}'")
+            self.logger.info(f"[EMAIL DEBUG] is_active() - config value: '{active_config}'")
             return active_config == 'true'
         except Exception as e:
-            self.logger.error(f"🔍 [EMAIL DEBUG] is_active() - Errore accesso config: {e}")
+            self.logger.error(f"[EMAIL DEBUG] is_active() - Errore accesso config: {e}")
             # Fallback: se c'è errore durante l'avvio, assumiamo attivo se .env lo dice
             env_active = os.getenv('EMAIL_MONITOR_ACTIVE', '').lower()
-            self.logger.info(f"🔍 [EMAIL DEBUG] is_active() - fallback ENV: '{env_active}'")
+            self.logger.info(f"[EMAIL DEBUG] is_active() - fallback ENV: '{env_active}'")
             return env_active == 'true'
     
     def start_monitoring(self):
         """Avvia il thread di monitoraggio"""
-        self.logger.info(f"🔍 [EMAIL DEBUG] start_monitoring called - running: {self.running}, is_active: {self.is_active()}")
+        self.logger.info(f"[EMAIL DEBUG] start_monitoring called - running: {self.running}, is_active: {self.is_active()}")
         
         if self.running:
-            self.logger.info("🔍 [EMAIL DEBUG] Monitor già running - return False")
+            self.logger.info("[EMAIL DEBUG] Monitor già running - return False")
             return False
             
         if not self.is_active():
-            self.logger.info("🔍 [EMAIL DEBUG] Monitor non attivo - return False")
+            self.logger.info("[EMAIL DEBUG] Monitor non attivo - return False")
             return False
             
-        self.logger.info("🔍 [EMAIL DEBUG] Avvio thread monitor...")
+        self.logger.info("[EMAIL DEBUG] Avvio thread monitor...")
         self.running = True
         self.thread = threading.Thread(target=self._monitor_loop, daemon=True)
         self.thread.start()
-        self.logger.info(f"🔍 [EMAIL DEBUG] Thread creato e avviato - alive: {self.thread.is_alive()}")
+        self.logger.info(f"[EMAIL DEBUG] Thread creato e avviato - alive: {self.thread.is_alive()}")
         self.logger.info("[EMAIL] Email monitor started")
         return True
     
@@ -77,12 +77,12 @@ class EmailMonitor:
         self.running = False
         if self.thread:
             self.thread.join(timeout=5)
-        self.logger.info("📧 Email monitor stopped")
+        self.logger.info("[EMAIL] Email monitor stopped")
     
     def _monitor_loop(self):
         """Loop principale di monitoraggio"""
         self.logger.info("[EMAIL] Monitor loop started!")
-        self.logger.info(f"🔍 [EMAIL DEBUG] Monitor thread loop INIZIATO - running={self.running}")
+        self.logger.info(f"[EMAIL DEBUG] Monitor thread loop INIZIATO - running={self.running}")
         while self.running:
             try:
                 self.logger.info(f"[EMAIL] Loop iteration - running={self.running}, active={self.is_active()}")
@@ -100,12 +100,12 @@ class EmailMonitor:
                 
             except Exception as e:
                 import traceback
-                self.logger.error(f"🔍 [EMAIL DEBUG] Errore nel loop di monitoraggio: {e}")
-                self.logger.error(f"🔍 [EMAIL DEBUG] Traceback: {traceback.format_exc()}")
+                self.logger.error(f"[EMAIL DEBUG] Errore nel loop di monitoraggio: {e}")
+                self.logger.error(f"[EMAIL DEBUG] Traceback: {traceback.format_exc()}")
                 # Continua il loop anche in caso di errore
                 time.sleep(60)  # Attendi 1 minuto prima di riprovare
                 
-        self.logger.info("🔍 [EMAIL DEBUG] Monitor loop TERMINATO")
+        self.logger.info("[EMAIL DEBUG] Monitor loop TERMINATO")
     
     def _check_emails(self):
         """Controlla nuove email e processa allegati PDF"""
@@ -148,7 +148,7 @@ class EmailMonitor:
                 }
             
             email_ids = messages[0].split()
-            self.logger.info(f"📬 Trovate {len(email_ids)} email totali")
+            self.logger.info(f"[EMAIL] Trovate {len(email_ids)} email totali")
             self.logger.info(f"DEBUG: Processing prime 10 email: {email_ids[:10]}")
             
             processed_count = 0
@@ -199,7 +199,7 @@ class EmailMonitor:
             from_addr = email_message.get('From', 'Mittente sconosciuto')
             date = email_message.get('Date', '')
             
-            self.logger.info(f"📧 Processando: {subject} da {from_addr}")
+            self.logger.info(f"[EMAIL] Processando: {subject} da {from_addr}")
             self.logger.info(f"DEBUG: Email ID: {email_id}, Subject: '{subject}'")
             
             # Estrai allegati PDF
@@ -252,7 +252,7 @@ class EmailMonitor:
             else:
                 # Segna comunque come letta se non ci sono PDF  
                 mail.store(email_id, '+FLAGS', '\\Seen')
-                self.logger.info(f"📧 Nessun PDF trovato in: {subject}")
+                self.logger.info(f"[EMAIL] Nessun PDF trovato in: {subject}")
                 return False  # Email senza PDF validi
     
     def _create_batch_job(self, pdf_files, subject, from_addr):
@@ -337,7 +337,7 @@ Questo è un messaggio automatico, si prega di non rispondere.
             server.sendmail(email_address, to_email, msg.as_string())
             server.quit()
             
-            self.logger.info(f"📧 Email di conferma inviata a {to_email}")
+            self.logger.info(f"[EMAIL] Email di conferma inviata a {to_email}")
             
         except Exception as e:
             self.logger.error(f"Errore invio email conferma: {e}")
