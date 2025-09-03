@@ -267,8 +267,10 @@
                         document.querySelector(`input[name="unita_misura_${index}"]`).value = articolo.unita_misura || 'PZ';
                         resultsDiv.innerHTML = '';
                         resultsDiv.classList.remove('show');
-                        // Aggiorna giacenza quando seleziono articolo
-                        aggiornaGiacenza(index);
+                        // Aggiorna giacenza quando seleziono articolo - con piccolo delay per aggiornamento DOM
+                        setTimeout(() => {
+                            aggiornaGiacenza(index);
+                        }, 50);
                     };
                     resultsDiv.appendChild(div);
                 });
