@@ -5730,50 +5730,191 @@ def pdf_allegato_ordine(id):
 
 @app.route('/ordini/<int:id>/pdf')
 def stampa_ordine_pdf(id):
-    """Stampa ordine come PDF con logo a sinistra"""
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.units import cm
-    from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-    from io import BytesIO
-    import os
-    
-    ordine = OrdineFornitore.query.get_or_404(id)
-    dettagli = DettaglioOrdine.query.filter_by(ordine_id=id).all()
-    
-    # Crea il buffer per il PDF
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    content = []
-    
-    # Stili
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Title'],
-        fontSize=18,
-        textColor=colors.HexColor('#007bff'),
-        alignment=TA_CENTER,
-        spaceAfter=0.3*cm
-    )
-    subtitle_style = ParagraphStyle(
-        'CustomSubtitle',
-        parent=styles['Heading2'],
-        fontSize=14,
-        textColor=colors.HexColor('#666666'),
-        alignment=TA_CENTER,
-        spaceAfter=0.5*cm
-    )
-    normal_style = styles['Normal']
-    
-    # Header con logo a SINISTRA e titolo
+    """Stampa ordine come PDF usando DocumentTemplate"""
     try:
-        # Percorso del logo
-        logo_path = os.path.join(os.path.dirname(__file__), 'static', 'logo-acg.png')
-        if os.path.exists(logo_path):
-            # Crea tabella per header con logo a sinistra e titolo al centro/destra
+        print(f"[DEBUG ORDINE] Tentativo stampa ordine ID: {id}")
+        ordine = OrdineFornitore.query.get_or_404(id)
+        dettagli = DettaglioOrdine.query.filter_by(ordine_id=id).all()
+        print(f"[DEBUG ORDINE] Ordine trovato: {ordine.numero_ordine or 'BOZZA'}, Dettagli: {len(dettagli)}")
+        
+        # Usa il sistema DocumentTemplate esistente come gli altri documenti
+        from document_templates import DocumentTemplate
+        
+        # Prepara i dati per il template
+        template_data = {
+            'numero_documento': ordine.numero_ordine or f'BOZZA-{ordine.id}',
+            'data_documento': ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else datetime.now().strftime('%d/%m/%Y'),
+            'tipo_documento': 'ORDINE FORNITORE',
+            'fornitore_nome': ordine.fornitore_nome or 'Fornitore non specificato',
+            'fornitore_piva': getattr(ordine.fornitore, 'partita_iva', 'N/D') if ordine.fornitore else 'N/D',
+            'fornitore_email': getattr(ordine.fornitore, 'email', 'N/D') if ordine.fornitore else 'N/D',
+            'oggetto': ordine.oggetto or '',
+            'stato': ordine.stato.upper() if ordine.stato else 'BOZZA',
+            'priorita': ordine.priorita.upper() if ordine.priorita else 'MEDIA',
+            'note': ordine.note or '',
+            'articoli': []
+        }
+        
+        # Aggiungi articoli
+        totale_generale = 0
+        for dettaglio in dettagli:
+            totale_riga = (dettaglio.quantita or 0) * (dettaglio.prezzo_unitario or 0)
+            totale_generale += totale_riga
+            
+            template_data['articoli'].append({
+                'codice': dettaglio.codice_articolo or '-',
+                'codice_fornitore': dettaglio.codice_fornitore or '-',
+                'descrizione': dettaglio.descrizione or '-',
+                'quantita': dettaglio.quantita or 0,
+                'prezzo': dettaglio.prezzo_unitario or 0,
+                'totale': totale_riga
+            })
+        
+        template_data['totale_netto'] = ordine.totale_netto or totale_generale
+        template_data['totale_iva'] = (ordine.totale_lordo or totale_generale) - (ordine.totale_netto or totale_generale)
+        template_data['totale_lordo'] = ordine.totale_lordo or totale_generale
+        
+        # Genera il PDF usando il template HTML
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Ordine Fornitore</title>
+            {DocumentTemplate.get_styles()}
+        </head>
+        <body>
+            <div class="header">
+                <h1>{template_data['tipo_documento']}</h1>
+                <h2>{template_data['numero_documento']}</h2>
+                <p>Data: {template_data['data_documento']}</p>
+            </div>
+            
+            <div class="company-info">
+                <h3>ACG CLIMA SERVICE S.R.L.</h3>
+                <p>Sede Legale: Via Duccio Galimberti 47 - 15121 Alessandria (AL)<br>
+                Sede Operativa: Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)<br>
+                Tel: 0383/640606 - Email: info@acgclimaservice.com<br>
+                P.IVA: 02735970069 - C.F: 02735970069</p>
+            </div>
+            
+            <div class="document-info">
+                <table class="info-table">
+                    <tr>
+                        <td><strong>Fornitore:</strong></td>
+                        <td>{template_data['fornitore_nome']}</td>
+                        <td><strong>P.IVA:</strong></td>
+                        <td>{template_data['fornitore_piva']}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Oggetto:</strong></td>
+                        <td>{template_data['oggetto']}</td>
+                        <td><strong>Email:</strong></td>
+                        <td>{template_data['fornitore_email']}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Stato:</strong></td>
+                        <td>{template_data['stato']}</td>
+                        <td><strong>Priorità:</strong></td>
+                        <td>{template_data['priorita']}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="articles-section">
+                <h3>Articoli Ordinati</h3>
+                <table class="articles-table">
+                    <thead>
+                        <tr>
+                            <th>Codice</th>
+                            <th>Cod. Fornitore</th>
+                            <th>Descrizione</th>
+                            <th>Qtà</th>
+                            <th>Prezzo €</th>
+                            <th>Totale €</th>
+                        </tr>
+                    </thead>
+                    <tbody>"""
+        
+        for articolo in template_data['articoli']:
+            html_content += f"""
+                        <tr>
+                            <td>{articolo['codice']}</td>
+                            <td>{articolo['codice_fornitore']}</td>
+                            <td>{articolo['descrizione']}</td>
+                            <td>{articolo['quantita']:.2f}</td>
+                            <td>{articolo['prezzo']:.2f}</td>
+                            <td>{articolo['totale']:.2f}</td>
+                        </tr>"""
+        
+        html_content += f"""
+                    </tbody>
+                </table>
+                
+                <div class="totals">
+                    <table class="totals-table">
+                        <tr>
+                            <td><strong>Totale Netto:</strong></td>
+                            <td>€ {template_data['totale_netto']:.2f}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IVA:</strong></td>
+                            <td>€ {template_data['totale_iva']:.2f}</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td><strong>TOTALE LORDO:</strong></td>
+                            <td><strong>€ {template_data['totale_lordo']:.2f}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>"""
+        
+        if template_data['note']:
+            html_content += f"""
+            <div class="notes-section">
+                <h3>Note</h3>
+                <p>{template_data['note']}</p>
+            </div>"""
+        
+        html_content += f"""
+            <div class="footer">
+                <p>Documento generato automaticamente il {datetime.now().strftime('%d/%m/%Y alle %H:%M')}</p>
+            </div>
+        </body>
+        </html>"""
+        
+        # Usa wkhtmltopdf per generare il PDF
+        import pdfkit
+        
+        options = {
+            'page-size': 'A4',
+            'margin-top': '1cm',
+            'margin-right': '1cm',
+            'margin-bottom': '1cm',
+            'margin-left': '1cm',
+            'encoding': 'UTF-8',
+            'no-outline': None
+        }
+        
+        pdf_data = pdfkit.from_string(html_content, options=options)
+        
+        # Crea la risposta
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="ordine_{template_data["numero_documento"]}.pdf"'
+        
+        print(f"[DEBUG ORDINE] PDF generato con successo per ordine {template_data['numero_documento']}")
+        return response
+    
+    except Exception as e:
+        import traceback
+        print(f"[DEBUG ORDINE] Errore stampa ordine {id}: {e}")
+        print(f"[DEBUG ORDINE] Traceback: {traceback.format_exc()}")
+        return f"Errore generazione PDF ordine: {str(e)}", 500
+
+# ========== IMPORT ORDINI DA PDF ==========
+
+@app.route('/ordini/import')
             logo_img = Image(logo_path, width=3*cm, height=1.5*cm)
             
             # Tabella header: logo a SINISTRA, titolo al centro
@@ -5814,11 +5955,11 @@ def stampa_ordine_pdf(id):
         [Paragraph('<b>Data Ordine:</b>', normal_style), Paragraph(ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else '-', normal_style), 
          Paragraph('<b>Fornitore:</b>', normal_style), Paragraph(ordine.fornitore_nome or '-', normal_style)],
         [Paragraph('<b>Oggetto:</b>', normal_style), Paragraph(ordine.oggetto or '-', normal_style), 
-         Paragraph('<b>P.IVA:</b>', normal_style), Paragraph(ordine.fornitore.partita_iva if ordine.fornitore else '-', normal_style)],
+         Paragraph('<b>P.IVA:</b>', normal_style), Paragraph(getattr(ordine.fornitore, 'partita_iva', '-') if ordine.fornitore else '-', normal_style)],
         [Paragraph('<b>Stato:</b>', normal_style), Paragraph(ordine.stato.upper() if ordine.stato else 'BOZZA', normal_style), 
-         Paragraph('<b>Email:</b>', normal_style), Paragraph(ordine.fornitore.email if ordine.fornitore else '-', normal_style)],
+         Paragraph('<b>Email:</b>', normal_style), Paragraph(getattr(ordine.fornitore, 'email', '-') if ordine.fornitore else '-', normal_style)],
         [Paragraph('<b>Priorità:</b>', normal_style), Paragraph(ordine.priorita.upper() if ordine.priorita else '-', normal_style),
-         Paragraph('<b>Telefono:</b>', normal_style), Paragraph(ordine.fornitore.telefono if ordine.fornitore else '-', normal_style)]
+         Paragraph('<b>Telefono:</b>', normal_style), Paragraph(getattr(ordine.fornitore, 'telefono', '-') if ordine.fornitore else '-', normal_style)]
     ]
     
     info_table = Table(info_data, colWidths=[3*cm, 5*cm, 3*cm, 5*cm])
@@ -5917,12 +6058,19 @@ def stampa_ordine_pdf(id):
     doc.build(content)
     buffer.seek(0)
     
-    # Risposta con download forzato
-    response = make_response(buffer.getvalue())
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'attachment; filename="ordine_{ordine.numero_ordine or ordine.id}.pdf"'
+        # Risposta con download forzato
+        response = make_response(buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="ordine_{ordine.numero_ordine or ordine.id}.pdf"'
+        
+        print(f"[DEBUG ORDINE] PDF generato con successo per ordine {ordine.numero_ordine or ordine.id}")
+        return response
     
-    return response
+    except Exception as e:
+        import traceback
+        print(f"[DEBUG ORDINE] Errore stampa ordine {id}: {e}")
+        print(f"[DEBUG ORDINE] Traceback: {traceback.format_exc()}")
+        return f"Errore generazione PDF ordine: {str(e)}", 500
 
 # ========== IMPORT ORDINI DA PDF ==========
 
