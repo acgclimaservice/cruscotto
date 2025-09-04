@@ -366,28 +366,35 @@ class PreventivoTemplate(DocumentTemplate):
                             <th>Totale</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody>"""
+        
+        # Genera righe articoli dinamicamente
+        if preventivo_data.get('articoli'):
+            for articolo in preventivo_data['articoli']:
+                html += f"""
                         <tr>
-                            <td>Installazione impianto climatizzazione</td>
-                            <td>1</td>
-                            <td>SERV</td>
-                            <td>€ 2.500,00</td>
-                            <td>0%</td>
-                            <td>€ 2.500,00</td>
-                        </tr>
+                            <td>{articolo.get('descrizione', 'N/A')}</td>
+                            <td>{articolo.get('quantita', 0)}</td>
+                            <td>{articolo.get('unita_misura', 'PZ')}</td>
+                            <td>€ {articolo.get('prezzo_unitario', 0):.2f}</td>
+                            <td>{articolo.get('sconto_percentuale', 0):.0f}%</td>
+                            <td>€ {articolo.get('totale', 0):.2f}</td>
+                        </tr>"""
+        else:
+            # Fallback se non ci sono articoli
+            html += """
                         <tr>
-                            <td>Fornitura materiali</td>
-                            <td>1</td>
-                            <td>LOT</td>
-                            <td>€ 1.800,00</td>
-                            <td>5%</td>
-                            <td>€ 1.710,00</td>
-                        </tr>
+                            <td colspan="6" style="text-align: center; color: #666; font-style: italic;">
+                                Nessun articolo presente in questo preventivo
+                            </td>
+                        </tr>"""
+        
+        html += """
                     </tbody>
                     <tfoot>
-                        <tr><td colspan="5">Subtotale:</td><td>€ 4.210,00</td></tr>
-                        <tr><td colspan="5">IVA 22%:</td><td>€ 926,20</td></tr>
-                        <tr class="total-row"><td colspan="5"><strong>TOTALE PREVENTIVO:</strong></td><td><strong>€ 5.136,20</strong></td></tr>
+                        <tr><td colspan="5">Subtotale:</td><td>€ """ + f"{preventivo_data.get('totale_netto', 0):.2f}" + """</td></tr>
+                        <tr><td colspan="5">IVA """ + f"{preventivo_data.get('iva_percentuale', 22):.0f}" + """%:</td><td>€ """ + f"{(preventivo_data.get('totale_lordo', 0) - preventivo_data.get('totale_netto', 0)):.2f}" + """</td></tr>
+                        <tr class="total-row"><td colspan="5"><strong>TOTALE PREVENTIVO:</strong></td><td><strong>€ """ + f"{preventivo_data.get('totale_lordo', 0):.2f}" + """</strong></td></tr>
                     </tfoot>
                 </table>
             </div>
