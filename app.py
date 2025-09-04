@@ -672,7 +672,7 @@ def parse_pdf_claude():
             print(f"AI Status: Claude={'OK' if ai_status['claude'] else 'NO'} | Gemini={'OK' if ai_status['gemini'] else 'NO'}")
             
             # Parse con AI - leggi preferenza AI dal frontend
-            preferred_ai = request.form.get('preferred_ai', 'claude')
+            preferred_ai = request.form.get('preferred_ai', 'gemini')
             print(f"DEBUG: AI selezionata dall'utente: {preferred_ai.upper()}")
             
             file.seek(0)  # Reset per il parsing
@@ -690,13 +690,10 @@ def parse_pdf_claude():
                 if comparison:
                     print(f"Confronto: Claude={comparison.get('claude_articles', 0)} vs Gemini={comparison.get('gemini_articles', 0)} articoli")
                 
-                # Bug #16: Pulizia codici articolo per DDT Cambielli (solo per Claude AI)
+                # Bug #16: Pulizia codici articolo per DDT Cambielli (ora disabilitata - default Gemini)
                 fornitore_nome = parsed_data.get('fornitore', {}).get('ragione_sociale', '')
-                if 'CAMBIELLI' in fornitore_nome.upper() and ai_used.lower() == 'claude':
-                    print(f"DEBUG: Rilevato fornitore Cambielli con Claude AI: {fornitore_nome}")
-                    clean_cambielli_article_codes(parsed_data, ai_used)
-                elif 'CAMBIELLI' in fornitore_nome.upper() and ai_used.lower() != 'claude':
-                    print(f"DEBUG: Fornitore Cambielli rilevato ma AI={ai_used} - pulizia non necessaria")
+                if 'CAMBIELLI' in fornitore_nome.upper():
+                    print(f"DEBUG: Fornitore Cambielli rilevato con AI={ai_used} - pulizia disabilitata (default Gemini)")
                 
                 # Bug #45: Controllo automazione creazione fornitore
                 fornitore_info = check_fornitore_esistente(parsed_data.get('fornitore', {}))
@@ -2534,9 +2531,9 @@ def process_batch_files(job_id):
                     with open(batch_file.filename, 'rb') as file_obj:
                         print(f"DEBUG PDF: File {batch_file.original_filename} - size: {len(file_obj.read())} bytes")
                         file_obj.seek(0)  # Reset dopo lettura size
-                        # Usa Claude come default per batch
-                        print("DEBUG PDF: Chiamando Multi-AI Parser con Claude...")
-                        result = parser.parse_ddt_with_ai(file_obj, preferred_ai='claude')
+                        # Usa Gemini come default per batch
+                        print("DEBUG PDF: Chiamando Multi-AI Parser con Gemini...")
+                        result = parser.parse_ddt_with_ai(file_obj, preferred_ai='gemini')
                         print(f"DEBUG PDF: Multi-AI result: {result.get('success', False)} - {result.get('error', 'OK')}")
                         
                         # Se Multi-AI Parser fallisce, prova WorkingClaudeParser
@@ -2560,12 +2557,10 @@ def process_batch_files(job_id):
                     if result.get('success') and 'data' in result:
                         data = result['data']
                         
-                        # Bug #16: Pulizia codici articolo per DDT Cambielli anche nel batch (logica intelligente)
+                        # Bug #16: Pulizia codici articolo Cambielli disabilitata (batch usa Gemini di default)
                         fornitore_nome_batch = data.get('fornitore', {}).get('ragione_sociale', '')
                         if 'CAMBIELLI' in fornitore_nome_batch.upper():
-                            ai_used_batch = data.get('ai_used', 'claude')  # Default claude per batch
-                            print(f"DEBUG BATCH: Rilevato fornitore Cambielli: {fornitore_nome_batch}, AI: {ai_used_batch}")
-                            clean_cambielli_article_codes(data, ai_used_batch)
+                            print(f"DEBUG BATCH: Fornitore Cambielli rilevato - pulizia disabilitata (batch usa Gemini)")
                         
                         # Crea DDT IN
                         fornitore_nome = ''
