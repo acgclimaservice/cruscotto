@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✏️ Modifica MPLS #{{ mpls.numero_mpls }} - Sistema Gestione</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>🏢 ACG Clima</h2>
+            </div>
+            <ul>
+                <li><a href="/">🏠 Dashboard</a></li>
+                <li><a href="/ddt-in">📥 DDT IN</a></li>
+                <li><a href="/ddt-out">📤 DDT OUT</a></li>
+                <li><a href="/ordini">🛒 Ordini</a></li>
+                <li><a href="/preventivi">📋 Preventivi</a></li>
+                <li><a href="/offerte">💰 Offerte</a></li>
+                <li><a href="/mpls" class="active">💰 MPLS</a></li>
+                <li><a href="/catalogo">📚 Catalogo</a></li>
+                <li><a href="/movimenti">📊 Movimenti</a></li>
+                <li><a href="/inventario">📦 Inventario</a></li>
+                <li><a href="/commesse">🏗️ Commesse</a></li>
+                <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <div class="header-actions">
+                <div>
+                    <h1>✏️ Modifica MPLS #{{ mpls.numero_mpls }}</h1>
+                    <p>Modifica preventivo con calcolo automatico margini e ricarichi</p>
+                    {% if mpls.stato != 'bozza' %}
+                    <div class="alert alert-warning">
+                        ⚠️ Questo MPLS è già confermato. Puoi visualizzare ma non modificare i dati.
+                    </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <a href="/mpls/{{ mpls.id }}" class="btn btn-secondary">← Torna al Dettaglio</a>
+                    <a href="/mpls" class="btn btn-secondary">📋 Lista MPLS</a>
+                </div>
+            </div>
+
+            <form id="mplsForm" method="POST" action="/mpls/{{ mpls.id }}/update">
+                <!-- Dati Generali -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📋 Dati Generali</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="numero_mpls">Numero MPLS *</label>
+                                <input type="text" id="numero_mpls" name="numero_mpls" value="{{ mpls.numero_mpls }}" readonly class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="data_creazione">Data Creazione *</label>
+                                <input type="date" id="data_creazione" name="data_creazione" value="{{ mpls.data_creazione.strftime('%Y-%m-%d') }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} required class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cliente_nome">Nome Cliente *</label>
+                                <input type="text" id="cliente_nome" name="cliente_nome" value="{{ mpls.cliente_nome }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} required class="form-control" placeholder="Inserisci nome cliente" data-source="clienti">
+                                <div id="cliente_nome-suggestions" class="autocomplete-suggestions"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="cliente_codice">Codice Cliente</label>
+                                <input type="text" id="cliente_codice" name="cliente_codice" value="{{ mpls.cliente_codice or '' }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} class="form-control" placeholder="Codice cliente (opzionale)">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descrizione">Descrizione Progetto</label>
+                            <textarea id="descrizione" name="descrizione" rows="3" {% if mpls.stato != 'bozza' %}readonly{% endif %} class="form-control" placeholder="Descrizione del progetto/lavoro">{{ mpls.descrizione or '' }}</textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="commessa_id">Commessa Associata</label>
+                            <select id="commessa_id" name="commessa_id" {% if mpls.stato != 'bozza' %}disabled{% endif %} class="form-control">
+                                <option value="">-- Seleziona Commessa (Opzionale) --</option>
+                                {% for commessa in commesse %}
+                                <option value="{{ commessa.id }}" {% if mpls.commessa_id == commessa.id %}selected{% endif %}>
+                                    {{ commessa.numero_progressivo }} - {{ commessa.cliente_nome }} - {{ commessa.descrizione[:50] }}{% if commessa.descrizione|length > 50 %}...{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Collega questo MPLS a una commessa esistente</small>
+                        </div>
+
+                        <!-- Parametri MPLS Enhanced -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ore_manodopera">Ore Manodopera</label>
+                                <input type="number" id="ore_manodopera" name="ore_manodopera" value="{{ mpls.ore_manodopera or 0 }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} step="0.1" min="0" class="form-control">
+                                <small class="text-muted">€40/ora standard, €25/ora per Guazzotti</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="sovrapprezzo">Sovrapprezzo (€)</label>
+                                <input type="number" id="sovrapprezzo" name="sovrapprezzo" value="{{ mpls.sovrapprezzo or 0 }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} step="0.01" min="0" class="form-control">
+                                <small class="text-muted">Costi aggiuntivi personalizzati</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="checkbox-container">
+                                <input type="checkbox" id="is_guazzotti" name="is_guazzotti" value="1" {% if mpls.is_guazzotti %}checked{% endif %} {% if mpls.stato != 'bozza' %}disabled{% endif %}>
+                                <label for="is_guazzotti" class="checkbox-label">
+                                    <strong>Cliente Guazzotti</strong> - Ricarico fisso 20% e manodopera €25/ora
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="stato">Stato</label>
+                                <select id="stato" name="stato" {% if mpls.stato != 'bozza' %}disabled{% endif %} class="form-control">
+                                    <option value="bozza" {% if mpls.stato == 'bozza' %}selected{% endif %}>📝 Bozza</option>
+                                    <option value="confermato" {% if mpls.stato == 'confermato' %}selected{% endif %}>✅ Confermato</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Creato il</label>
+                                <input type="text" value="{{ mpls.data_creazione.strftime('%d/%m/%Y %H:%M') }}" readonly class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Articoli -->
+                <div class="card">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3>📦 Articoli</h3>
+                            {% if mpls.stato == 'bozza' %}
+                            <button type="button" id="addArticolo" class="btn btn-success btn-sm">+ Aggiungi Articolo</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="articoliTable">
+                                <thead>
+                                    <tr>
+                                        <th>Codice</th>
+                                        <th>Descrizione</th>
+                                        <th>Qtà</th>
+                                        <th>Prezzo Costo</th>
+                                        <th>Ricarico % (Auto)</th>
+                                        <th>Prezzo Vendita</th>
+                                        <th>Totale</th>
+                                        {% if mpls.stato == 'bozza' %}
+                                        <th>Azioni</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody id="articoliTableBody">
+                                    {% for articolo in articoli %}
+                                    <tr class="articolo-row">
+                                        <td><input type="text" name="articoli[{{ loop.index0 }}][codice]" value="{{ articolo.codice_articolo or '' }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} class="form-control form-control-sm"></td>
+                                        <td><input type="text" name="articoli[{{ loop.index0 }}][descrizione]" value="{{ articolo.descrizione or '' }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} class="form-control form-control-sm"></td>
+                                        <td><input type="number" name="articoli[{{ loop.index0 }}][quantita]" value="{{ articolo.quantita or 1 }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} step="0.01" class="form-control form-control-sm quantita-input"></td>
+                                        <td><input type="number" name="articoli[{{ loop.index0 }}][prezzo_costo]" value="{{ articolo.prezzo_costo or 0 }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} step="0.01" class="form-control form-control-sm prezzo-costo-input"></td>
+                                        <td><input type="number" name="articoli[{{ loop.index0 }}][ricarico_percentuale]" value="{{ articolo.ricarico_percentuale or 30 }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} step="0.1" class="form-control form-control-sm ricarico-input"></td>
+                                        <td><input type="number" name="articoli[{{ loop.index0 }}][prezzo_vendita]" value="{{ articolo.prezzo_vendita or 0 }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} step="0.01" class="form-control form-control-sm prezzo-vendita-input"></td>
+                                        <td><span class="totale-riga">€ {{ ((articolo.quantita or 1) * (articolo.prezzo_vendita or 0))|round(2) }}</span></td>
+                                        {% if mpls.stato == 'bozza' %}
+                                        <td><button type="button" class="btn btn-danger btn-sm remove-articolo">🗑️</button></td>
+                                        {% endif %}
+                                        <input type="hidden" name="articoli[{{ loop.index0 }}][id]" value="{{ articolo.id }}">
+                                    </tr>
+                                    {% endfor %}
+                                    
+                                    {% if not articoli %}
+                                    <!-- Riga vuota iniziale se non ci sono articoli -->
+                                    <tr class="articolo-row">
+                                        <td><input type="text" name="articoli[0][codice]" class="form-control form-control-sm"></td>
+                                        <td><input type="text" name="articoli[0][descrizione]" class="form-control form-control-sm"></td>
+                                        <td><input type="number" name="articoli[0][quantita]" value="1" step="0.01" class="form-control form-control-sm quantita-input"></td>
+                                        <td><input type="number" name="articoli[0][prezzo_costo]" value="0" step="0.01" class="form-control form-control-sm prezzo-costo-input"></td>
+                                        <td><input type="number" name="articoli[0][ricarico_percentuale]" value="30" step="0.1" class="form-control form-control-sm ricarico-input"></td>
+                                        <td><input type="number" name="articoli[0][prezzo_vendita]" readonly class="form-control form-control-sm prezzo-vendita-input"></td>
+                                        <td><span class="totale-riga">€ 0.00</span></td>
+                                        <td><button type="button" class="btn btn-danger btn-sm remove-articolo">🗑️</button></td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Totali e Margini -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>💰 Riepilogo Totali</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="totali-grid">
+                            <!-- Subtotali -->
+                            <div class="totale-item">
+                                <label>Materiali (con ricarico):</label>
+                                <span id="subtotaleMateriali">€ {{ mpls.subtotale_materiali_vendita or 0 }}</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Manodopera:</label>
+                                <span id="subtotaleManodopera">€ {{ mpls.subtotale_manodopera_vendita or 0 }}</span>
+                            </div>
+                            
+                            <!-- Costi Accessori -->
+                            <div class="totale-item">
+                                <label>Costo Gestione:</label>
+                                <span id="costoGestione">€ {{ mpls.costo_gestione or 0 }}</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Spese Brevi:</label>
+                                <span id="speseBrevi">€ {{ mpls.spese_brevi or 0 }}</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Materiale Consumo:</label>
+                                <span id="materialeConsumo">€ {{ mpls.materiale_consumo or 0 }}</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>Sovrapprezzo:</label>
+                                <span id="sovrapprezzoDisplay">€ {{ mpls.sovrapprezzo or 0 }}</span>
+                            </div>
+                            
+                            <!-- Totali Finali -->
+                            <div class="totale-item">
+                                <label>Totale Vendita (IVA esclusa):</label>
+                                <span id="totaleVendita">€ {{ mpls.totale_vendita or 0 }}</span>
+                            </div>
+                            <div class="totale-item">
+                                <label>IVA (22%):</label>
+                                <span id="totaleIva">€ {{ mpls.totale_iva or 0 }}</span>
+                            </div>
+                            <div class="totale-item totale-finale">
+                                <label>Totale IVA Inclusa:</label>
+                                <span id="totaleIvato">€ {{ mpls.totale_ivato or 0 }}</span>
+                            </div>
+                            
+                            <!-- Margini -->
+                            <div class="totale-item margine">
+                                <label>Costi Interni:</label>
+                                <span id="costiInterni">€ {{ mpls.costo_totale_interno or 0 }}</span>
+                            </div>
+                            <div class="totale-item margine">
+                                <label>Margine:</label>
+                                <span id="margineEuro">€ {{ mpls.margine_euro or 0 }}</span>
+                                <span id="marginePercentuale">({{ (mpls.margine_percentuale or 0)|round(1) }}%)</span>
+                            </div>
+                        </div>
+
+                        <!-- Campi nascosti per i totali Enhanced -->
+                        <input type="hidden" id="hiddenSubtotaleMateriali" name="subtotale_materiali_vendita" value="{{ mpls.subtotale_materiali_vendita or 0 }}">
+                        <input type="hidden" id="hiddenSubtotaleManodopera" name="subtotale_manodopera_vendita" value="{{ mpls.subtotale_manodopera_vendita or 0 }}">
+                        <input type="hidden" id="hiddenCostoGestione" name="costo_gestione" value="{{ mpls.costo_gestione or 0 }}">
+                        <input type="hidden" id="hiddenSpeseBrevi" name="spese_brevi" value="{{ mpls.spese_brevi or 0 }}">
+                        <input type="hidden" id="hiddenMaterialeConsumo" name="materiale_consumo" value="{{ mpls.materiale_consumo or 0 }}">
+                        <input type="hidden" id="hiddenCostoTotaleInterno" name="costo_totale_interno" value="{{ mpls.costo_totale_interno or 0 }}">
+                        
+                        <!-- Campi compatibilità esistente -->
+                        <input type="hidden" id="hiddenTotaleCosti" name="totale_costi" value="{{ mpls.totale_costi or 0 }}">
+                        <input type="hidden" id="hiddenTotaleVendita" name="totale_vendita" value="{{ mpls.totale_vendita or 0 }}">
+                        <input type="hidden" id="hiddenTotaleIva" name="totale_iva" value="{{ mpls.totale_iva or 0 }}">
+                        <input type="hidden" id="hiddenTotaleIvato" name="totale_ivato" value="{{ mpls.totale_ivato or 0 }}">
+                        <input type="hidden" id="hiddenMargineEuro" name="margine_euro" value="{{ mpls.margine_euro or 0 }}">
+                        <input type="hidden" id="hiddenMarginePercentuale" name="margine_percentuale" value="{{ mpls.margine_percentuale or 0 }}">
+                    </div>
+                </div>
+
+                <!-- Azioni -->
+                {% if mpls.stato == 'bozza' %}
+                <div class="form-actions">
+                    <button type="submit" name="stato" value="bozza" class="btn btn-warning">📝 Salva come Bozza</button>
+                    <button type="submit" name="stato" value="confermato" class="btn btn-success">✅ Salva e Conferma</button>
+                    <a href="/mpls/{{ mpls.id }}" class="btn btn-secondary">❌ Annulla</a>
+                </div>
+                {% else %}
+                <div class="form-actions">
+                    <a href="/mpls/{{ mpls.id }}" class="btn btn-primary">← Torna al Dettaglio</a>
+                    <a href="/mpls" class="btn btn-secondary">📋 Lista MPLS</a>
+                </div>
+                {% endif %}
+            </form>
+        </main>
+    </div>
+
+    <style>
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            background: #f8f9fa;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        
+        .form-control[readonly] {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        .form-control:disabled {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .form-control-sm {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 12px;
+            color: #374151;
+        }
+        
+        .totali-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .totale-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        
+        .totale-item label {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .totale-finale {
+            border-top: 2px solid #007bff;
+            padding-top: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .margine {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        
+        .checkbox-label {
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .text-muted {
+            color: #6c757d;
+            font-size: 0.875em;
+        }
+        
+        .totali-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+        }
+    </style>
+
+    <script>
+        let articoloIndex = {{ articoli|length if articoli else 1 }};
+
+        // Aggiungi nuovo articolo (solo se in bozza)
+        {% if mpls.stato == 'bozza' %}
+        document.getElementById('addArticolo').addEventListener('click', function() {
+            const tbody = document.getElementById('articoliTableBody');
+            const row = document.createElement('tr');
+            row.className = 'articolo-row';
+            row.innerHTML = `
+                <td><input type="text" name="articoli[${articoloIndex}][codice]" class="form-control form-control-sm"></td>
+                <td><input type="text" name="articoli[${articoloIndex}][descrizione]" class="form-control form-control-sm"></td>
+                <td><input type="number" name="articoli[${articoloIndex}][quantita]" value="1" step="0.01" class="form-control form-control-sm quantita-input"></td>
+                <td><input type="number" name="articoli[${articoloIndex}][prezzo_costo]" value="0" step="0.01" class="form-control form-control-sm prezzo-costo-input"></td>
+                <td><input type="number" name="articoli[${articoloIndex}][ricarico_percentuale]" value="30" step="0.1" class="form-control form-control-sm ricarico-input"></td>
+                <td><input type="number" name="articoli[${articoloIndex}][prezzo_vendita]" readonly class="form-control form-control-sm prezzo-vendita-input"></td>
+                <td><span class="totale-riga">€ 0.00</span></td>
+                <td><button type="button" class="btn btn-danger btn-sm remove-articolo">🗑️</button></td>
+            `;
+            tbody.appendChild(row);
+            
+            // Aggiorna event listeners
+            updateEventListeners();
+            articoloIndex++;
+        });
+        {% endif %}
+
+        // Rimuovi articolo
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-articolo')) {
+                e.target.closest('tr').remove();
+                calcolaTotali();
+            }
+        });
+
+        // Aggiorna event listeners per calcoli
+        function updateEventListeners() {
+            {% if mpls.stato == 'bozza' %}
+            document.querySelectorAll('.quantita-input, .prezzo-costo-input, .ricarico-input').forEach(input => {
+                input.removeEventListener('input', calcolaRiga);
+                input.addEventListener('input', calcolaRiga);
+            });
+            {% endif %}
+        }
+
+        // Calcola ricarico automatico secondo logica Gemini
+        function calcolaRicaricoAutomatico(prezzoCosto, quantita, isGuazzotti) {
+            const costoTotale = prezzoCosto * quantita;
+            
+            if (isGuazzotti) {
+                return 20.0; // 20% fisso per Guazzotti
+            } else {
+                // Ricarichi progressivi per clienti normali
+                if (costoTotale < 100) {
+                    return 40.0; // 40%
+                } else if (costoTotale <= 200) {
+                    return 35.0; // 35%
+                } else {
+                    return 30.0; // 30%
+                }
+            }
+        }
+
+        // Calcola valori singola riga con logica Enhanced
+        function calcolaRiga(e) {
+            const row = e.target.closest('tr');
+            const quantita = parseFloat(row.querySelector('.quantita-input').value) || 0;
+            const prezzoCosto = parseFloat(row.querySelector('.prezzo-costo-input').value) || 0;
+            const isGuazzotti = document.getElementById('is_guazzotti').checked;
+            
+            // Calcola ricarico automatico
+            const ricaricoPercentuale = calcolaRicaricoAutomatico(prezzoCosto, quantita, isGuazzotti);
+            row.querySelector('.ricarico-input').value = ricaricoPercentuale.toFixed(1);
+            
+            // Calcola prezzo di vendita
+            const prezzoVendita = prezzoCosto * (1 + ricaricoPercentuale / 100);
+            row.querySelector('.prezzo-vendita-input').value = prezzoVendita.toFixed(2);
+            
+            // Calcola totale riga
+            const totaleRiga = quantita * prezzoVendita;
+            row.querySelector('.totale-riga').textContent = `€ ${totaleRiga.toFixed(2)}`;
+            
+            // Ricalcola totali generali
+            calcolaTotaliEnhanced();
+        }
+
+        // Calcola totali generali con logica Enhanced
+        function calcolaTotaliEnhanced() {
+            const isGuazzotti = document.getElementById('is_guazzotti').checked;
+            const oreManodopera = parseFloat(document.getElementById('ore_manodopera').value) || 0;
+            const sovrapprezzo = parseFloat(document.getElementById('sovrapprezzo').value) || 0;
+            
+            // 1. CALCOLO MATERIALI
+            let subtotaleMateriali = 0;
+            let costoMaterialiAcquisto = 0;
+            
+            document.querySelectorAll('.articolo-row').forEach(row => {
+                const quantita = parseFloat(row.querySelector('.quantita-input').value) || 0;
+                const prezzoCosto = parseFloat(row.querySelector('.prezzo-costo-input').value) || 0;
+                const prezzoVendita = parseFloat(row.querySelector('.prezzo-vendita-input').value) || 0;
+                
+                costoMaterialiAcquisto += quantita * prezzoCosto;
+                subtotaleMateriali += quantita * prezzoVendita;
+            });
+            
+            // 2. CALCOLO MANODOPERA
+            const costoOrarioVendita = isGuazzotti ? 25.0 : 40.0;
+            const costoOrarioInterno = 22.0;
+            const subtotaleManodopera = oreManodopera * costoOrarioVendita;
+            const costoManodoperaInterno = oreManodopera * costoOrarioInterno;
+            
+            // 3. CALCOLO COSTI ACCESSORI
+            const costoGestione = isGuazzotti ? 0 : 30.0;
+            const speseBrevi = (!isGuazzotti && oreManodopera > 0 && oreManodopera < 3) ? 30.0 : 0;
+            const materialeConsumo = (!isGuazzotti && costoMaterialiAcquisto > 0) ? Math.max(10.0, costoMaterialiAcquisto * 0.03) : 0;
+            
+            // 4. TOTALI FINALI
+            const totaleCostiAccessori = costoGestione + speseBrevi + materialeConsumo;
+            const totaleVendita = subtotaleMateriali + subtotaleManodopera + totaleCostiAccessori + sovrapprezzo;
+            const totaleIva = totaleVendita * 0.22;
+            const totaleIvato = totaleVendita + totaleIva;
+            
+            // 5. MARGINI
+            const costoTotaleInterno = costoMaterialiAcquisto + costoManodoperaInterno;
+            const margineEuro = totaleVendita - costoTotaleInterno;
+            const marginePercentuale = totaleVendita > 0 ? (margineEuro / totaleVendita) * 100 : 0;
+            
+            // 6. AGGIORNA UI
+            document.getElementById('subtotaleMateriali').textContent = `€ ${subtotaleMateriali.toFixed(2)}`;
+            document.getElementById('subtotaleManodopera').textContent = `€ ${subtotaleManodopera.toFixed(2)}`;
+            document.getElementById('costoGestione').textContent = `€ ${costoGestione.toFixed(2)}`;
+            document.getElementById('speseBrevi').textContent = `€ ${speseBrevi.toFixed(2)}`;
+            document.getElementById('materialeConsumo').textContent = `€ ${materialeConsumo.toFixed(2)}`;
+            document.getElementById('sovrapprezzoDisplay').textContent = `€ ${sovrapprezzo.toFixed(2)}`;
+            document.getElementById('totaleVendita').textContent = `€ ${totaleVendita.toFixed(2)}`;
+            document.getElementById('totaleIva').textContent = `€ ${totaleIva.toFixed(2)}`;
+            document.getElementById('totaleIvato').textContent = `€ ${totaleIvato.toFixed(2)}`;
+            document.getElementById('costiInterni').textContent = `€ ${costoTotaleInterno.toFixed(2)}`;
+            document.getElementById('margineEuro').textContent = `€ ${margineEuro.toFixed(2)}`;
+            document.getElementById('marginePercentuale').textContent = `(${marginePercentuale.toFixed(1)}%)`;
+            
+            // 7. AGGIORNA CAMPI NASCOSTI Enhanced
+            document.getElementById('hiddenSubtotaleMateriali').value = subtotaleMateriali.toFixed(2);
+            document.getElementById('hiddenSubtotaleManodopera').value = subtotaleManodopera.toFixed(2);
+            document.getElementById('hiddenCostoGestione').value = costoGestione.toFixed(2);
+            document.getElementById('hiddenSpeseBrevi').value = speseBrevi.toFixed(2);
+            document.getElementById('hiddenMaterialeConsumo').value = materialeConsumo.toFixed(2);
+            document.getElementById('hiddenCostoTotaleInterno').value = costoTotaleInterno.toFixed(2);
+            
+            // Compatibilità campi esistenti
+            document.getElementById('hiddenTotaleCosti').value = costoTotaleInterno.toFixed(2);
+            document.getElementById('hiddenTotaleVendita').value = totaleVendita.toFixed(2);
+            document.getElementById('hiddenTotaleIva').value = totaleIva.toFixed(2);
+            document.getElementById('hiddenTotaleIvato').value = totaleIvato.toFixed(2);
+            document.getElementById('hiddenMargineEuro').value = margineEuro.toFixed(2);
+            document.getElementById('hiddenMarginePercentuale').value = marginePercentuale.toFixed(2);
+        }
+        
+        // Alias per compatibilità
+        function calcolaTotali() {
+            calcolaTotaliEnhanced();
+        }
+
+        // Inizializza event listeners Enhanced
+        document.addEventListener('DOMContentLoaded', function() {
+            updateEventListeners();
+            
+            {% if mpls.stato == 'bozza' %}
+            // Event listeners per campi MPLS Enhanced
+            document.getElementById('is_guazzotti').addEventListener('change', function() {
+                // Ricalcola tutti i ricarichi quando cambia il cliente
+                document.querySelectorAll('.articolo-row').forEach(row => {
+                    const quantitaInput = row.querySelector('.quantita-input');
+                    if (quantitaInput) {
+                        calcolaRiga({target: quantitaInput});
+                    }
+                });
+            });
+            
+            document.getElementById('ore_manodopera').addEventListener('input', calcolaTotaliEnhanced);
+            document.getElementById('sovrapprezzo').addEventListener('input', calcolaTotaliEnhanced);
+            
+            // Inizializza autocompletamento clienti
+            const clienteInput = document.getElementById('cliente_nome');
+            if (clienteInput) {
+                AutocompleteHelpers.setupClientiAutocomplete(clienteInput);
+            }
+            {% endif %}
+            
+            // Calcolo iniziale
+            calcolaTotaliEnhanced();
+        });
+    </script>
+</body>
+</html>

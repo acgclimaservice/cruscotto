@@ -8178,9 +8178,14 @@ def modifica_mpls(id):
         # Carica articoli
         articoli = MPLSArticolo.query.filter_by(mpls_id=id).all()
         
+        # Carica commesse per dropdown
+        from models import Commessa
+        commesse = Commessa.query.filter_by(stato='aperta').order_by(Commessa.data_apertura.desc()).all()
+        
         return render_template('modifica-mpls.html',
                              mpls=mpls,
                              articoli=articoli,
+                             commesse=commesse,
                              today=datetime.now().strftime('%Y-%m-%d'))
                              
     except Exception as e:
@@ -8204,7 +8209,24 @@ def update_mpls(id):
         mpls.descrizione = request.form.get('descrizione', '')
         mpls.stato = request.form.get('stato', 'bozza')
         
-        # Aggiorna totali
+        # Aggiorna parametri Enhanced
+        mpls.ore_manodopera = float(request.form.get('ore_manodopera', 0))
+        mpls.sovrapprezzo = float(request.form.get('sovrapprezzo', 0))
+        mpls.is_guazzotti = bool(request.form.get('is_guazzotti'))
+        
+        # Commessa associata
+        commessa_id = request.form.get('commessa_id')
+        mpls.commessa_id = int(commessa_id) if commessa_id else None
+        
+        # Aggiorna totali Enhanced
+        mpls.subtotale_materiali_vendita = float(request.form.get('subtotale_materiali_vendita', 0))
+        mpls.subtotale_manodopera_vendita = float(request.form.get('subtotale_manodopera_vendita', 0))
+        mpls.costo_gestione = float(request.form.get('costo_gestione', 0))
+        mpls.spese_brevi = float(request.form.get('spese_brevi', 0))
+        mpls.materiale_consumo = float(request.form.get('materiale_consumo', 0))
+        mpls.costo_totale_interno = float(request.form.get('costo_totale_interno', 0))
+        
+        # Totali compatibilità esistente
         mpls.totale_costi = float(request.form.get('totale_costi', 0))
         mpls.totale_vendita = float(request.form.get('totale_vendita', 0))
         mpls.totale_iva = float(request.form.get('totale_iva', 0))
@@ -8234,7 +8256,7 @@ def update_mpls(id):
             if art_data.get('codice') or art_data.get('descrizione'):
                 articolo = MPLSArticolo(
                     mpls_id=mpls.id,
-                    codice=art_data.get('codice', ''),
+                    codice_articolo=art_data.get('codice', ''),
                     descrizione=art_data.get('descrizione', ''),
                     quantita=float(art_data.get('quantita', 1)),
                     prezzo_costo=float(art_data.get('prezzo_costo', 0)),
