@@ -5310,8 +5310,27 @@ def preventivi_pdf(id):
         
         # Genera HTML professionale
         html_content = PreventivoTemplate.generate_html(preventivo_data)
-        response = make_response(html_content)
-        response.headers['Content-Type'] = 'text/html'
+        
+        # Converti HTML in PDF usando pdfkit
+        import pdfkit
+        
+        options = {
+            'page-size': 'A4',
+            'margin-top': '0.75in',
+            'margin-right': '0.75in', 
+            'margin-bottom': '0.75in',
+            'margin-left': '0.75in',
+            'encoding': "UTF-8",
+            'no-outline': None,
+            'enable-local-file-access': None
+        }
+        
+        pdf_data = pdfkit.from_string(html_content, options=options)
+        
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="preventivo_{preventivo.numero_preventivo or preventivo.id}.pdf"'
+        
         return response
             
     except Exception as e:
