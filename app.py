@@ -1006,7 +1006,16 @@ def dettaglio_commessa(id):
             (OrdineFornitore.commessa == commessa_search)
         ).order_by(OrdineFornitore.data_ordine.desc()).all()
         
-        print(f"Debug commessa {numero_commessa}: trovati {len(ordini_collegati)} ordini collegati")
+        # MPLS collegati (collegati tramite commessa_id foreign key)
+        mpls_collegati = MPLS.query.filter(MPLS.commessa_id == id).order_by(MPLS.data_creazione.desc()).all()
+        
+        # Offerte fornitori collegate
+        offerte_collegate = OffertaFornitore.query.filter(
+            (OffertaFornitore.commessa == numero_commessa) | 
+            (OffertaFornitore.commessa == commessa_search)
+        ).order_by(OffertaFornitore.data_ricevuta.desc()).all()
+        
+        print(f"Debug commessa {numero_commessa}: trovati {len(ordini_collegati)} ordini, {len(mpls_collegati)} MPLS, {len(offerte_collegate)} offerte collegati")
         
         # Combina tutti i DDT per la visualizzazione
         ddt_collegati = []
@@ -1040,7 +1049,9 @@ def dettaglio_commessa(id):
                              commessa=commessa,
                              ddt_collegati=ddt_collegati,
                              preventivi_collegati=preventivi_collegati,
-                             ordini_collegati=ordini_collegati)
+                             ordini_collegati=ordini_collegati,
+                             mpls_collegati=mpls_collegati,
+                             offerte_collegate=offerte_collegate)
     except Exception as e:
         print(f"Errore dettaglio commessa: {e}")
         return str(e), 500

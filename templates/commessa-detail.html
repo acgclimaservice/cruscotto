@@ -244,6 +244,104 @@
             </div>
         </div>
 
+        <!-- MPLS Collegati -->
+        <div class="card-detail">
+            <div class="card-header">
+                <h3>💼 MPLS Collegati</h3>
+                <span class="count-badge">{{ mpls_collegati|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if mpls_collegati %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Numero MPLS</th>
+                                <th>Cliente</th>
+                                <th>Descrizione</th>
+                                <th>Data Creazione</th>
+                                <th>Totale Costo</th>
+                                <th>Totale Vendita</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mpls in mpls_collegati %}
+                            <tr>
+                                <td><strong>{{ mpls.numero_mpls }}</strong></td>
+                                <td>{{ mpls.cliente_nome or '-' }}</td>
+                                <td>{{ mpls.descrizione or '-' }}</td>
+                                <td>{{ mpls.data_creazione.strftime('%d/%m/%Y') if mpls.data_creazione else '-' }}</td>
+                                <td>€ {{ "%.2f"|format(mpls.totale_costo_materiali or 0) }}</td>
+                                <td>€ {{ "%.2f"|format(mpls.totale_vendita_materiali or 0) }}</td>
+                                <td>
+                                    <a href="/mpls/{{ mpls.id }}" class="btn btn-sm">Visualizza</a>
+                                    <a href="/mpls/{{ mpls.id }}/modifica" class="btn btn-sm btn-secondary">Modifica</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    Nessun MPLS collegato a questa commessa
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Offerte Fornitori Collegate -->
+        <div class="card-detail">
+            <div class="card-header">
+                <h3>💰 Offerte Fornitori Collegate</h3>
+                <span class="count-badge">{{ offerte_collegate|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if offerte_collegate %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Numero Offerta</th>
+                                <th>Fornitore</th>
+                                <th>Oggetto</th>
+                                <th>Stato</th>
+                                <th>Data Ricevuta</th>
+                                <th>Totale</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for offerta in offerte_collegate %}
+                            <tr>
+                                <td><strong>{{ offerta.numero_offerta or 'BOZZA #' + offerta.id|string }}</strong></td>
+                                <td>{{ offerta.fornitore_nome or '-' }}</td>
+                                <td>{{ offerta.oggetto or '-' }}</td>
+                                <td>
+                                    <span class="status {{ 'confirmed' if offerta.stato == 'accettata' else ('draft' if offerta.stato == 'creata' else 'pending') }}">
+                                        {{ offerta.stato|upper }}
+                                    </span>
+                                </td>
+                                <td>{{ offerta.data_ricevuta.strftime('%d/%m/%Y') if offerta.data_ricevuta else '-' }}</td>
+                                <td>€ {{ "%.2f"|format(offerta.totale_netto or 0) }}</td>
+                                <td>
+                                    <a href="/offerte/{{ offerta.id }}" class="btn btn-sm">Visualizza</a>
+                                    <a href="/offerte/{{ offerta.id }}/modifica" class="btn btn-sm btn-secondary">Modifica</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    Nessuna offerta fornitore collegata a questa commessa
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- Statistiche -->
         <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 30px;">
             <div class="stat-card">
