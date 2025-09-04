@@ -7931,17 +7931,26 @@ def stampa_mpls(id):
             if articolo.prezzo_costo and articolo.prezzo_costo > 0 and articolo.prezzo_vendita:
                 ricarico = ((articolo.prezzo_vendita - articolo.prezzo_costo) / articolo.prezzo_costo) * 100
             
-            html_content += f"""
+            html_content += """
                     <tr>
-                        <td>{articolo.codice or '-'}</td>
-                        <td>{articolo.descrizione or '-'}</td>
-                        <td>{articolo.quantita or 0}</td>
-                        <td>{getattr(articolo, 'fornitore', '-') or '-'}</td>
-                        <td>€ {articolo.prezzo_costo:.2f if articolo.prezzo_costo else 0}</td>
-                        <td>{ricarico:.1f}%</td>
-                        <td>€ {articolo.prezzo_vendita:.2f if articolo.prezzo_vendita else 0}</td>
-                        <td>€ {vendita_totale:.2f}</td>
-                    </tr>"""
+                        <td>{}</td>
+                        <td>{}</td>
+                        <td>{}</td>
+                        <td>{}</td>
+                        <td>€ {:.2f}</td>
+                        <td>{:.1f}%</td>
+                        <td>€ {:.2f}</td>
+                        <td>€ {:.2f}</td>
+                    </tr>""".format(
+                articolo.codice or '-',
+                articolo.descrizione or '-',
+                articolo.quantita or 0,
+                getattr(articolo, 'fornitore', '-') or '-',
+                articolo.prezzo_costo if articolo.prezzo_costo else 0,
+                ricarico,
+                articolo.prezzo_vendita if articolo.prezzo_vendita else 0,
+                vendita_totale
+            )
         
         # Calcoli finali
         costo_manodopera = (mpls.ore_manodopera or 0) * (mpls.costo_orario_manodopera or 0)
