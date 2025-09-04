@@ -180,7 +180,14 @@
       "Read(/D:\\CRUSCOTTO_1.2/**)",
       "Read(/D:\\CRUSCOTTO_1.2/**)",
       "Read(/D:\\CRUSCOTTO_1.2/**)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)"
     ],
     "deny": [],
     "ask": []
