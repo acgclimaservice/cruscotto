@@ -86,7 +86,8 @@ class MultiAIPDFParser:
       "codice": "codice articolo",
       "descrizione": "descrizione completa",
       "quantita": numero_quantita,
-      "prezzo_unitario": prezzo_numerico
+      "prezzo_unitario": prezzo_numerico,
+      "unita_misura": "unità di misura (es: PZ, KG, LT, MT)"
     }}
   ]
 }}
@@ -110,6 +111,8 @@ IMPORTANTE:
 - Estrai TUTTI gli articoli presenti
 - Per le quantità usa il formato numerico (es. 2, non "2,000")  
 - Per i prezzi usa il formato numerico (es. 150.50)
+- Per le unità di misura cerca: PZ, NR, KG, G, LT, ML, MT, CM, M2, etc.
+- Se l'unità di misura non è specificata, usa "PZ" come default
 - Rispondi SOLO con JSON valido, nessun altro testo
 
 TESTO DEL DDT:
@@ -189,7 +192,7 @@ TESTO DEL DDT:
   "numero_ddt": "numero documento",
   "data_ddt": "YYYY-MM-DD", 
   "fornitore": {"ragione_sociale": "nome", "partita_iva": "piva"},
-  "articoli": [{"codice": "cod", "descrizione": "desc", "quantita": num, "prezzo_unitario": num}]
+  "articoli": [{"codice": "cod", "descrizione": "desc", "quantita": num, "prezzo_unitario": num, "unita_misura": "UM (es: PZ, KG, LT)"}]
 }
 
 CRITICO - DISTINZIONE FORNITORE/DESTINATARIO:
@@ -207,7 +210,8 @@ CRITICO - ESTRAZIONE CODICE ARTICOLO PER CAMBIELLI:
 - Se non riesci a distinguere le colonne, metti "CODICE_NON_TROVATO" nel campo codice
 - ESEMPIO CORRETTO: Pos=1, Codice=CA12345 → usa "CA12345" NON "1"
 
-IMPORTANTE: quantità come numero puro (2 non 2,000), prezzi come decimali."""
+IMPORTANTE: quantità come numero puro (2 non 2,000), prezzi come decimali.
+UNITÀ MISURA: Estrai unità di misura (PZ, KG, LT, MT, etc.) o usa "PZ" se non specificata."""
 
             # API diretta - usa modello funzionante
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"

@@ -1469,6 +1469,7 @@ def create_ddt_from_import():
                 descrizione=art_data.get('descrizione', ''),
                 quantita=float(art_data.get('quantita', 0)),
                 costo_unitario=float(costo),
+                unita_misura=art_data.get('unita_misura', 'PZ'),
                 mastrino_riga=art_data.get('mastrino_riga', '')
             )
             db.session.add(articolo)
@@ -1793,6 +1794,7 @@ def nuovo_ddt_in():
                     descrizione=descrizione,
                     quantita=float(request.form.get(f'articoli[{i}][quantita]', 1)),
                     costo_unitario=float(request.form.get(f'articoli[{i}][costo]', 0)),
+                    unita_misura=request.form.get(f'articoli[{i}][unita_misura]', 'PZ'),
                     mastrino_riga=request.form.get(f'articoli[{i}][mastrino]', '')
                 )
                 db.session.add(articolo)
@@ -2144,6 +2146,7 @@ def modifica_ddt_in(id):
                     descrizione=request.form.get(f'articoli[{i}][descrizione]'),
                     quantita=float(request.form.get(f'articoli[{i}][quantita]', 1)),
                     costo_unitario=float(request.form.get(f'articoli[{i}][costo]', 0)),
+                    unita_misura=request.form.get(f'articoli[{i}][unita_misura]', 'PZ'),
                     mastrino_riga=request.form.get(f'articoli[{i}][mastrino]', '')
                 )
                 db.session.add(articolo)
@@ -2644,6 +2647,7 @@ def process_batch_files(job_id):
                                     descrizione=articolo_data.get('descrizione', ''),
                                     costo_unitario=float(articolo_data.get('prezzo_unitario', 0)),
                                     quantita=float(articolo_data.get('quantita', 0)),
+                                    unita_misura=articolo_data.get('unita_misura', 'PZ'),
                                     mastrino_riga=''  # Vuoto per import batch, da compilare in fase di conferma
                                 )
                                 db.session.add(articolo)
