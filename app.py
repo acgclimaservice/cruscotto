@@ -7770,13 +7770,25 @@ def crea_mpls_da_ddt(ddt_id):
         # Lista commesse per dropdown
         commesse = Commessa.query.filter_by(stato='aperta').all()
         
+        # Converte articoli in dizionari per JSON
+        articoli_dict = []
+        for articolo in articoli:
+            articoli_dict.append({
+                'codice_interno': articolo.codice_interno,
+                'codice_fornitore': articolo.codice_fornitore,
+                'descrizione': articolo.descrizione,
+                'quantita': float(articolo.quantita) if articolo.quantita else 1,
+                'costo_unitario': float(articolo.costo_unitario) if articolo.costo_unitario else 0,
+                'unita_misura': articolo.unita_misura
+            })
+        
         return render_template('nuovo-mpls.html', 
                              numero_mpls=numero_mpls,
                              commesse=commesse,
                              fonte_tipo='ddt_in',
                              fonte_id=ddt_id,
                              fonte_data=ddt,
-                             articoli_fonte=articoli)
+                             articoli_fonte=articoli_dict)
     
     except Exception as e:
         print(f"Errore MPLS da DDT: {e}")
@@ -7796,13 +7808,25 @@ def crea_mpls_da_offerta(offerta_id):
         # Lista commesse per dropdown
         commesse = Commessa.query.filter_by(stato='aperta').all()
         
+        # Converte dettagli offerta in dizionari per JSON
+        dettagli_dict = []
+        for dettaglio in dettagli:
+            dettagli_dict.append({
+                'codice_articolo': dettaglio.codice_articolo,
+                'codice_fornitore': dettaglio.codice_fornitore,
+                'descrizione': dettaglio.descrizione,
+                'quantita': float(dettaglio.quantita) if dettaglio.quantita else 1,
+                'prezzo_unitario': float(dettaglio.prezzo_unitario) if dettaglio.prezzo_unitario else 0,
+                'unita_misura': dettaglio.unita_misura
+            })
+        
         return render_template('nuovo-mpls.html', 
                              numero_mpls=numero_mpls,
                              commesse=commesse,
                              fonte_tipo='offerta',
                              fonte_id=offerta_id,
                              fonte_data=offerta,
-                             articoli_fonte=dettagli)
+                             articoli_fonte=dettagli_dict)
     
     except Exception as e:
         print(f"Errore MPLS da Offerta: {e}")
