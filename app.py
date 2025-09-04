@@ -5549,6 +5549,8 @@ def modifica_ordine(id):
             ordine.data_scadenza = datetime.strptime(data_scadenza_str, '%Y-%m-%d').date()
         
         # Rimuovi dettagli esistenti
+        dettagli_rimossi = DettaglioOrdine.query.filter_by(ordine_id=id).count()
+        print(f"DEBUG - Rimozione di {dettagli_rimossi} dettagli esistenti")
         DettaglioOrdine.query.filter_by(ordine_id=id).delete()
         
         # Aggiungi nuovi dettagli
@@ -5557,13 +5559,18 @@ def modifica_ordine(id):
         print(f"DEBUG - Form keys found: {list(request.form.keys())}")
         print(f"DEBUG - Dettagli keys: {dettagli_keys}")
         
+        dettagli_aggiunti = 0
         for key in dettagli_keys:
             index = key.split('[')[1].split(']')[0]
             descrizione = request.form.get(f'dettagli[{index}][descrizione]')
+            print(f"DEBUG - Processing dettaglio {index}: descrizione='{descrizione}'")
+            
             if descrizione and descrizione.strip():
                 quantita = float(request.form.get(f'dettagli[{index}][quantita]', 0))
                 prezzo_unitario = float(request.form.get(f'dettagli[{index}][prezzo_unitario]', 0))
                 totale_riga = quantita * prezzo_unitario
+                
+                print(f"DEBUG - Dettaglio {index}: quantita={quantita}, prezzo={prezzo_unitario}, totale_riga={totale_riga}")
                 
                 dettaglio = DettaglioOrdine(
                     ordine_id=ordine.id,
@@ -5578,13 +5585,18 @@ def modifica_ordine(id):
                     note=request.form.get(f'dettagli[{index}][note]', '')
                 )
                 db.session.add(dettaglio)
+                dettagli_aggiunti += 1
                 totale += totale_riga
+        
+        print(f"DEBUG - Aggiunti {dettagli_aggiunti} nuovi dettagli, totale ordine: {totale}")
         
         # Aggiorna totali
         ordine.totale_netto = totale
         ordine.totale_lordo = totale * (1 + ordine.iva/100)
         
+        print(f"DEBUG - Prima del commit - totale_netto: {ordine.totale_netto}, totale_lordo: {ordine.totale_lordo}")
         db.session.commit()
+        print("DEBUG - Commit eseguito con successo!")
         flash('Ordine modificato con successo!', 'success')
         return redirect(url_for('dettaglio_ordine', id=ordine.id))
         
