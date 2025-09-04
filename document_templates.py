@@ -2,6 +2,8 @@
 # Modelli per documenti DDT IN/OUT, Preventivi e Ordini
 from datetime import datetime
 from models import db
+import base64
+import os
 
 class DocumentTemplate:
     """Classe base per template documenti"""
@@ -23,8 +25,28 @@ class DocumentTemplate:
     }
     
     @staticmethod
+    def get_logo_base64():
+        """Converte il logo in base64 per l'uso nei PDF"""
+        try:
+            logo_path = os.path.join('static', 'logo-acg.png')
+            if os.path.exists(logo_path):
+                with open(logo_path, 'rb') as logo_file:
+                    logo_data = base64.b64encode(logo_file.read()).decode('utf-8')
+                    return f"data:image/png;base64,{logo_data}"
+        except Exception as e:
+            print(f"Errore caricamento logo: {e}")
+        return None
+    
+    @staticmethod
     def get_header_company():
         """Header comune con dati aziendali"""
+        logo_base64 = DocumentTemplate.get_logo_base64()
+        
+        if logo_base64:
+            logo_html = f'<img src="{logo_base64}" alt="ACG Clima Service" style="height: 60px; width: auto;">'
+        else:
+            logo_html = '<div class="logo-placeholder">ACG</div>'
+            
         return f"""
         <div class="document-header">
             <div class="company-info">
@@ -38,8 +60,7 @@ class DocumentTemplate:
                 <p><strong>{DocumentTemplate.COMPANY_DATA['settore']}</strong></p>
             </div>
             <div class="document-logo">
-                <img src="/static/logo-acg.png" alt="ACG Clima Service" style="height: 60px; width: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <div class="logo-placeholder" style="display: none;">ACG</div>
+                {logo_html}
             </div>
         </div>
         """
