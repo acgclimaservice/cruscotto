@@ -31,4 +31,5 @@ The server encountered an internal error and was unable to complete your request
 21 nella sezione mpls aggiungimi l'autocompletamento dei clienti. 
 22 se genero un mpls dall'offerta o dal ddt in non mi riporta gli articoli presenti nell'offerta e nel ddt. 
 23 inserisci la possibilità di stampare un mpls creato. 
+24 per i ddt elaborati via mail non mi fa il controllo dei duplicati. 
  

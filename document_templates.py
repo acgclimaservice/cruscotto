@@ -44,6 +44,30 @@ class DocumentTemplate:
         </div>
         """
 
+    @staticmethod
+    def get_styles():
+        """Stili CSS base per tutti i documenti"""
+        return """
+        body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+        .document-header { display: flex; justify-content: space-between; border-bottom: 2px solid #007bff; padding-bottom: 20px; margin-bottom: 20px; }
+        .company-info h2 { color: #007bff; margin: 0 0 10px 0; }
+        .company-info p { margin: 2px 0; font-size: 14px; }
+        .logo-placeholder { width: 80px; height: 80px; background: #007bff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; border-radius: 8px; }
+        .document-title { text-align: center; margin: 30px 0; }
+        .document-title h1 { color: #007bff; margin-bottom: 10px; }
+        .document-number { background: #f8f9fa; padding: 10px; border-radius: 5px; font-weight: bold; }
+        .document-details { display: flex; gap: 30px; margin: 30px 0; }
+        .section { flex: 1; background: #f8f9fa; padding: 15px; border-radius: 8px; }
+        .section h3 { color: #007bff; margin-top: 0; }
+        .articles-table { margin: 30px 0; }
+        .articles-table h3 { color: #007bff; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; border: 1px solid #ddd; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #007bff; color: white; font-weight: bold; }
+        .total-row { background: #f8f9fa; font-weight: bold; }
+        .document-footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
+        """
+
 
 class DDTInTemplate(DocumentTemplate):
     """Template per DDT IN (Documento di Trasporto in Entrata)"""
