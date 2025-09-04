@@ -7952,8 +7952,9 @@ def stampa_mpls(id):
                 vendita_totale
             )
         
-        # Calcoli finali
-        costo_manodopera = (mpls.ore_manodopera or 0) * (mpls.costo_orario_manodopera or 0)
+        # Calcoli finali - usa costo orario fisso di 25€/ora se non specificato
+        costo_orario = 25.0  # Euro per ora - valore standard
+        costo_manodopera = (mpls.ore_manodopera or 0) * costo_orario
         totale_netto = totale_vendita + costo_manodopera + (mpls.sovrapprezzo or 0)
         margine = totale_netto - totale_costi - costo_manodopera
         margine_percentuale = (margine / totale_netto * 100) if totale_netto > 0 else 0
