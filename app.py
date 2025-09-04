@@ -5774,7 +5774,16 @@ def stampa_ordine_pdf(id):
         <head>
             <meta charset="UTF-8">
             <title>Ordine Fornitore</title>
+            <style>
             {DocumentTemplate.get_styles()}
+            .items-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+            .items-table th, .items-table td {{ padding: 10px; border: 1px solid #ddd; text-align: left; }}
+            .items-table th {{ background-color: #007bff; color: white; }}
+            .number {{ text-align: right; }}
+            .totals {{ margin-top: 20px; }}
+            .totals-table {{ width: 100%; }}
+            .totals-table td {{ padding: 8px; border: none; }}
+            </style>
         </head>
         <body>
             {DocumentTemplate.get_header_company()}
