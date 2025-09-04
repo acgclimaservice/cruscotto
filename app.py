@@ -6539,31 +6539,71 @@ def aggiorna_offerta(id):
         if fornitore_id:
             offerta.fornitore_id = int(fornitore_id)
         
-        # Aggiorna dettagli solo se vengono inviati dati di articoli
-        articoli_data = data.get('articoli', [])
-        if articoli_data:  # Solo se ci sono articoli da aggiornare
+        # Aggiorna dettagli solo se vengono inviati dati di articoli validi
+        # Per form JSON usa data.get('articoli'), per form HTML usa il pattern articoli[i][campo]
+        articoli_validi_trovati = False
+        
+        if request.is_json:
+            # Dati JSON - controlla array articoli
+            articoli_data = data.get('articoli', [])
+            if articoli_data and any(art.get('descrizione') for art in articoli_data):
+                articoli_validi_trovati = True
+        else:
+            # Dati form HTML - controlla pattern articoli[i][descrizione]
+            i = 0
+            while f'articoli[{i}][descrizione]' in request.form:
+                if request.form.get(f'articoli[{i}][descrizione]', '').strip():
+                    articoli_validi_trovati = True
+                    break
+                i += 1
+        
+        if articoli_validi_trovati:
             # Elimina dettagli esistenti
             DettaglioOfferta.query.filter_by(offerta_id=id).delete()
             
             # Aggiungi nuovi dettagli
-            for articolo_data in articoli_data:
-                if articolo_data.get('descrizione'):
-                    dettaglio = DettaglioOfferta(
-                        offerta_id=id,
-                        codice_articolo=articolo_data.get('codice_articolo', ''),
-                        codice_fornitore=articolo_data.get('codice_fornitore', ''),
-                        descrizione=articolo_data.get('descrizione'),
-                        quantita=float(articolo_data.get('quantita', 0)),
-                        unita_misura=articolo_data.get('unita_misura', 'PZ'),
-                        prezzo_unitario=float(articolo_data.get('prezzo_unitario', 0)) if articolo_data.get('prezzo_unitario') else None,
-                        sconto_percentuale=float(articolo_data.get('sconto_percentuale', 0)) if articolo_data.get('sconto_percentuale') else None,
-                        totale_riga=float(articolo_data.get('totale_riga', 0)) if articolo_data.get('totale_riga') else None,
-                        disponibilita=articolo_data.get('disponibilita', ''),
-                        tempo_consegna=articolo_data.get('tempo_consegna', ''),
-                        note=articolo_data.get('note', '')
-                    )
-                    db.session.add(dettaglio)
-        # Se non ci sono articoli_data, mantieni i dettagli esistenti
+            if request.is_json:
+                # Processa dati JSON
+                for articolo_data in data.get('articoli', []):
+                    if articolo_data.get('descrizione'):
+                        dettaglio = DettaglioOfferta(
+                            offerta_id=id,
+                            codice_articolo=articolo_data.get('codice_articolo', ''),
+                            codice_fornitore=articolo_data.get('codice_fornitore', ''),
+                            descrizione=articolo_data.get('descrizione'),
+                            quantita=float(articolo_data.get('quantita', 0)),
+                            unita_misura=articolo_data.get('unita_misura', 'PZ'),
+                            prezzo_unitario=float(articolo_data.get('prezzo_unitario', 0)) if articolo_data.get('prezzo_unitario') else None,
+                            sconto_percentuale=float(articolo_data.get('sconto_percentuale', 0)) if articolo_data.get('sconto_percentuale') else None,
+                            totale_riga=float(articolo_data.get('totale_riga', 0)) if articolo_data.get('totale_riga') else None,
+                            disponibilita=articolo_data.get('disponibilita', ''),
+                            tempo_consegna=articolo_data.get('tempo_consegna', ''),
+                            note=articolo_data.get('note', '')
+                        )
+                        db.session.add(dettaglio)
+            else:
+                # Processa dati form HTML
+                i = 0
+                while f'articoli[{i}][descrizione]' in request.form:
+                    descrizione = request.form.get(f'articoli[{i}][descrizione]', '').strip()
+                    if descrizione:
+                        dettaglio = DettaglioOfferta(
+                            offerta_id=id,
+                            codice_articolo=request.form.get(f'articoli[{i}][codice_articolo]', ''),
+                            codice_fornitore=request.form.get(f'articoli[{i}][codice_fornitore]', ''),
+                            descrizione=descrizione,
+                            quantita=float(request.form.get(f'articoli[{i}][quantita]', 0) or 0),
+                            unita_misura=request.form.get(f'articoli[{i}][unita_misura]', 'PZ'),
+                            prezzo_unitario=float(request.form.get(f'articoli[{i}][prezzo_unitario]', 0) or 0) if request.form.get(f'articoli[{i}][prezzo_unitario]') else None,
+                            sconto_percentuale=float(request.form.get(f'articoli[{i}][sconto_percentuale]', 0) or 0) if request.form.get(f'articoli[{i}][sconto_percentuale]') else None,
+                            totale_riga=float(request.form.get(f'articoli[{i}][totale_riga]', 0) or 0) if request.form.get(f'articoli[{i}][totale_riga]') else None,
+                            disponibilita=request.form.get(f'articoli[{i}][disponibilita]', ''),
+                            tempo_consegna=request.form.get(f'articoli[{i}][tempo_consegna]', ''),
+                            note=request.form.get(f'articoli[{i}][note]', '')
+                        )
+                        db.session.add(dettaglio)
+                    i += 1
+        # Se non ci sono articoli validi, mantieni i dettagli esistenti
         
         db.session.commit()
         
