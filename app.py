@@ -679,7 +679,9 @@ def parse_pdf_claude():
                     print(f"Confronto: Claude={comparison.get('claude_articles', 0)} vs Gemini={comparison.get('gemini_articles', 0)} articoli")
                 
                 # Bug #16: Pulizia codici articolo per DDT Cambielli
-                if 'CAMBIELLI' in file.filename.upper():
+                fornitore_nome = parsed_data.get('fornitore', {}).get('ragione_sociale', '')
+                if 'CAMBIELLI' in fornitore_nome.upper():
+                    print(f"DEBUG: Rilevato fornitore Cambielli: {fornitore_nome}")
                     clean_cambielli_article_codes(parsed_data)
                 
                 # Bug #45: Controllo automazione creazione fornitore
@@ -2545,7 +2547,9 @@ def process_batch_files(job_id):
                         data = result['data']
                         
                         # Bug #16: Pulizia codici articolo per DDT Cambielli anche nel batch
-                        if 'CAMBIELLI' in batch_file.original_filename.upper():
+                        fornitore_nome_batch = data.get('fornitore', {}).get('ragione_sociale', '')
+                        if 'CAMBIELLI' in fornitore_nome_batch.upper():
+                            print(f"DEBUG BATCH: Rilevato fornitore Cambielli: {fornitore_nome_batch}")
                             clean_cambielli_article_codes(data)
                         
                         # Crea DDT IN
