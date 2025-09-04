@@ -5553,6 +5553,8 @@ def modifica_ordine(id):
         # Aggiungi nuovi dettagli
         totale = 0
         dettagli_keys = [key for key in request.form.keys() if key.startswith('dettagli[') and key.endswith('[descrizione]')]
+        print(f"DEBUG - Form keys found: {list(request.form.keys())}")
+        print(f"DEBUG - Dettagli keys: {dettagli_keys}")
         
         for key in dettagli_keys:
             index = key.split('[')[1].split(']')[0]
