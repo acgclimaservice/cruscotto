@@ -263,6 +263,7 @@
                         <th>Codice</th>
                         <th>Descrizione</th>
                         <th>Quantità</th>
+                        <th>U.M.</th>
                         <th>Prezzo Unitario</th>
                         <th>Mastrino <span style="color: red;">*</span></th>
                         <th>Azioni</th>
@@ -507,6 +508,7 @@
                         <td><input type="text" value="${art.codice || ''}" id="codice-${index}"></td>
                         <td><input type="text" value="${art.descrizione || ''}" id="descrizione-${index}"></td>
                         <td><input type="number" step="0.01" value="${art.quantita || 0}" id="quantita-${index}"></td>
+                        <td><input type="text" value="${art.unita_misura || 'PZ'}" id="unita_misura-${index}" style="width: 50px; text-align: center;"></td>
                         <td><input type="number" step="0.01" value="${art.prezzo_unitario || 0}" id="prezzo-${index}"></td>
                         <td>
                             <div style="position: relative;">
@@ -632,6 +634,7 @@
             const codice = document.getElementById(`codice-${i}`);
             const descrizione = document.getElementById(`descrizione-${i}`);
             const quantita = document.getElementById(`quantita-${i}`);
+            const unita_misura = document.getElementById(`unita_misura-${i}`);
             const prezzo = document.getElementById(`prezzo-${i}`);
             const mastrino = document.getElementById(`mastrino-${i}`);
             
@@ -647,6 +650,7 @@
                     codice: codice.value, // Questo è il codice fornitore
                     descrizione: descrizione.value,
                     quantita: parseFloat(quantita.value) || 0,
+                    unita_misura: unita_misura ? unita_misura.value || 'PZ' : 'PZ',
                     costo_unitario: parseFloat(prezzo.value) || 0,
                     mastrino_riga: mastrinoValue
                 });

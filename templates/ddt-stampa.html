@@ -277,6 +277,7 @@
                     <th style="width: 80px;">Codice</th>
                     <th>Descrizione</th>
                     <th style="width: 60px;">Qty</th>
+                    <th style="width: 40px;">U.M.</th>
                     <th style="width: 90px;">Costo Unit.</th>
                     <th style="width: 90px;">Totale</th>
                 </tr>
@@ -288,6 +289,7 @@
                     <td><strong>{{ articolo.codice_interno or '-' }}</strong></td>
                     <td>{{ articolo.descrizione }}</td>
                     <td style="text-align: right;">{{ "{:.2f}".format(articolo.quantita) }}</td>
+                    <td style="text-align: center;">{{ articolo.unita_misura or 'PZ' }}</td>
                     <td style="text-align: right;">€ {{ "{:.2f}".format(articolo.costo_unitario or 0) }}</td>
                     <td style="text-align: right;"><strong>€ {{ "{:.2f}".format((articolo.quantita * (articolo.costo_unitario or 0))) }}</strong></td>
                 </tr>
