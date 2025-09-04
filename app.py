@@ -714,46 +714,26 @@ def parse_pdf_claude():
         file.seek(0)
         pdf_base64 = base64.b64encode(file.read()).decode()
         
-        if 'CAMBIELLI' in filename or 'CA0' in filename:
-            fallback_data = {
-                'numero_ddt': filename.replace('.pdf', '').replace('.PDF', ''),
-                'data_ddt': datetime.now().strftime('%Y-%m-%d'),
-                'fornitore': {
-                    'ragione_sociale': 'CAMBIELLI SRL',
-                    'partita_iva': '03456789012'
-                },
-                'articoli': [
-                    {
-                        'codice': 'CAMBIO.AUTO.001',
-                        'descrizione': 'Cambio automatico Mercedes Citaro',
-                        'quantita': 1,
-                        'prezzo_unitario': 2850.00
-                    }
-                ],
-                'pdf_base64': pdf_base64,
-                'ai_used': 'fallback',
-                'warning': 'Dati generati automaticamente - controllare accuratezza'
-            }
-        else:
-            fallback_data = {
-                'numero_ddt': filename.replace('.pdf', '').replace('.PDF', ''),
-                'data_ddt': datetime.now().strftime('%Y-%m-%d'),
-                'fornitore': {
-                    'ragione_sociale': 'Fornitore da PDF',
-                    'partita_iva': '12345678901'
-                },
-                'articoli': [
-                    {
-                        'codice': 'ART001',
-                        'descrizione': 'Articolo estratto da PDF',
-                        'quantita': 1,
-                        'prezzo_unitario': 100.00
-                    }
-                ],
-                'pdf_base64': pdf_base64,
-                'ai_used': 'fallback',
-                'warning': 'Dati generati automaticamente - completare manualmente'
-            }
+        # Fallback generico per tutti i fornitori (incluso Cambielli)
+        fallback_data = {
+            'numero_ddt': filename.replace('.pdf', '').replace('.PDF', ''),
+            'data_ddt': datetime.now().strftime('%Y-%m-%d'),
+            'fornitore': {
+                'ragione_sociale': 'Fornitore da PDF',
+                'partita_iva': '12345678901'
+            },
+            'articoli': [
+                {
+                    'codice': 'ART001',
+                    'descrizione': 'Articolo estratto da PDF - Verifica manualmente',
+                    'quantita': 1,
+                    'prezzo_unitario': 100.00
+                }
+            ],
+            'pdf_base64': pdf_base64,
+            'ai_used': 'fallback',
+            'warning': 'Dati generati automaticamente - controllare accuratezza'
+        }
         
         # Bug #45: Controllo fornitore anche nel fallback
         fornitore_info = check_fornitore_esistente(fallback_data.get('fornitore', {}))
