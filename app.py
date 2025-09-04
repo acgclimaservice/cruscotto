@@ -5840,7 +5840,7 @@ def stampa_ordine_pdf(id):
                 
                 html_content += f"""
                         <tr>
-                            <td>{dettaglio.codice or '-'}</td>
+                            <td>{dettaglio.codice_articolo or '-'}</td>
                             <td>{dettaglio.codice_fornitore or '-'}</td>
                             <td>{dettaglio.descrizione or '-'}</td>
                             <td class="number">{dettaglio.quantita:.2f if dettaglio.quantita else '0'}</td>
