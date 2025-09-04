@@ -86,6 +86,7 @@
                         <th>Codice</th>
                         <th>Descrizione</th>
                         <th>Quantità</th>
+                        <th>U.M.</th>
                         <th>Costo Unit.</th>
                         <th>Totale</th>
                     </tr>
@@ -96,6 +97,7 @@
                         <td>{{ articolo.codice_interno or '-' }}</td>
                         <td>{{ articolo.descrizione }}</td>
                         <td>{{ articolo.quantita }}</td>
+                        <td>{{ articolo.unita_misura or 'PZ' }}</td>
                         <td>€ {{ "{:.2f}".format(articolo.costo_unitario or 0) }}</td>
                         <td>€ {{ "{:.2f}".format((articolo.quantita * (articolo.costo_unitario or 0))) }}</td>
                     </tr>

@@ -103,6 +103,7 @@
                                 <th>Codice Fornitore *</th>
                                 <th>Descrizione *</th>
                                 <th>Quantità *</th>
+                                <th>U.M.</th>
                                 <th>Costo Unitario *</th>
                                 <th>Mastrino *</th>
                                 <th>Azioni</th>
@@ -119,6 +120,8 @@
                                           value="{{ articolo.descrizione }}" required style="width: 100%;"></td>
                                 <td><input type="number" name="articoli[{{ loop.index0 }}][quantita]" 
                                           value="{{ articolo.quantita }}" step="0.01" required style="width: 100%;"></td>
+                                <td><input type="text" name="articoli[{{ loop.index0 }}][unita_misura]" 
+                                          value="{{ articolo.unita_misura or 'PZ' }}" style="width: 100%;"></td>
                                 <td><input type="number" name="articoli[{{ loop.index0 }}][costo]" 
                                           value="{{ articolo.costo_unitario }}" step="0.01" required style="width: 100%;"></td>
                                 <td>
@@ -155,6 +158,7 @@
                 <td><input type="text" name="articoli[${rigaCounter}][codice_fornitore]" required style="width: 100%;"></td>
                 <td><input type="text" name="articoli[${rigaCounter}][descrizione]" required style="width: 100%;"></td>
                 <td><input type="number" name="articoli[${rigaCounter}][quantita]" step="0.01" required style="width: 100%;"></td>
+                <td><input type="text" name="articoli[${rigaCounter}][unita_misura]" value="PZ" style="width: 100%;"></td>
                 <td><input type="number" name="articoli[${rigaCounter}][costo]" step="0.01" required style="width: 100%;"></td>
                 <td><input type="text" name="articoli[${rigaCounter}][mastrino]" required style="width: 100%;" class="mastrino-input" data-index="${rigaCounter}"></td>
                 <td><button type="button" onclick="rimuoviRiga(this)" class="btn btn-danger btn-small">🗑️</button></td>
