@@ -5835,7 +5835,9 @@ def stampa_ordine_pdf(id):
             
             totale_generale = 0
             for dettaglio in dettagli:
-                totale_riga = (dettaglio.quantita or 0) * (dettaglio.prezzo_unitario or 0)
+                quantita = float(dettaglio.quantita or 0)
+                prezzo = float(dettaglio.prezzo_unitario or 0)
+                totale_riga = quantita * prezzo
                 totale_generale += totale_riga
                 
                 html_content += f"""
@@ -5843,8 +5845,8 @@ def stampa_ordine_pdf(id):
                             <td>{dettaglio.codice_articolo or '-'}</td>
                             <td>{dettaglio.codice_fornitore or '-'}</td>
                             <td>{dettaglio.descrizione or '-'}</td>
-                            <td class="number">{dettaglio.quantita:.2f if dettaglio.quantita else '0'}</td>
-                            <td class="number">€ {dettaglio.prezzo_unitario:.2f if dettaglio.prezzo_unitario else '0.00'}</td>
+                            <td class="number">{quantita:.2f}</td>
+                            <td class="number">€ {prezzo:.2f}</td>
                             <td class="number">€ {totale_riga:.2f}</td>
                         </tr>
                 """
@@ -5857,7 +5859,7 @@ def stampa_ordine_pdf(id):
                     <table class="totals-table">
                         <tr>
                             <td><strong>TOTALE NETTO:</strong></td>
-                            <td><strong>€ {ordine.totale_netto:.2f if ordine.totale_netto else totale_generale:.2f}</strong></td>
+                            <td><strong>€ {(ordine.totale_netto if ordine.totale_netto else totale_generale):.2f}</strong></td>
                         </tr>
                     </table>
                 </div>
