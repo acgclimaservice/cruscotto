@@ -554,10 +554,15 @@ def serve_pdf(filename):
     else:
         return "PDF non trovato", 404
 
-def clean_cambielli_article_codes(parsed_data):
-    """Bug #16: Ripulisce i codici articolo DDT Cambielli dalla concatenazione con numero posizione"""
+def clean_cambielli_article_codes(parsed_data, ai_used=None):
+    """Bug #16: Ripulisce i codici articolo DDT Cambielli dalla concatenazione con numero posizione (solo Claude)"""
     if not parsed_data.get('articoli'):
         return
+    
+    # Determina se c'è necessità di pulizia
+    ai_info = ai_used or parsed_data.get('ai_used', '')
+    if ai_info and 'gemini' in ai_info.lower():
+        print(f"DEBUG Cambielli: AI={ai_info} - pulizia probabilmente non necessaria, controllo comunque...")
     
     for i, articolo in enumerate(parsed_data['articoli']):
         old_code = articolo.get('codice', '')
@@ -566,17 +571,18 @@ def clean_cambielli_article_codes(parsed_data):
             
         print(f"DEBUG Cambielli: Codice originale: '{old_code}'")
         
-        # Se il codice inizia con un numero e è lungo più di 2 caratteri
+        # Logica più intelligente: controlla se il codice sembra concatenato
         if old_code and len(old_code) > 2 and old_code[0].isdigit():
-            # Verifica se rimuovendo il primo carattere otteniamo un codice valido
-            new_code = old_code[1:]
+            # Per codici che iniziano con 1, 2, 3... (numeri posizione) e sono lunghi
+            first_digit = old_code[0]
+            remaining_code = old_code[1:]
             
-            # Se il nuovo codice è almeno 4 caratteri, probabilmente è quello giusto
-            if len(new_code) >= 4:
-                parsed_data['articoli'][i]['codice'] = new_code
-                print(f"DEBUG Cambielli: Codice pulito: '{old_code}' → '{new_code}'")
+            # Se il primo digit è 1, 2, o 3 ed il resto è almeno 4 caratteri, probabile concatenazione
+            if first_digit in ['1', '2', '3'] and len(remaining_code) >= 4:
+                parsed_data['articoli'][i]['codice'] = remaining_code
+                print(f"DEBUG Cambielli: Codice pulito (pos {first_digit}): '{old_code}' → '{remaining_code}'")
             else:
-                print(f"DEBUG Cambielli: Codice troppo corto dopo pulizia, mantengo originale: '{old_code}'")
+                print(f"DEBUG Cambielli: Codice sembra corretto, mantengo: '{old_code}'")
         else:
             print(f"DEBUG Cambielli: Codice non necessita pulizia: '{old_code}'")
 
@@ -678,11 +684,13 @@ def parse_pdf_claude():
                 if comparison:
                     print(f"Confronto: Claude={comparison.get('claude_articles', 0)} vs Gemini={comparison.get('gemini_articles', 0)} articoli")
                 
-                # Bug #16: Pulizia codici articolo per DDT Cambielli
+                # Bug #16: Pulizia codici articolo per DDT Cambielli (solo per Claude AI)
                 fornitore_nome = parsed_data.get('fornitore', {}).get('ragione_sociale', '')
-                if 'CAMBIELLI' in fornitore_nome.upper():
-                    print(f"DEBUG: Rilevato fornitore Cambielli: {fornitore_nome}")
-                    clean_cambielli_article_codes(parsed_data)
+                if 'CAMBIELLI' in fornitore_nome.upper() and ai_used.lower() == 'claude':
+                    print(f"DEBUG: Rilevato fornitore Cambielli con Claude AI: {fornitore_nome}")
+                    clean_cambielli_article_codes(parsed_data, ai_used)
+                elif 'CAMBIELLI' in fornitore_nome.upper() and ai_used.lower() != 'claude':
+                    print(f"DEBUG: Fornitore Cambielli rilevato ma AI={ai_used} - pulizia non necessaria")
                 
                 # Bug #45: Controllo automazione creazione fornitore
                 fornitore_info = check_fornitore_esistente(parsed_data.get('fornitore', {}))
@@ -2546,11 +2554,12 @@ def process_batch_files(job_id):
                     if result.get('success') and 'data' in result:
                         data = result['data']
                         
-                        # Bug #16: Pulizia codici articolo per DDT Cambielli anche nel batch
+                        # Bug #16: Pulizia codici articolo per DDT Cambielli anche nel batch (logica intelligente)
                         fornitore_nome_batch = data.get('fornitore', {}).get('ragione_sociale', '')
                         if 'CAMBIELLI' in fornitore_nome_batch.upper():
-                            print(f"DEBUG BATCH: Rilevato fornitore Cambielli: {fornitore_nome_batch}")
-                            clean_cambielli_article_codes(data)
+                            ai_used_batch = data.get('ai_used', 'claude')  # Default claude per batch
+                            print(f"DEBUG BATCH: Rilevato fornitore Cambielli: {fornitore_nome_batch}, AI: {ai_used_batch}")
+                            clean_cambielli_article_codes(data, ai_used_batch)
                         
                         # Crea DDT IN
                         fornitore_nome = ''
