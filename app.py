@@ -5762,6 +5762,8 @@ def pdf_allegato_ordine(id):
 def stampa_ordine_pdf(id):
     """Stampa ordine come PDF usando DocumentTemplate"""
     try:
+        from document_templates import DocumentTemplate
+        
         ordine = OrdineFornitore.query.get_or_404(id)
         dettagli = DettaglioOrdine.query.filter_by(ordine_id=id).all()
         
