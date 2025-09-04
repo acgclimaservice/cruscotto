@@ -120,11 +120,8 @@
                         <!-- Status -->
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="stato">Stato</label>
-                                <select id="stato" name="stato" {% if mpls.stato != 'bozza' %}disabled{% endif %} class="form-control">
-                                    <option value="bozza" {% if mpls.stato == 'bozza' %}selected{% endif %}>📝 Bozza</option>
-                                    <option value="confermato" {% if mpls.stato == 'confermato' %}selected{% endif %}>✅ Confermato</option>
-                                </select>
+                                <label>Stato Attuale</label>
+                                <input type="text" value="{% if mpls.stato == 'bozza' %}📝 Bozza{% else %}✅ Confermato{% endif %}" readonly class="form-control">
                             </div>
                             <div class="form-group">
                                 <label>Creato il</label>

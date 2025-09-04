@@ -8196,6 +8196,7 @@ def modifica_mpls(id):
 def update_mpls(id):
     """Aggiorna MPLS esistente"""
     try:
+        print(f"[DEBUG UPDATE] Aggiornamento MPLS {id} - Form data: {dict(request.form)}")
         mpls = MPLS.query.get_or_404(id)
         
         if mpls.stato != 'bozza':
@@ -8266,13 +8267,16 @@ def update_mpls(id):
                 db.session.add(articolo)
         
         db.session.commit()
+        print(f"[DEBUG UPDATE] MPLS {mpls.numero_mpls} salvato con successo! Stato: {mpls.stato}")
         
         flash(f"MPLS {mpls.numero_mpls} aggiornato con successo!", "success")
         return redirect(f'/mpls/{mpls.id}')
         
     except Exception as e:
         db.session.rollback()
-        print(f"Errore aggiornamento MPLS: {e}")
+        import traceback
+        print(f"[DEBUG UPDATE] Errore aggiornamento MPLS: {e}")
+        print(f"[DEBUG UPDATE] Traceback: {traceback.format_exc()}")
         flash(f"Errore nell'aggiornamento: {str(e)}", "error")
         return redirect(f'/mpls/{id}/modifica')
 
