@@ -7839,64 +7839,67 @@ def stampa_mpls(id):
         mpls = MPLS.query.get_or_404(id)
         articoli = MPLSArticolo.query.filter_by(mpls_id=id).all()
         
-        # Template HTML per stampa MPLS
-        html_content = f"""
-        <!DOCTYPE html>
-        <html lang="it">
-        <head>
-            <meta charset="UTF-8">
-            <title>MPLS {mpls.numero_mpls}</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 20px; color: #333; }}
-                .header {{ text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #007bff; }}
-                .header h1 {{ color: #007bff; margin-bottom: 10px; }}
-                .info-section {{ margin-bottom: 30px; }}
-                .info-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
-                .info-item {{ margin-bottom: 10px; }}
-                .info-label {{ font-weight: bold; color: #666; }}
-                table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                th {{ background-color: #007bff; color: white; }}
-                .totali {{ background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; }}
-                .totale-finale {{ font-size: 1.2em; font-weight: bold; color: #007bff; }}
-                @media print {{ .no-print {{ display: none !important; }} }}
-            </style>
-        </head>
-        <body>
-            <div class="no-print">
-                <button onclick="window.print()">🖨️ Stampa</button>
-                <button onclick="window.close()">❌ Chiudi</button>
-            </div>
-            
-            <div class="header">
-                <h1>PREVENTIVO MARGINI PREZZI LISTINO SCONTI</h1>
-                <h2>{mpls.numero_mpls}</h2>
-                <p><strong>ACG CLIMA SERVICE S.R.L.</strong></p>
-            </div>
-            
-            <div class="info-section">
-                <div class="info-grid">
-                    <div>
-                        <div class="info-item">
-                            <span class="info-label">Cliente:</span> {mpls.cliente_nome}
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Data Creazione:</span> {mpls.data_creazione.strftime('%d/%m/%Y') if mpls.data_creazione else '-'}
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Stato:</span> {mpls.stato.upper()}
-                        </div>
-                    </div>
-                    <div>
-                        <div class="info-item">
-                            <span class="info-label">Commessa:</span> {mpls.commessa.numero_progressivo if mpls.commessa else 'N/A'}
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Descrizione:</span> {mpls.descrizione or 'N/A'}
-                        </div>
-                    </div>
+        # Template HTML per stampa MPLS - usa .format() per evitare conflitti
+        data_creazione = mpls.data_creazione.strftime('%d/%m/%Y') if mpls.data_creazione else '-'
+        commessa_numero = mpls.commessa.numero_progressivo if mpls.commessa else 'N/A'
+        descrizione = mpls.descrizione or 'N/A'
+        
+        html_content = """<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>MPLS {numero_mpls}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; color: #333; }}
+        .header {{ text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #007bff; }}
+        .header h1 {{ color: #007bff; margin-bottom: 10px; }}
+        .info-section {{ margin-bottom: 30px; }}
+        .info-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
+        .info-item {{ margin-bottom: 10px; }}
+        .info-label {{ font-weight: bold; color: #666; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+        th {{ background-color: #007bff; color: white; }}
+        .totali {{ background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; }}
+        .totale-finale {{ font-size: 1.2em; font-weight: bold; color: #007bff; }}
+        @media print {{ .no-print {{ display: none !important; }} }}
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button onclick="window.print()">🖨️ Stampa</button>
+        <button onclick="window.close()">❌ Chiudi</button>
+    </div>
+    
+    <div class="header">
+        <h1>PREVENTIVO MARGINI PREZZI LISTINO SCONTI</h1>
+        <h2>{numero_mpls}</h2>
+        <p><strong>ACG CLIMA SERVICE S.R.L.</strong></p>
+    </div>
+    
+    <div class="info-section">
+        <div class="info-grid">
+            <div>
+                <div class="info-item">
+                    <span class="info-label">Cliente:</span> {cliente_nome}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Data Creazione:</span> {data_creazione}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Stato:</span> {stato}
                 </div>
             </div>
+            <div>
+                <div class="info-item">
+                    <span class="info-label">Commessa:</span> {commessa_numero}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Descrizione:</span> {descrizione}
+                </div>
+            </div>
+        </div>
+    </div>
             
             <h3>Articoli e Calcoli</h3>
             <table>
@@ -7946,7 +7949,7 @@ def stampa_mpls(id):
         margine = totale_netto - totale_costi - costo_manodopera
         margine_percentuale = (margine / totale_netto * 100) if totale_netto > 0 else 0
         
-        html_content += f"""
+        html_content += """
                 </tbody>
             </table>
             
@@ -7957,7 +7960,7 @@ def stampa_mpls(id):
                             <span class="info-label">Totale Costi Materiali:</span> € {totale_costi:.2f}
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Ore Manodopera:</span> {mpls.ore_manodopera or 0} ore
+                            <span class="info-label">Ore Manodopera:</span> {ore_manodopera} ore
                         </div>
                         <div class="info-item">
                             <span class="info-label">Costo Manodopera:</span> € {costo_manodopera:.2f}
@@ -7965,7 +7968,7 @@ def stampa_mpls(id):
                     </div>
                     <div>
                         <div class="info-item">
-                            <span class="info-label">Sovrapprezzo:</span> € {mpls.sovrapprezzo or 0:.2f}
+                            <span class="info-label">Sovrapprezzo:</span> € {sovrapprezzo:.2f}
                         </div>
                         <div class="info-item">
                             <span class="info-label">Margine:</span> € {margine:.2f} ({margine_percentuale:.1f}%)
@@ -7978,12 +7981,30 @@ def stampa_mpls(id):
             </div>
             
             <div style="text-align: center; margin-top: 50px; font-size: 12px; color: #666;">
-                Documento generato automaticamente il {datetime.now().strftime('%d/%m/%Y alle %H:%M')}<br>
+                Documento generato automaticamente il {data_now}<br>
                 ACG CLIMA SERVICE S.R.L. - Sistema Gestione MPLS
             </div>
         </body>
         </html>
         """
+        
+        # Applica .format() con tutti i valori
+        html_content = html_content.format(
+            numero_mpls=mpls.numero_mpls,
+            cliente_nome=mpls.cliente_nome,
+            data_creazione=data_creazione,
+            stato=mpls.stato.upper(),
+            commessa_numero=commessa_numero,
+            descrizione=descrizione,
+            totale_costi=totale_costi,
+            ore_manodopera=mpls.ore_manodopera or 0,
+            costo_manodopera=costo_manodopera,
+            sovrapprezzo=mpls.sovrapprezzo or 0,
+            margine=margine,
+            margine_percentuale=margine_percentuale,
+            totale_netto=totale_netto,
+            data_now=datetime.now().strftime('%d/%m/%Y alle %H:%M')
+        )
         
         response = make_response(html_content)
         response.headers['Content-Type'] = 'text/html'
