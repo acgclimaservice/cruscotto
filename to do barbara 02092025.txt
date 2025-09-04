@@ -24,14 +24,17 @@ MA IL CAMPO DATA OFFERTA NON VIENE COMPILATO.
 15 per i fornitori dobbiamo inserire un controllo che non mi duplichi i fornitori già presenti in anagrafica. il check che un fornitore sia già presente può avvenire per ragione sociale o per partita iva. 
 16 nei ddt in importati via mail, manualmente e nell'import multiplo nei ddt di cambielli mi legge il codice articolo come la colonna pos e articolo (prime due colonne).  FATTO
 17 se nei ddt in dobbiamo controllare le unità di misura. nei ddt importati non ne tiene nemmeno conto, mentre se nei ddt inseriti manualmente provo a cambiare l'unità di misura non mi tiene la modifica. FATTO
-18 la stampa del ddt out mi restituisce questo errore: type object 'DocumentTemplate' has no attribute 'get_styles'
+18 la stampa del ddt out mi restituisce questo errore: type object 'DocumentTemplate' has no attribute 'get_styles' FATTO
 19 la stampa dell'ordine mi restituisce questo errore: Internal Server Error
 The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
-20 la stampa dell'offerta mirestituisce questo errore: Errore PDF: type object 'DocumentTemplate' has no attribute 'get_styles'
+20 la stampa dell'offerta mirestituisce questo errore: Errore PDF: type object 'DocumentTemplate' has no attribute 'get_styles' FATTO
 21 nella sezione mpls aggiungimi l'autocompletamento dei clienti. 
 22 se genero un mpls dall'offerta o dal ddt in non mi riporta gli articoli presenti nell'offerta e nel ddt. 
 23 inserisci la possibilità di stampare un mpls creato. 
 24 per i ddt elaborati via mail non mi fa il controllo dei duplicati.
 25 la stampa del preventivo non stampa quello che realmente c'è in quel preventivo.  
+26 se modifico un offerta per esempio aggiornando lo stato non mi mantiene l'articolo che era già presente
+
+
 
  

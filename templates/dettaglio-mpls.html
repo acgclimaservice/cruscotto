@@ -39,6 +39,7 @@
                     {% if mpls.stato == 'bozza' %}
                     <a href="/mpls/{{ mpls.id }}/modifica" class="btn btn-warning">✏️ Modifica</a>
                     {% endif %}
+                    <button class="btn btn-primary" onclick="window.open('/mpls/{{ mpls.id }}/stampa', '_blank')">🖨️ Stampa MPLS</button>
                     <a href="/mpls" class="btn btn-secondary">← Torna alla Lista</a>
                 </div>
             </div>
