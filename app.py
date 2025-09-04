@@ -7889,7 +7889,7 @@ def stampa_mpls(id):
                     </div>
                     <div>
                         <div class="info-item">
-                            <span class="info-label">Commessa:</span> {mpls.commessa.numero_commessa if mpls.commessa else 'N/A'}
+                            <span class="info-label">Commessa:</span> {mpls.commessa.numero_progressivo if mpls.commessa else 'N/A'}
                         </div>
                         <div class="info-item">
                             <span class="info-label">Descrizione:</span> {mpls.descrizione or 'N/A'}
