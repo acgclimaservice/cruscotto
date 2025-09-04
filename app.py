@@ -7837,7 +7837,7 @@ def stampa_mpls(id):
     """Stampa MPLS in formato professionale"""
     try:
         mpls = MPLS.query.get_or_404(id)
-        articoli = DettaglioMPLS.query.filter_by(mpls_id=id).all()
+        articoli = MPLSArticolo.query.filter_by(mpls_id=id).all()
         
         # Template HTML per stampa MPLS
         html_content = f"""
@@ -7918,19 +7918,24 @@ def stampa_mpls(id):
         totale_vendita = 0
         
         for articolo in articoli:
-            costo_totale = (articolo.quantita or 0) * (articolo.costo_unitario or 0)
+            costo_totale = (articolo.quantita or 0) * (articolo.prezzo_costo or 0)
             vendita_totale = (articolo.quantita or 0) * (articolo.prezzo_vendita or 0)
             totale_costi += costo_totale
             totale_vendita += vendita_totale
+            
+            # Calcola ricarico se disponibile
+            ricarico = 0
+            if articolo.prezzo_costo and articolo.prezzo_costo > 0 and articolo.prezzo_vendita:
+                ricarico = ((articolo.prezzo_vendita - articolo.prezzo_costo) / articolo.prezzo_costo) * 100
             
             html_content += f"""
                     <tr>
                         <td>{articolo.codice or '-'}</td>
                         <td>{articolo.descrizione or '-'}</td>
                         <td>{articolo.quantita or 0}</td>
-                        <td>{articolo.fornitore or '-'}</td>
-                        <td>€ {articolo.costo_unitario:.2f if articolo.costo_unitario else 0}</td>
-                        <td>{articolo.ricarico_percentuale:.1f if articolo.ricarico_percentuale else 0}%</td>
+                        <td>{getattr(articolo, 'fornitore', '-') or '-'}</td>
+                        <td>€ {articolo.prezzo_costo:.2f if articolo.prezzo_costo else 0}</td>
+                        <td>{ricarico:.1f}%</td>
                         <td>€ {articolo.prezzo_vendita:.2f if articolo.prezzo_vendita else 0}</td>
                         <td>€ {vendita_totale:.2f}</td>
                     </tr>"""
