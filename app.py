@@ -5569,7 +5569,9 @@ def modifica_ordine(id):
             if descrizione and descrizione.strip():
                 quantita = float(request.form.get(f'dettagli[{index}][quantita]', 0))
                 prezzo_unitario = float(request.form.get(f'dettagli[{index}][prezzo_unitario]', 0))
-                totale_riga = quantita * prezzo_unitario
+                sconto_percentuale = float(request.form.get(f'dettagli[{index}][sconto_percentuale]', 0))
+                subtotale = quantita * prezzo_unitario
+                totale_riga = subtotale * (1 - sconto_percentuale/100)
                 
                 print(f"DEBUG - Dettaglio {index}: quantita={quantita}, prezzo={prezzo_unitario}, totale_riga={totale_riga}")
                 
@@ -5581,7 +5583,7 @@ def modifica_ordine(id):
                     quantita=quantita,
                     unita_misura=request.form.get(f'dettagli[{index}][unita_misura]', 'PZ'),
                     prezzo_unitario=prezzo_unitario,
-                    sconto_percentuale=float(request.form.get(f'dettagli[{index}][sconto_percentuale]', 0)),
+                    sconto_percentuale=sconto_percentuale,
                     totale_riga=totale_riga,
                     note=request.form.get(f'dettagli[{index}][note]', '')
                 )
