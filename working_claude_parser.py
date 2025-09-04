@@ -97,6 +97,13 @@ class WorkingClaudeParser:
 IMPORTANTE per DESTINATARIO vs FORNITORE:
 - Il DESTINATARIO è il CLIENTE (chi riceve preventivo/merce)
 - Il FORNITORE è chi EMETTE il documento (chi invia)
+
+CRITICO - ESTRAZIONE CODICE ARTICOLO:
+- NON confondere il numero di POSIZIONE (Pos, #, 1, 2, 3...) con il CODICE ARTICOLO
+- Il codice articolo è solitamente alfanumerico (es: ABC123, PART-456, etc.)
+- I numeri di posizione sono solo numerici progressivi (1, 2, 3...)
+- Ignora completamente i numeri di posizione/riga
+- Concentrati solo sui veri codici articolo che identificano il prodotto
 - Se vedi "ACGCLIMA SERVICE", probabilmente è il fornitore che emette
 - Cerca "Cliente:", "Destinatario:", "Spett.le" per il cliente
 - Cerca "Mittente:", "Da:" o intestazione per il fornitore

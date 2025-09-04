@@ -29,7 +29,22 @@
       "Bash(start:*)",
       "Bash(set)",
       "WebSearch",
-      "WebFetch(domain:acgclimaservice.pythonanywhere.com)"
+      "WebFetch(domain:acgclimaservice.pythonanywhere.com)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2\\routes/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)"
     ],
     "deny": [],
     "ask": []

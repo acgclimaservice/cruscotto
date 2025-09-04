@@ -97,6 +97,13 @@ CRITICO - DISTINZIONE FORNITORE/DESTINATARIO:
 - Cerca nella sezione "Mittente", "Fornitore", "Da:" o intestazione del documento
 - Il fornitore ha solitamente P.IVA e indirizzo nella parte superiore del DDT
 
+CRITICO - ESTRAZIONE CODICE ARTICOLO:
+- NON confondere il numero di POSIZIONE (Pos, #, 1, 2, 3...) con il CODICE ARTICOLO
+- Il codice articolo è solitamente alfanumerico (es: ABC123, PART-456, etc.)
+- I numeri di posizione sono solo numerici progressivi (1, 2, 3...)
+- Ignora completamente i numeri di posizione/riga
+- Concentrati solo sui veri codici articolo che identificano il prodotto
+
 IMPORTANTE: 
 - Estrai TUTTI gli articoli presenti
 - Per le quantità usa il formato numerico (es. 2, non "2,000")  
@@ -189,6 +196,13 @@ CRITICO - DISTINZIONE FORNITORE/DESTINATARIO:
 - Se vedi "ACGCLIMA SERVICE" come destinatario, NON è il fornitore
 - Cerca il fornitore nella sezione intestazione, "Mittente", "Da:" del documento
 - Il fornitore è l'azienda che emette il DDT (di solito in alto)
+
+CRITICO - ESTRAZIONE CODICE ARTICOLO:
+- NON confondere il numero di POSIZIONE (Pos, #, 1, 2, 3...) con il CODICE ARTICOLO
+- Il codice articolo è solitamente alfanumerico (es: ABC123, PART-456, etc.)
+- I numeri di posizione sono solo numerici progressivi (1, 2, 3...)
+- Ignora completamente i numeri di posizione/riga
+- Concentrati solo sui veri codici articolo che identificano il prodotto
 
 IMPORTANTE: quantità come numero puro (2 non 2,000), prezzi come decimali."""
 
