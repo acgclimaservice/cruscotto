@@ -5560,6 +5560,12 @@ def modifica_ordine(id):
         print(f"DEBUG - Form keys found: {list(request.form.keys())}")
         print(f"DEBUG - Dettagli keys: {dettagli_keys}")
         
+        # DEBUG: Mostra tutti i campi dettagli
+        all_dettagli_keys = [key for key in request.form.keys() if key.startswith('dettagli[')]
+        print(f"DEBUG - ALL dettagli keys: {all_dettagli_keys}")
+        for key in all_dettagli_keys:
+            print(f"DEBUG - {key} = {request.form.get(key)}")
+        
         dettagli_aggiunti = 0
         for key in dettagli_keys:
             index = key.split('[')[1].split(']')[0]
