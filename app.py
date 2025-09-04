@@ -577,8 +577,8 @@ def clean_cambielli_article_codes(parsed_data, ai_used=None):
             first_digit = old_code[0]
             remaining_code = old_code[1:]
             
-            # Se il primo digit è 1, 2, o 3 ed il resto è almeno 4 caratteri, probabile concatenazione
-            if first_digit in ['1', '2', '3'] and len(remaining_code) >= 4:
+            # Se il primo digit è un numero posizione (1-9) ed il resto è almeno 4 caratteri, probabile concatenazione
+            if first_digit in ['1', '2', '3', '4', '5', '6', '7', '8', '9'] and len(remaining_code) >= 4:
                 parsed_data['articoli'][i]['codice'] = remaining_code
                 print(f"DEBUG Cambielli: Codice pulito (pos {first_digit}): '{old_code}' → '{remaining_code}'")
             else:
