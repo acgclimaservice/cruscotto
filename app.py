@@ -5538,6 +5538,7 @@ def modifica_ordine(id):
         ordine.note = request.form.get('note', '')
         ordine.priorita = request.form.get('priorita', 'media')
         ordine.iva = float(request.form.get('iva', 22))
+        ordine.commessa = request.form.get('commessa', '')
         
         # Gestione fornitore_id
         fornitore_id_value = request.form.get('fornitore_id')
