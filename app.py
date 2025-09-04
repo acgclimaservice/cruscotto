@@ -2584,21 +2584,32 @@ def process_batch_files(job_id):
                                 db.session.flush()
                         
                         # Controllo duplicati DDT (numero DDT fornitore)
-                        numero_ddt_fornitore = data.get('numero_ddt', '').strip()
+                        # Supporta sia 'numero_ddt' (Multi-AI parser) che 'numero_ddt_origine' (manual import)
+                        numero_ddt_fornitore = data.get('numero_ddt', '').strip() or data.get('numero_ddt_origine', '').strip()
+                        
                         if numero_ddt_fornitore and fornitore_nome:
-                            # Controlla se esiste già un DDT con stesso riferimento e fornitore
+                            # Primo controllo: exact match
                             ddt_esistente = DDTIn.query.filter_by(
                                 riferimento=numero_ddt_fornitore,
                                 fornitore=fornitore_nome
                             ).first()
                             
+                            # Secondo controllo: case insensitive e normalizzazione spazi
+                            if not ddt_esistente:
+                                ddt_esistente = DDTIn.query.filter(
+                                    db.func.lower(db.func.trim(DDTIn.riferimento)) == db.func.lower(db.func.trim(numero_ddt_fornitore)),
+                                    db.func.lower(db.func.trim(DDTIn.fornitore)) == db.func.lower(db.func.trim(fornitore_nome))
+                                ).first()
+                            
                             if ddt_esistente:
                                 batch_file.status = 'skipped'
                                 batch_file.error_message = f'DDT duplicato: {numero_ddt_fornitore} dal fornitore {fornitore_nome} già importato (ID: {ddt_esistente.id})'
                                 job.failed_files += 1
-                                print(f"DDT DUPLICATO saltato: {numero_ddt_fornitore} da {fornitore_nome}")
+                                print(f"[DUPLICATO] DDT {numero_ddt_fornitore} da {fornitore_nome} saltato - già esistente ID: {ddt_esistente.id}")
                                 db.session.commit()
                                 continue
+                            else:
+                                print(f"[OK] DDT {numero_ddt_fornitore} da {fornitore_nome} - nessun duplicato trovato, procedo")
                         
                         # Leggi e codifica PDF originale in base64
                         import base64
