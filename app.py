@@ -5531,6 +5531,7 @@ def modifica_ordine(id):
         return render_template('modifica-ordine.html', ordine=ordine, fornitori=fornitori, dettagli=dettagli)
     
     try:
+        print(f"DEBUG - Inizio modifica ordine {id}")
         # Aggiorna dati ordine
         ordine.fornitore_nome = request.form.get('fornitore_nome')
         ordine.oggetto = request.form.get('oggetto')
