@@ -69,7 +69,8 @@ class MultiAIPDFParser:
                 print("DEBUG Claude: Testo estratto insufficiente dal PDF")
                 return {'success': False, 'error': 'Impossibile estrarre testo dal PDF'}
             
-            print(f"DEBUG Claude: Testo estratto: {len(pdf_text)} caratteri")
+            print(f"DEBUG Claude CAMBIELLI: Testo estratto: {len(pdf_text)} caratteri")
+            print(f"DEBUG Claude CAMBIELLI: Prime 500 char del testo: {pdf_text[:500]}")
             
             prompt = f"""Analizza questo testo estratto da un DDT italiano e restituisci SOLO il JSON in questo formato:
 
@@ -97,12 +98,13 @@ CRITICO - DISTINZIONE FORNITORE/DESTINATARIO:
 - Cerca nella sezione "Mittente", "Fornitore", "Da:" o intestazione del documento
 - Il fornitore ha solitamente P.IVA e indirizzo nella parte superiore del DDT
 
-CRITICO - ESTRAZIONE CODICE ARTICOLO:
-- NON confondere il numero di POSIZIONE (Pos, #, 1, 2, 3...) con il CODICE ARTICOLO
-- Il codice articolo è solitamente alfanumerico (es: ABC123, PART-456, etc.)
-- I numeri di posizione sono solo numerici progressivi (1, 2, 3...)
-- Ignora completamente i numeri di posizione/riga
-- Concentrati solo sui veri codici articolo che identificano il prodotto
+CRITICO - ESTRAZIONE CODICE ARTICOLO PER CAMBIELLI:
+- NEI DDT CAMBIELLI: La prima colonna è sempre il numero POSIZIONE (1, 2, 3...)  
+- NEI DDT CAMBIELLI: La seconda colonna è il vero CODICE ARTICOLO (es: CA123, PART456, etc.)
+- IGNORA COMPLETAMENTE la prima colonna con i numeri 1, 2, 3...
+- USA SEMPRE la seconda colonna per il codice articolo
+- Se non riesci a distinguere le colonne, metti "CODICE_NON_TROVATO" nel campo codice
+- ESEMPIO CORRETTO: Pos=1, Codice=CA12345 → usa "CA12345" NON "1"
 
 IMPORTANTE: 
 - Estrai TUTTI gli articoli presenti
@@ -197,12 +199,13 @@ CRITICO - DISTINZIONE FORNITORE/DESTINATARIO:
 - Cerca il fornitore nella sezione intestazione, "Mittente", "Da:" del documento
 - Il fornitore è l'azienda che emette il DDT (di solito in alto)
 
-CRITICO - ESTRAZIONE CODICE ARTICOLO:
-- NON confondere il numero di POSIZIONE (Pos, #, 1, 2, 3...) con il CODICE ARTICOLO
-- Il codice articolo è solitamente alfanumerico (es: ABC123, PART-456, etc.)
-- I numeri di posizione sono solo numerici progressivi (1, 2, 3...)
-- Ignora completamente i numeri di posizione/riga
-- Concentrati solo sui veri codici articolo che identificano il prodotto
+CRITICO - ESTRAZIONE CODICE ARTICOLO PER CAMBIELLI:
+- NEI DDT CAMBIELLI: La prima colonna è sempre il numero POSIZIONE (1, 2, 3...)  
+- NEI DDT CAMBIELLI: La seconda colonna è il vero CODICE ARTICOLO (es: CA123, PART456, etc.)
+- IGNORA COMPLETAMENTE la prima colonna con i numeri 1, 2, 3...
+- USA SEMPRE la seconda colonna per il codice articolo
+- Se non riesci a distinguere le colonne, metti "CODICE_NON_TROVATO" nel campo codice
+- ESEMPIO CORRETTO: Pos=1, Codice=CA12345 → usa "CA12345" NON "1"
 
 IMPORTANTE: quantità come numero puro (2 non 2,000), prezzi come decimali."""
 
@@ -500,7 +503,8 @@ TESTO DA ANALIZZARE:
             )
             
             content = message.content[0].text.strip()
-            print(f"DEBUG Claude: Risposta ricevuta: {len(content)} caratteri")
+            print(f"DEBUG Claude CAMBIELLI: Risposta ricevuta: {len(content)} caratteri")
+            print(f"DEBUG Claude CAMBIELLI: Contenuto risposta: {content[:1000]}")
             
             # Pulisci JSON
             if content.startswith('```json'):
