@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>💰 Nuovo MPLS - Sistema Gestione</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <script src="{{ url_for('static', filename='autocomplete.js') }}"></script>
 </head>
 <body>
     <div class="container">
@@ -60,7 +61,8 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="cliente_nome">Nome Cliente *</label>
-                                <input type="text" id="cliente_nome" name="cliente_nome" required class="form-control" placeholder="Inserisci nome cliente">
+                                <input type="text" id="cliente_nome" name="cliente_nome" required class="form-control" placeholder="Inserisci nome cliente" data-source="clienti">
+                                <div id="cliente_nome-suggestions" class="autocomplete-suggestions"></div>
                             </div>
                             <div class="form-group">
                                 <label for="cliente_codice">Codice Cliente</label>
@@ -610,8 +612,56 @@
             document.getElementById('ore_manodopera').addEventListener('input', calcolaTotaliEnhanced);
             document.getElementById('sovrapprezzo').addEventListener('input', calcolaTotaliEnhanced);
             
+            // Funzione per precompilare articoli dalla fonte
+            function precompilaArticoliDaFonte() {
+                const articoliFonte = {{ articoli_fonte|tojson|safe if articoli_fonte else '[]' }};
+                const tbody = document.getElementById('articoliTableBody');
+                
+                // Rimuovi la riga vuota se presente
+                tbody.innerHTML = '';
+                
+                articoliFonte.forEach((articolo, index) => {
+                    const row = document.createElement('tr');
+                    row.className = 'articolo-row';
+                    
+                    // Gestione differenze tra DDT e Offerte
+                    const codice = articolo.codice_interno || articolo.codice_articolo || articolo.codice_fornitore || '';
+                    const descrizione = articolo.descrizione || '';
+                    const quantita = articolo.quantita || 1;
+                    const costoUnitario = articolo.costo_unitario || articolo.prezzo_unitario || 0;
+                    
+                    row.innerHTML = `
+                        <td><input type="text" name="articoli[${index}][codice]" value="${codice}" class="form-control form-control-sm"></td>
+                        <td><input type="text" name="articoli[${index}][descrizione]" value="${descrizione}" class="form-control form-control-sm"></td>
+                        <td><input type="number" name="articoli[${index}][quantita]" value="${quantita}" step="0.01" class="form-control form-control-sm quantita-input"></td>
+                        <td><input type="text" name="articoli[${index}][fornitore]" value="" class="form-control form-control-sm"></td>
+                        <td><input type="number" name="articoli[${index}][costo_unitario]" value="${costoUnitario}" step="0.01" class="form-control form-control-sm costo-input"></td>
+                        <td><input type="number" name="articoli[${index}][ricarico_percentuale]" value="30" step="0.1" class="form-control form-control-sm ricarico-input"></td>
+                        <td><input type="number" name="articoli[${index}][prezzo_vendita]" readonly class="form-control form-control-sm prezzo-vendita-input"></td>
+                        <td><span class="totale-riga">€ 0.00</span></td>
+                        <td><button type="button" class="btn btn-danger btn-sm remove-articolo">🗑️</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                articoloIndex = articoliFonte.length;
+                updateEventListeners();
+                calcolaTotaliEnhanced();
+            }
+            
             // Calcolo iniziale
             calcolaTotaliEnhanced();
+            
+            // Inizializza autocompletamento clienti
+            const clienteInput = document.getElementById('cliente_nome');
+            if (clienteInput) {
+                AutocompleteHelpers.setupClientiAutocomplete(clienteInput);
+            }
+            
+            // Precompila articoli dalla fonte (DDT o Offerta)
+            {% if articoli_fonte %}
+            precompilaArticoliDaFonte();
+            {% endif %}
         });
     </script>
 </body>

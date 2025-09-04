@@ -117,7 +117,19 @@
       "Read(/D:\\CRUSCOTTO_1.2/**)",
       "Read(/D:\\CRUSCOTTO_1.2/**)",
       "Read(/D:\\CRUSCOTTO_1.2/**)",
-      "Read(/D:\\CRUSCOTTO_1.2/**)"
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2\\templates/**)",
+      "Read(/D:\\CRUSCOTTO_1.2\\templates/**)",
+      "Read(/D:\\CRUSCOTTO_1.2\\templates/**)",
+      "Read(/D:\\CRUSCOTTO_1.2\\templates/**)",
+      "Read(/D:\\CRUSCOTTO_1.2\\static/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2/**)",
+      "Read(/D:\\CRUSCOTTO_1.2\\templates/**)",
+      "Read(/D:\\CRUSCOTTO_1.2\\templates/**)",
+      "Read(/D:\\CRUSCOTTO_1.2\\templates/**)"
     ],
     "deny": [],
     "ask": []
