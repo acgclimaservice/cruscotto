@@ -5778,7 +5778,7 @@ def stampa_ordine_pdf(id):
             {DocumentTemplate.get_styles()}
             .items-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
             .items-table th, .items-table td {{ padding: 10px; border: 1px solid #ddd; text-align: left; }}
-            .items-table th {{ background-color: #007bff; color: white; }}
+            .items-table th {{ background-color: #003366; color: white; }}
             .number {{ text-align: right; }}
             .totals {{ margin-top: 20px; }}
             .totals-table {{ width: 100%; }}
