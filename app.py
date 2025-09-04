@@ -8211,13 +8211,28 @@ def update_mpls(id):
         mpls.stato = request.form.get('stato', 'bozza')
         
         # Aggiorna parametri Enhanced
-        mpls.ore_manodopera = float(request.form.get('ore_manodopera', 0))
-        mpls.sovrapprezzo = float(request.form.get('sovrapprezzo', 0))
+        try:
+            mpls.ore_manodopera = float(request.form.get('ore_manodopera', 0))
+            print(f"[DEBUG UPDATE] ore_manodopera OK: {mpls.ore_manodopera}")
+        except Exception as e:
+            print(f"[DEBUG UPDATE] Errore ore_manodopera: {e}")
+            
+        try:
+            mpls.sovrapprezzo = float(request.form.get('sovrapprezzo', 0))
+            print(f"[DEBUG UPDATE] sovrapprezzo OK: {mpls.sovrapprezzo}")
+        except Exception as e:
+            print(f"[DEBUG UPDATE] Errore sovrapprezzo: {e}")
+            
         mpls.is_guazzotti = bool(request.form.get('is_guazzotti'))
+        print(f"[DEBUG UPDATE] is_guazzotti: {mpls.is_guazzotti}")
         
         # Commessa associata
-        commessa_id = request.form.get('commessa_id')
-        mpls.commessa_id = int(commessa_id) if commessa_id else None
+        try:
+            commessa_id = request.form.get('commessa_id')
+            mpls.commessa_id = int(commessa_id) if commessa_id else None
+            print(f"[DEBUG UPDATE] commessa_id OK: {mpls.commessa_id}")
+        except Exception as e:
+            print(f"[DEBUG UPDATE] Errore commessa_id: {e}")
         
         # Aggiorna totali Enhanced
         mpls.subtotale_materiali_vendita = float(request.form.get('subtotale_materiali_vendita', 0))
@@ -8257,7 +8272,7 @@ def update_mpls(id):
             if art_data.get('codice') or art_data.get('descrizione'):
                 articolo = MPLSArticolo(
                     mpls_id=mpls.id,
-                    codice_articolo=art_data.get('codice', ''),
+                    codice=art_data.get('codice', ''),
                     descrizione=art_data.get('descrizione', ''),
                     quantita=float(art_data.get('quantita', 1)),
                     prezzo_costo=float(art_data.get('prezzo_costo', 0)),

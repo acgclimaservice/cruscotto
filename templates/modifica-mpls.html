@@ -161,7 +161,7 @@
                                 <tbody id="articoliTableBody">
                                     {% for articolo in articoli %}
                                     <tr class="articolo-row">
-                                        <td><input type="text" name="articoli[{{ loop.index0 }}][codice]" value="{{ articolo.codice_articolo or '' }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} class="form-control form-control-sm"></td>
+                                        <td><input type="text" name="articoli[{{ loop.index0 }}][codice]" value="{{ articolo.codice or '' }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} class="form-control form-control-sm"></td>
                                         <td><input type="text" name="articoli[{{ loop.index0 }}][descrizione]" value="{{ articolo.descrizione or '' }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} class="form-control form-control-sm"></td>
                                         <td><input type="number" name="articoli[{{ loop.index0 }}][quantita]" value="{{ articolo.quantita or 1 }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} step="0.01" class="form-control form-control-sm quantita-input"></td>
                                         <td><input type="number" name="articoli[{{ loop.index0 }}][prezzo_costo]" value="{{ articolo.prezzo_costo or 0 }}" {% if mpls.stato != 'bozza' %}readonly{% endif %} step="0.01" class="form-control form-control-sm prezzo-costo-input"></td>
