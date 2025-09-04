@@ -554,6 +554,32 @@ def serve_pdf(filename):
     else:
         return "PDF non trovato", 404
 
+def clean_cambielli_article_codes(parsed_data):
+    """Bug #16: Ripulisce i codici articolo DDT Cambielli dalla concatenazione con numero posizione"""
+    if not parsed_data.get('articoli'):
+        return
+    
+    for i, articolo in enumerate(parsed_data['articoli']):
+        old_code = articolo.get('codice', '')
+        if not old_code:
+            continue
+            
+        print(f"DEBUG Cambielli: Codice originale: '{old_code}'")
+        
+        # Se il codice inizia con un numero e è lungo più di 2 caratteri
+        if old_code and len(old_code) > 2 and old_code[0].isdigit():
+            # Verifica se rimuovendo il primo carattere otteniamo un codice valido
+            new_code = old_code[1:]
+            
+            # Se il nuovo codice è almeno 4 caratteri, probabilmente è quello giusto
+            if len(new_code) >= 4:
+                parsed_data['articoli'][i]['codice'] = new_code
+                print(f"DEBUG Cambielli: Codice pulito: '{old_code}' → '{new_code}'")
+            else:
+                print(f"DEBUG Cambielli: Codice troppo corto dopo pulizia, mantengo originale: '{old_code}'")
+        else:
+            print(f"DEBUG Cambielli: Codice non necessita pulizia: '{old_code}'")
+
 def check_fornitore_esistente(fornitore_data):
     """Bug #45: Controllo e proposta creazione fornitore automatica"""
     if not fornitore_data or not fornitore_data.get('ragione_sociale'):
@@ -651,6 +677,10 @@ def parse_pdf_claude():
                 print(f"Parsing SUCCESS con {ai_used.upper()}")
                 if comparison:
                     print(f"Confronto: Claude={comparison.get('claude_articles', 0)} vs Gemini={comparison.get('gemini_articles', 0)} articoli")
+                
+                # Bug #16: Pulizia codici articolo per DDT Cambielli
+                if 'CAMBIELLI' in file.filename.upper():
+                    clean_cambielli_article_codes(parsed_data)
                 
                 # Bug #45: Controllo automazione creazione fornitore
                 fornitore_info = check_fornitore_esistente(parsed_data.get('fornitore', {}))
@@ -2513,6 +2543,10 @@ def process_batch_files(job_id):
                     
                     if result.get('success') and 'data' in result:
                         data = result['data']
+                        
+                        # Bug #16: Pulizia codici articolo per DDT Cambielli anche nel batch
+                        if 'CAMBIELLI' in batch_file.original_filename.upper():
+                            clean_cambielli_article_codes(data)
                         
                         # Crea DDT IN
                         fornitore_nome = ''
