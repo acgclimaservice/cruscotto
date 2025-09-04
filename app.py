@@ -5732,15 +5732,10 @@ def pdf_allegato_ordine(id):
 def stampa_ordine_pdf(id):
     """Stampa ordine come PDF usando DocumentTemplate"""
     try:
-        print(f"[DEBUG ORDINE] Tentativo stampa ordine ID: {id}")
         ordine = OrdineFornitore.query.get_or_404(id)
         dettagli = DettaglioOrdine.query.filter_by(ordine_id=id).all()
-        print(f"[DEBUG ORDINE] Ordine trovato: {ordine.numero_ordine or 'BOZZA'}, Dettagli: {len(dettagli)}")
         
-        # Usa il sistema DocumentTemplate esistente come altri documenti
-        from document_templates import DocumentTemplate
-        
-        # Crea HTML semplificato per il PDF ordine
+        # Genera contenuto HTML utilizzando DocumentTemplate
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -5750,54 +5745,61 @@ def stampa_ordine_pdf(id):
             {DocumentTemplate.get_styles()}
         </head>
         <body>
-            <div class="header">
+            {DocumentTemplate.get_header_company()}
+            
+            <div class="document-title">
                 <h1>ORDINE FORNITORE</h1>
-                <h2>{ordine.numero_ordine or f'BOZZA-{ordine.id}'}</h2>
-                <p>Data: {ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else datetime.now().strftime('%d/%m/%Y')}</p>
+                <h2>{ordine.numero_ordine or f'BOZZA #{ordine.id}'}</h2>
             </div>
             
-            <div class="company-info">
-                <h3>ACG CLIMA SERVICE S.R.L.</h3>
-                <p>Sede Legale: Via Duccio Galimberti 47 - 15121 Alessandria (AL)<br>
-                Sede Operativa: Via Zanardi Bonfiglio 68 - 27058 Voghera (PV)<br>
-                Tel: 0383/640606 - Email: info@acgclimaservice.com<br>
-                P.IVA: 02735970069 - C.F: 02735970069</p>
-            </div>
-            
-            <div class="document-info">
+            <div class="info-section">
                 <table class="info-table">
                     <tr>
+                        <td><strong>Data Ordine:</strong></td>
+                        <td>{ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else '-'}</td>
                         <td><strong>Fornitore:</strong></td>
-                        <td>{ordine.fornitore_nome or 'Non specificato'}</td>
+                        <td>{ordine.fornitore_nome or '-'}</td>
+                    </tr>
+                    <tr>
                         <td><strong>Oggetto:</strong></td>
-                        <td>{ordine.oggetto or ''}</td>
+                        <td>{ordine.oggetto or '-'}</td>
+                        <td><strong>P.IVA:</strong></td>
+                        <td>{ordine.fornitore.partita_iva if ordine.fornitore else '-'}</td>
                     </tr>
                     <tr>
                         <td><strong>Stato:</strong></td>
                         <td>{ordine.stato.upper() if ordine.stato else 'BOZZA'}</td>
+                        <td><strong>Email:</strong></td>
+                        <td>{ordine.fornitore.email if ordine.fornitore else '-'}</td>
+                    </tr>
+                    <tr>
                         <td><strong>Priorità:</strong></td>
-                        <td>{ordine.priorita.upper() if ordine.priorita else 'MEDIA'}</td>
+                        <td>{ordine.priorita.upper() if ordine.priorita else '-'}</td>
+                        <td><strong>Telefono:</strong></td>
+                        <td>{ordine.fornitore.telefono if ordine.fornitore else '-'}</td>
                     </tr>
                 </table>
-            </div>"""
+            </div>
+        """
         
-        # Aggiungi tabella articoli se esistenti
+        # Aggiungi dettagli articoli
         if dettagli:
             html_content += """
-            <div class="articles-section">
-                <h3>Articoli Ordinati</h3>
-                <table class="articles-table">
+            <div class="section">
+                <h3>Dettagli Articoli</h3>
+                <table class="items-table">
                     <thead>
                         <tr>
                             <th>Codice</th>
                             <th>Cod. Fornitore</th>
                             <th>Descrizione</th>
-                            <th>Qtà</th>
+                            <th>Quantità</th>
                             <th>Prezzo €</th>
                             <th>Totale €</th>
                         </tr>
                     </thead>
-                    <tbody>"""
+                    <tbody>
+            """
             
             totale_generale = 0
             for dettaglio in dettagli:
@@ -5806,13 +5808,14 @@ def stampa_ordine_pdf(id):
                 
                 html_content += f"""
                         <tr>
-                            <td>{dettaglio.codice_articolo or '-'}</td>
+                            <td>{dettaglio.codice or '-'}</td>
                             <td>{dettaglio.codice_fornitore or '-'}</td>
                             <td>{dettaglio.descrizione or '-'}</td>
-                            <td>{dettaglio.quantita:.2f if dettaglio.quantita else '0'}</td>
-                            <td>{dettaglio.prezzo_unitario:.2f if dettaglio.prezzo_unitario else '0.00'}</td>
-                            <td>{totale_riga:.2f}</td>
-                        </tr>"""
+                            <td class="number">{dettaglio.quantita:.2f if dettaglio.quantita else '0'}</td>
+                            <td class="number">€ {dettaglio.prezzo_unitario:.2f if dettaglio.prezzo_unitario else '0.00'}</td>
+                            <td class="number">€ {totale_riga:.2f}</td>
+                        </tr>
+                """
             
             html_content += f"""
                     </tbody>
@@ -5821,73 +5824,92 @@ def stampa_ordine_pdf(id):
                 <div class="totals">
                     <table class="totals-table">
                         <tr>
-                            <td><strong>Totale Netto:</strong></td>
-                            <td>€ {ordine.totale_netto:.2f if ordine.totale_netto else totale_generale:.2f}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>IVA:</strong></td>
-                            <td>€ {((ordine.totale_lordo or totale_generale) - (ordine.totale_netto or totale_generale)):.2f}</td>
-                        </tr>
-                        <tr class="total-row">
-                            <td><strong>TOTALE LORDO:</strong></td>
-                            <td><strong>€ {ordine.totale_lordo:.2f if ordine.totale_lordo else totale_generale:.2f}</strong></td>
+                            <td><strong>TOTALE NETTO:</strong></td>
+                            <td><strong>€ {ordine.totale_netto:.2f if ordine.totale_netto else totale_generale:.2f}</strong></td>
                         </tr>
                     </table>
                 </div>
-            </div>"""
+            </div>
+            """
         
-        # Note e footer
+        # Note
         if ordine.note:
             html_content += f"""
-            <div class="notes-section">
+            <div class="section">
                 <h3>Note</h3>
                 <p>{ordine.note}</p>
-            </div>"""
+            </div>
+            """
         
+        # Footer
         html_content += f"""
             <div class="footer">
                 <p>Documento generato automaticamente il {datetime.now().strftime('%d/%m/%Y alle %H:%M')}</p>
             </div>
         </body>
-        </html>"""
+        </html>
+        """
         
-        # Genera PDF da HTML
+        # Genera PDF usando pdfkit
         import pdfkit
+        from flask import make_response
         
-        options = {{
+        options = {
             'page-size': 'A4',
-            'margin-top': '1cm',
-            'margin-right': '1cm', 
-            'margin-bottom': '1cm',
-            'margin-left': '1cm',
-            'encoding': 'UTF-8',
-            'no-outline': None
-        }}
+            'margin-top': '0.75in',
+            'margin-right': '0.75in',
+            'margin-bottom': '0.75in',
+            'margin-left': '0.75in',
+            'encoding': "UTF-8",
+            'no-outline': None,
+            'enable-local-file-access': None
+        }
         
         pdf_data = pdfkit.from_string(html_content, options=options)
         
-        # Crea la risposta
         response = make_response(pdf_data)
         response.headers['Content-Type'] = 'application/pdf'
         response.headers['Content-Disposition'] = f'attachment; filename="ordine_{ordine.numero_ordine or ordine.id}.pdf"'
         
-        print(f"[DEBUG ORDINE] PDF generato con successo per ordine {ordine.numero_ordine or ordine.id}")
         return response
-    
+        
     except Exception as e:
+        print(f"[DEBUG ORDINE] Errore stampa ordine: {str(e)}")
         import traceback
-        print(f"[DEBUG ORDINE] Errore stampa ordine {id}: {e}")
         print(f"[DEBUG ORDINE] Traceback: {traceback.format_exc()}")
         return f"Errore generazione PDF ordine: {str(e)}", 500
-
-# ========== IMPORT ORDINI DA PDF ==========
-
-@app.route('/ordini/import')
-def ordini_import_page():
-    """Pagina import ordini da PDF"""
-    return render_template('ordini-import.html', today=datetime.now().strftime('%Y-%m-%d'))
-
-@app.route('/ordini/parse-pdf', methods=['POST'])
+    """Stampa ordine come PDF con logo a sinistra"""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import cm
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from io import BytesIO
+    import os
+    
+    ordine = OrdineFornitore.query.get_or_404(id)
+    dettagli = DettaglioOrdine.query.filter_by(ordine_id=id).all()
+    
+    # Crea il buffer per il PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    content = []
+    
+    # Stili
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Title'],
+        fontSize=18,
+        textColor=colors.HexColor('#007bff'),
+        alignment=TA_CENTER,
+        spaceAfter=0.3*cm
+    )
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
         textColor=colors.HexColor('#666666'),
         alignment=TA_CENTER,
         spaceAfter=0.5*cm
