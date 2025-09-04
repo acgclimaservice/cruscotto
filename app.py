@@ -6524,6 +6524,10 @@ def aggiorna_offerta(id):
         offerta.priorita = data.get('priorita', 'media')
         offerta.note = data.get('note', '')
         
+        # Aggiorna stato se fornito
+        if data.get('stato'):
+            offerta.stato = data.get('stato')
+        
         # Aggiorna date se fornite
         if data.get('data_offerta'):
             offerta.data_offerta = datetime.strptime(data.get('data_offerta'), '%Y-%m-%d').date()
@@ -6535,28 +6539,31 @@ def aggiorna_offerta(id):
         if fornitore_id:
             offerta.fornitore_id = int(fornitore_id)
         
-        # Elimina dettagli esistenti
-        DettaglioOfferta.query.filter_by(offerta_id=id).delete()
-        
-        # Aggiungi nuovi dettagli
+        # Aggiorna dettagli solo se vengono inviati dati di articoli
         articoli_data = data.get('articoli', [])
-        for articolo_data in articoli_data:
-            if articolo_data.get('descrizione'):
-                dettaglio = DettaglioOfferta(
-                    offerta_id=id,
-                    codice_articolo=articolo_data.get('codice_articolo', ''),
-                    codice_fornitore=articolo_data.get('codice_fornitore', ''),
-                    descrizione=articolo_data.get('descrizione'),
-                    quantita=float(articolo_data.get('quantita', 0)),
-                    unita_misura=articolo_data.get('unita_misura', 'PZ'),
-                    prezzo_unitario=float(articolo_data.get('prezzo_unitario', 0)) if articolo_data.get('prezzo_unitario') else None,
-                    sconto_percentuale=float(articolo_data.get('sconto_percentuale', 0)) if articolo_data.get('sconto_percentuale') else None,
-                    totale_riga=float(articolo_data.get('totale_riga', 0)) if articolo_data.get('totale_riga') else None,
-                    disponibilita=articolo_data.get('disponibilita', ''),
-                    tempo_consegna=articolo_data.get('tempo_consegna', ''),
-                    note=articolo_data.get('note', '')
-                )
-                db.session.add(dettaglio)
+        if articoli_data:  # Solo se ci sono articoli da aggiornare
+            # Elimina dettagli esistenti
+            DettaglioOfferta.query.filter_by(offerta_id=id).delete()
+            
+            # Aggiungi nuovi dettagli
+            for articolo_data in articoli_data:
+                if articolo_data.get('descrizione'):
+                    dettaglio = DettaglioOfferta(
+                        offerta_id=id,
+                        codice_articolo=articolo_data.get('codice_articolo', ''),
+                        codice_fornitore=articolo_data.get('codice_fornitore', ''),
+                        descrizione=articolo_data.get('descrizione'),
+                        quantita=float(articolo_data.get('quantita', 0)),
+                        unita_misura=articolo_data.get('unita_misura', 'PZ'),
+                        prezzo_unitario=float(articolo_data.get('prezzo_unitario', 0)) if articolo_data.get('prezzo_unitario') else None,
+                        sconto_percentuale=float(articolo_data.get('sconto_percentuale', 0)) if articolo_data.get('sconto_percentuale') else None,
+                        totale_riga=float(articolo_data.get('totale_riga', 0)) if articolo_data.get('totale_riga') else None,
+                        disponibilita=articolo_data.get('disponibilita', ''),
+                        tempo_consegna=articolo_data.get('tempo_consegna', ''),
+                        note=articolo_data.get('note', '')
+                    )
+                    db.session.add(dettaglio)
+        # Se non ci sono articoli_data, mantieni i dettagli esistenti
         
         db.session.commit()
         
