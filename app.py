@@ -571,18 +571,24 @@ def clean_cambielli_article_codes(parsed_data, ai_used=None):
             
         print(f"DEBUG Cambielli: Codice originale: '{old_code}'")
         
-        # Logica più intelligente: controlla se il codice sembra concatenato
-        if old_code and len(old_code) > 2 and old_code[0].isdigit():
-            # Per codici che iniziano con 1, 2, 3... (numeri posizione) e sono lunghi
-            first_digit = old_code[0]
-            remaining_code = old_code[1:]
+        # Logica più intelligente: controlla se il codice sembra concatenato con numero posizione
+        if old_code and len(old_code) > 3:
+            import re
+            # Pattern per riconoscere numeri posizione all'inizio (1-1000) seguiti da codice alfanumerico
+            match = re.match(r'^(\d{1,4})([A-Za-z0-9]{4,})$', old_code)
             
-            # Se il primo digit è un numero posizione (1-9) ed il resto è almeno 4 caratteri, probabile concatenazione
-            if first_digit in ['1', '2', '3', '4', '5', '6', '7', '8', '9'] and len(remaining_code) >= 4:
-                parsed_data['articoli'][i]['codice'] = remaining_code
-                print(f"DEBUG Cambielli: Codice pulito (pos {first_digit}): '{old_code}' → '{remaining_code}'")
+            if match:
+                position_num = int(match.group(1))
+                remaining_code = match.group(2)
+                
+                # Se il numero è ragionevole per una posizione (1-1000) e il resto è un codice valido
+                if 1 <= position_num <= 1000 and len(remaining_code) >= 4:
+                    parsed_data['articoli'][i]['codice'] = remaining_code
+                    print(f"DEBUG Cambielli: Codice pulito (pos {position_num}): '{old_code}' → '{remaining_code}'")
+                else:
+                    print(f"DEBUG Cambielli: Numero {position_num} fuori range o codice troppo corto, mantengo: '{old_code}'")
             else:
-                print(f"DEBUG Cambielli: Codice sembra corretto, mantengo: '{old_code}'")
+                print(f"DEBUG Cambielli: Pattern non riconosciuto, mantengo: '{old_code}'")
         else:
             print(f"DEBUG Cambielli: Codice non necessita pulizia: '{old_code}'")
 
