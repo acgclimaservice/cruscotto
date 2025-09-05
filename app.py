@@ -3107,9 +3107,10 @@ def modifica_ddt_out(id):
 
 @app.route('/stampa-ddt/in/<int:id>')
 def stampa_ddt_in(id):
-    """Stampa DDT IN - Template professionale v2"""
+    """Stampa DDT IN - Auto-download PDF"""
     try:
         from document_templates import DDTInTemplate
+        import pdfkit
         
         ddt = DDTIn.query.get_or_404(id)
         articoli = ArticoloIn.query.filter_by(ddt_id=id).all()
@@ -3138,11 +3139,32 @@ def stampa_ddt_in(id):
         
         # Genera HTML professionale
         html_content = DDTInTemplate.generate_html(ddt_data)
-        return html_content
+        
+        # Converti HTML in PDF usando pdfkit
+        options = {
+            'page-size': 'A4',
+            'margin-top': '0.75in',
+            'margin-right': '0.75in', 
+            'margin-bottom': '0.75in',
+            'margin-left': '0.75in',
+            'encoding': "UTF-8",
+            'no-outline': None,
+            'enable-local-file-access': None
+        }
+        
+        pdf_data = pdfkit.from_string(html_content, options=options)
+        
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="ddt_in_{ddt.numero_ddt or ddt.id}.pdf"'
+        
+        return response
         
     except Exception as e:
-        print(f"Errore stampa DDT IN v2: {e}")
-        return str(e), 500
+        print(f"Errore stampa DDT IN PDF: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Errore PDF: {e}", 500
 
 @app.route('/stampa-ddt/out/<int:id>')
 def stampa_ddt_out(id):
@@ -8107,9 +8129,10 @@ def crea_mpls_da_offerta(offerta_id):
 
 @app.route('/mpls/<int:id>/stampa')
 def stampa_mpls(id):
-    """Stampa MPLS in formato professionale con template DDT OUT"""
+    """Stampa MPLS - Auto-download PDF"""
     try:
         from document_templates import MPLSTemplate
+        import pdfkit
         
         mpls = MPLS.query.get_or_404(id)
         articoli = MPLSArticolo.query.filter_by(mpls_id=id).all()
@@ -8146,13 +8169,31 @@ def stampa_mpls(id):
         # Genera HTML con nuovo template
         html_content = MPLSTemplate.generate_html(mpls_data)
         
-        response = make_response(html_content)
-        response.headers['Content-Type'] = 'text/html'
+        # Converti HTML in PDF usando pdfkit
+        options = {
+            'page-size': 'A4',
+            'margin-top': '0.75in',
+            'margin-right': '0.75in', 
+            'margin-bottom': '0.75in',
+            'margin-left': '0.75in',
+            'encoding': "UTF-8",
+            'no-outline': None,
+            'enable-local-file-access': None
+        }
+        
+        pdf_data = pdfkit.from_string(html_content, options=options)
+        
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="mpls_{mpls.numero_mpls or mpls.id}.pdf"'
+        
         return response
         
     except Exception as e:
-        print(f"Errore stampa MPLS: {e}")
-        return str(e), 500
+        print(f"Errore stampa MPLS PDF: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Errore PDF: {e}", 500
 
 @app.route('/mpls/da-ordine/<int:ordine_id>')
 def crea_mpls_da_ordine(ordine_id):
