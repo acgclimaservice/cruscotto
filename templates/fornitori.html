@@ -43,6 +43,7 @@
                 <button class="btn btn-secondary" onclick="location.href='/fornitori/template-excel'">📥 Template Excel</button>
                 <input type="file" id="importFile" style="display:none" accept=".xlsx,.xls" onchange="uploadFornitoreFile(this)">
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importa Excel</button>
+                <button class="btn btn-danger" onclick="eliminaTuttiFornitori()">🗑️ Elimina Tutti i Fornitori</button>
                 <button class="btn btn-success" onclick="location.href='/fornitori/nuovo'">+ Nuovo Fornitore</button>
             </div>
         </div>
@@ -146,6 +147,25 @@
                     alert('Errore: ' + (data.error || 'Eliminazione fallita'));
                 }
             });
+        }
+    }
+    
+    function eliminaTuttiFornitori() {
+        if (confirm('ATTENZIONE: Sei sicuro di voler eliminare TUTTI i fornitori? Questa azione non può essere annullata!')) {
+            if (confirm('ULTIMA CONFERMA: Eliminare tutti i fornitori dalla banca dati?')) {
+                fetch('/fornitori/elimina-tutti', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('Errore: ' + (data.error || 'Eliminazione fallita'));
+                    }
+                });
+            }
         }
     }
     </script>

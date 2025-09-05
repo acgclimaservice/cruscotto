@@ -43,6 +43,7 @@
                 <button class="btn btn-secondary" onclick="location.href='/clienti/template-excel'">📥 Template Excel</button>
                 <input type="file" id="importFile" style="display:none" accept=".xlsx,.xls" onchange="uploadClienteFile(this)">
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importa Excel</button>
+                <button class="btn btn-danger" onclick="eliminaTuttiClienti()">🗑️ Elimina Tutti i Clienti</button>
                 <button class="btn btn-success" onclick="location.href='/clienti/nuovo'">+ Nuovo Cliente</button>
             </div>
         </div>
@@ -146,6 +147,25 @@
                     alert('Errore: ' + (data.error || 'Eliminazione fallita'));
                 }
             });
+        }
+    }
+    
+    function eliminaTuttiClienti() {
+        if (confirm('ATTENZIONE: Sei sicuro di voler eliminare TUTTI i clienti? Questa azione non può essere annullata!')) {
+            if (confirm('ULTIMA CONFERMA: Eliminare tutti i clienti dalla banca dati?')) {
+                fetch('/clienti/elimina-tutti', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('Errore: ' + (data.error || 'Eliminazione fallita'));
+                    }
+                });
+            }
         }
     }
     </script>

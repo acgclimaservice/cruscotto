@@ -134,6 +134,10 @@
                                         {% if mpls.stato == 'bozza' %}
                                             <a href="/mpls/{{ mpls.id }}/modifica" class="btn btn-sm btn-warning">✏️ Modifica</a>
                                         {% endif %}
+                                        <form method="POST" action="/mpls/{{ mpls.id }}/elimina" style="display: inline;" 
+                                              onsubmit="return confirm('Sei sicuro di voler eliminare il MPLS {{ mpls.numero_mpls }}? Questa azione non può essere annullata.')">
+                                            <button type="submit" class="btn btn-sm btn-danger">🗑️ Elimina</button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>

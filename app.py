@@ -8572,6 +8572,27 @@ def update_mpls(id):
 # ROTTE MPLS IMPORT 
 # =====================================================
 
+@app.route('/mpls/<int:id>/elimina', methods=['POST'])
+def elimina_mpls(id):
+    """Elimina un MPLS"""
+    try:
+        mpls = MPLS.query.get_or_404(id)
+        numero_mpls = mpls.numero_mpls
+        
+        # Elimina prima gli articoli collegati
+        MPLSArticolo.query.filter_by(mpls_id=id).delete()
+        
+        # Elimina il MPLS
+        db.session.delete(mpls)
+        db.session.commit()
+        
+        flash(f"MPLS {numero_mpls} eliminato con successo!", "success")
+        return redirect('/mpls')
+    except Exception as e:
+        print(f"Errore eliminazione MPLS: {e}")
+        flash("Errore durante l'eliminazione del MPLS", "error")
+        return redirect('/mpls')
+
 @app.route('/mpls/import')
 def mpls_import():
     """Pagina import MPLS da PDF"""

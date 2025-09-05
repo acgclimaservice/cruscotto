@@ -164,6 +164,34 @@ def elimina_fornitore(id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
 
+@fornitori_bp.route('/elimina-tutti', methods=['POST'])
+def elimina_tutti_fornitori():
+    """Elimina tutti i fornitori"""
+    try:
+        # Verifica se ci sono DDT collegati
+        from models import DDTIn
+        ddt_count = DDTIn.query.count()
+        
+        if ddt_count > 0:
+            return jsonify({
+                'success': False,
+                'error': f'Impossibile eliminare tutti i fornitori. Ci sono {ddt_count} DDT IN presenti nel sistema.'
+            })
+        
+        # Elimina tutti i fornitori
+        fornitori_count = Fornitore.query.count()
+        Fornitore.query.delete()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'{fornitori_count} fornitori eliminati con successo!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
 @fornitori_bp.route('/importa-excel', methods=['POST'])
 def importa_excel_fornitori():
     """Importa fornitori da file Excel"""

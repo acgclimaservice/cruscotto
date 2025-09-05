@@ -157,6 +157,34 @@ def elimina_cliente(id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
 
+@clienti_bp.route('/elimina-tutti', methods=['POST'])
+def elimina_tutti_clienti():
+    """Elimina tutti i clienti"""
+    try:
+        # Verifica se ci sono DDT collegati
+        from models import DDTOut
+        ddt_count = DDTOut.query.count()
+        
+        if ddt_count > 0:
+            return jsonify({
+                'success': False,
+                'error': f'Impossibile eliminare tutti i clienti. Ci sono {ddt_count} DDT presenti nel sistema.'
+            })
+        
+        # Elimina tutti i clienti
+        clienti_count = Cliente.query.count()
+        Cliente.query.delete()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'{clienti_count} clienti eliminati con successo!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
 @clienti_bp.route('/importa-excel', methods=['POST'])
 def importa_excel():
     """Importa clienti da file Excel"""
