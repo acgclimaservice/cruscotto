@@ -134,6 +134,7 @@
                                 <a href="/commesse/{{ commessa.id }}/modifica" class="btn btn-sm btn-warning">✏️ Modifica</a>
                                 <button class="btn btn-sm btn-danger" onclick="chiudiCommessa({{ commessa.id }})">Chiudi</button>
                             {% endif %}
+                            <button class="btn btn-sm btn-danger" onclick="eliminaCommessa({{ commessa.id }})" style="background-color: #dc2626;">🗑️ Elimina</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -186,6 +187,30 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('Errore durante la chiusura della commessa');
+            });
+        }
+    }
+    
+    function eliminaCommessa(id) {
+        if (confirm('ATTENZIONE: Sei sicuro di voler eliminare definitivamente questa commessa? Questa operazione NON può essere annullata!')) {
+            fetch(`/commesse/${id}/elimina`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Commessa eliminata con successo');
+                    location.reload();
+                } else {
+                    alert('Errore: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore durante l\'eliminazione della commessa');
             });
         }
     }

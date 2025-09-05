@@ -1081,6 +1081,40 @@ def chiudi_commessa(id):
         print(f"Errore chiusura commessa: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/commesse/<int:id>/elimina', methods=['DELETE'])
+def elimina_commessa(id):
+    """Elimina definitivamente una commessa"""
+    try:
+        commessa = Commessa.query.get_or_404(id)
+        
+        # Log dell'operazione
+        numero_progressivo = commessa.numero_progressivo
+        cliente_nome = commessa.cliente_nome
+        
+        # Elimina prima eventuali allegati collegati
+        try:
+            allegati = AllegatoCommessa.query.filter_by(commessa_id=id).all()
+            for allegato in allegati:
+                # Rimuovi il file fisico se esiste
+                if allegato.percorso_file and os.path.exists(allegato.percorso_file):
+                    os.remove(allegato.percorso_file)
+                db.session.delete(allegato)
+        except Exception as e:
+            print(f"Errore eliminazione allegati commessa: {e}")
+        
+        # Elimina la commessa
+        db.session.delete(commessa)
+        db.session.commit()
+        
+        print(f"Commessa eliminata: {numero_progressivo} - Cliente: {cliente_nome}")
+        
+        return jsonify({'success': True, 'message': 'Commessa eliminata con successo'})
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore eliminazione commessa: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/commesse/<int:commessa_id>/allegati/upload', methods=['POST'])
 def upload_allegato_commessa(commessa_id):
     """Upload allegato per una commessa"""
