@@ -335,6 +335,184 @@ class DDTOutTemplate(DocumentTemplate):
         """
 
 
+class MPLSTemplate(DocumentTemplate):
+    """Template per MPLS (Margine, Prezzo, Lavoro, Servizio)"""
+    
+    @staticmethod
+    def generate_html(mpls_data):
+        """Genera HTML per MPLS con stile DDT OUT"""
+        current_date = datetime.now().strftime('%d/%m/%Y')
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="it">
+        <head>
+            <meta charset="UTF-8">
+            <title>MPLS - {mpls_data.get('numero_mpls', 'N/A')}</title>
+            <style>{MPLSTemplate.get_styles()}</style>
+        </head>
+        <body>
+            {DocumentTemplate.get_header_company()}
+            
+            <div class="document-title">
+                <h1>PREVENTIVO MARGINI PREZZI LISTINO SCONTI</h1>
+                <div class="document-number">MPLS N. {mpls_data.get('numero_mpls', 'N/A')}</div>
+            </div>
+            
+            <div class="document-details">
+                <div class="section">
+                    <h3>CLIENTE</h3>
+                    <p><strong>{mpls_data.get('cliente_nome', 'N/A')}</strong></p>
+                    <p>Codice Cliente: {mpls_data.get('cliente_codice', 'N/A')}</p>
+                    <p>Indirizzo: {mpls_data.get('indirizzo', 'N/A')}</p>
+                </div>
+                
+                <div class="section">
+                    <h3>DETTAGLI MPLS</h3>
+                    <p>Data Creazione: {mpls_data.get('data_creazione', current_date)}</p>
+                    <p>Stato: {mpls_data.get('stato', 'N/A').upper()}</p>
+                    <p>Commessa: {mpls_data.get('commessa_numero', 'N/A')}</p>
+                </div>
+            </div>
+            
+            <div class="description-section">
+                <h3>DESCRIZIONE LAVORI</h3>
+                <p>{mpls_data.get('descrizione', 'N/A')}</p>
+            </div>
+            
+            <div class="articles-table">
+                <h3>ARTICOLI E CALCOLI</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Codice</th>
+                            <th>Descrizione</th>
+                            <th>Qty</th>
+                            <th>Fornitore</th>
+                            <th>Costo Unit.</th>
+                            <th>Ricarico %</th>
+                            <th>Prezzo Vendita</th>
+                            <th>Totale</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+        
+        # Aggiungi articoli
+        totale_costi = 0
+        totale_vendita = 0
+        
+        if 'articoli' in mpls_data and mpls_data['articoli']:
+            for articolo in mpls_data['articoli']:
+                costo_totale = float(articolo.get('quantita', 0)) * float(articolo.get('prezzo_costo', 0))
+                vendita_totale = float(articolo.get('quantita', 0)) * float(articolo.get('prezzo_vendita', 0))
+                totale_costi += costo_totale
+                totale_vendita += vendita_totale
+                
+                # Calcola ricarico
+                ricarico = 0
+                if articolo.get('prezzo_costo', 0) > 0 and articolo.get('prezzo_vendita', 0):
+                    ricarico = ((float(articolo.get('prezzo_vendita', 0)) - float(articolo.get('prezzo_costo', 0))) / float(articolo.get('prezzo_costo', 0))) * 100
+                
+                html += f"""
+                        <tr>
+                            <td>{articolo.get('codice', 'N/A')}</td>
+                            <td>{articolo.get('descrizione', 'N/A')}</td>
+                            <td>{articolo.get('quantita', 0)}</td>
+                            <td>{articolo.get('fornitore', 'N/A')}</td>
+                            <td>€ {float(articolo.get('prezzo_costo', 0)):.2f}</td>
+                            <td>{ricarico:.1f}%</td>
+                            <td>€ {float(articolo.get('prezzo_vendita', 0)):.2f}</td>
+                            <td>€ {vendita_totale:.2f}</td>
+                        </tr>
+                """
+        else:
+            html += """
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 30px; color: #666;">
+                                Nessun articolo presente
+                            </td>
+                        </tr>
+            """
+        
+        # Calcoli finali
+        ore_manodopera = float(mpls_data.get('ore_manodopera', 0))
+        costo_orario = 25.0
+        costo_manodopera = ore_manodopera * costo_orario
+        sovrapprezzo = float(mpls_data.get('sovrapprezzo', 0))
+        
+        totale_netto = totale_vendita + costo_manodopera + sovrapprezzo
+        margine = totale_netto - totale_costi - costo_manodopera
+        margine_percentuale = (margine / totale_netto * 100) if totale_netto > 0 else 0
+        
+        html += f"""
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="calculations-section">
+                <h3>CALCOLI E MARGINI</h3>
+                <div class="calculations-grid">
+                    <div class="calc-item">
+                        <span class="calc-label">Totale Costi Materiali:</span>
+                        <span class="calc-value">€ {totale_costi:.2f}</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">Ore Manodopera:</span>
+                        <span class="calc-value">{ore_manodopera} ore</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">Costo Manodopera:</span>
+                        <span class="calc-value">€ {costo_manodopera:.2f}</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">Sovrapprezzo:</span>
+                        <span class="calc-value">€ {sovrapprezzo:.2f}</span>
+                    </div>
+                    <div class="calc-item total-item">
+                        <span class="calc-label">TOTALE PREVENTIVO:</span>
+                        <span class="calc-value">€ {totale_netto:.2f}</span>
+                    </div>
+                    <div class="calc-item margin-item">
+                        <span class="calc-label">MARGINE:</span>
+                        <span class="calc-value">€ {margine:.2f} ({margine_percentuale:.1f}%)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="document-footer">
+                <p>Documento generato automaticamente il {current_date}</p>
+                <p>Sistema Gestione MPLS - {DocumentTemplate.COMPANY_DATA['ragione_sociale']}</p>
+            </div>
+            
+            <div class="no-print" style="margin-top: 30px; text-align: center;">
+                <button onclick="window.print()" class="print-btn">🖨️ Stampa</button>
+                <button onclick="window.close()" class="close-btn">❌ Chiudi</button>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html
+    
+    @staticmethod
+    def get_styles():
+        return DocumentTemplate.get_styles() + """
+        .description-section { margin: 30px 0; background: #f8f9fa; padding: 20px; border-radius: 8px; }
+        .calculations-section { margin: 30px 0; background: #f8f9fa; padding: 20px; border-radius: 8px; }
+        .calculations-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .calc-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; }
+        .calc-label { font-weight: bold; }
+        .calc-value { font-weight: bold; color: #003366; }
+        .total-item { background: #e3f2fd; padding: 12px; border-radius: 5px; font-size: 1.1em; border: none; }
+        .margin-item { background: #c8e6c9; padding: 12px; border-radius: 5px; font-size: 1.1em; border: none; }
+        .print-btn, .close-btn { padding: 10px 20px; margin: 0 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .print-btn { background: #003366; color: white; }
+        .close-btn { background: #666; color: white; }
+        @media print { .no-print { display: none !important; } }
+        """
+
+
 class PreventivoTemplate(DocumentTemplate):
     """Template per Preventivi"""
     
@@ -420,17 +598,6 @@ class PreventivoTemplate(DocumentTemplate):
                 </table>
             </div>
             
-            <div class="conditions">
-                <h3>CONDIZIONI</h3>
-                <ul>
-                    <li><strong>Pagamento:</strong> 30% all'ordine, saldo a consegna ultimata</li>
-                    <li><strong>Consegna:</strong> 15-20 giorni lavorativi dalla conferma d'ordine</li>
-                    <li><strong>Validità offerta:</strong> 30 giorni dalla data di emissione</li>
-                    <li><strong>Garanzia:</strong> 24 mesi su materiali e installazione</li>
-                    <li><strong>Assistenza:</strong> Contratto di manutenzione disponibile</li>
-                </ul>
-            </div>
-            
             <div class="document-footer">
                 <p>Documento generato automaticamente il {current_date}</p>
                 <p>Sistema Gestione DDT - {DocumentTemplate.COMPANY_DATA['ragione_sociale']}</p>
@@ -445,9 +612,6 @@ class PreventivoTemplate(DocumentTemplate):
     def get_styles():
         return DocumentTemplate.get_styles() + """
         .services-table { margin: 30px 0; }
-        .conditions { margin: 30px 0; background: #f8f9fa; padding: 20px; border-radius: 8px; }
-        .conditions ul { margin: 10px 0; padding-left: 20px; }
-        .conditions li { margin: 8px 0; }
         """
 
 

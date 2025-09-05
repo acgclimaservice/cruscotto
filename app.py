@@ -8107,187 +8107,44 @@ def crea_mpls_da_offerta(offerta_id):
 
 @app.route('/mpls/<int:id>/stampa')
 def stampa_mpls(id):
-    """Stampa MPLS in formato professionale"""
+    """Stampa MPLS in formato professionale con template DDT OUT"""
     try:
+        from document_templates import MPLSTemplate
+        
         mpls = MPLS.query.get_or_404(id)
         articoli = MPLSArticolo.query.filter_by(mpls_id=id).all()
         
-        # Template HTML per stampa MPLS - usa .format() per evitare conflitti
+        # Prepara dati per il template
         data_creazione = mpls.data_creazione.strftime('%d/%m/%Y') if mpls.data_creazione else '-'
         commessa_numero = mpls.commessa.numero_progressivo if mpls.commessa else 'N/A'
-        descrizione = mpls.descrizione or 'N/A'
         
-        html_content = """<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <title>MPLS {numero_mpls}</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; color: #333; }}
-        .header {{ text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #007bff; }}
-        .header h1 {{ color: #007bff; margin-bottom: 10px; }}
-        .info-section {{ margin-bottom: 30px; }}
-        .info-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
-        .info-item {{ margin-bottom: 10px; }}
-        .info-label {{ font-weight: bold; color: #666; }}
-        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-        th {{ background-color: #007bff; color: white; }}
-        .totali {{ background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; }}
-        .totale-finale {{ font-size: 1.2em; font-weight: bold; color: #007bff; }}
-        @media print {{ .no-print {{ display: none !important; }} }}
-    </style>
-</head>
-<body>
-    <div class="no-print">
-        <button onclick="window.print()">🖨️ Stampa</button>
-        <button onclick="window.close()">❌ Chiudi</button>
-    </div>
-    
-    <div class="header">
-        <h1>PREVENTIVO MARGINI PREZZI LISTINO SCONTI</h1>
-        <h2>{numero_mpls}</h2>
-        <p><strong>ACG CLIMA SERVICE S.R.L.</strong></p>
-    </div>
-    
-    <div class="info-section">
-        <div class="info-grid">
-            <div>
-                <div class="info-item">
-                    <span class="info-label">Cliente:</span> {cliente_nome}
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Data Creazione:</span> {data_creazione}
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Stato:</span> {stato}
-                </div>
-            </div>
-            <div>
-                <div class="info-item">
-                    <span class="info-label">Commessa:</span> {commessa_numero}
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Descrizione:</span> {descrizione}
-                </div>
-            </div>
-        </div>
-    </div>
-            
-            <h3>Articoli e Calcoli</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Codice</th>
-                        <th>Descrizione</th>
-                        <th>Qty</th>
-                        <th>Fornitore</th>
-                        <th>Costo Unit.</th>
-                        <th>Ricarico %</th>
-                        <th>Prezzo Vendita</th>
-                        <th>Totale</th>
-                    </tr>
-                </thead>
-                <tbody>"""
+        mpls_data = {
+            'numero_mpls': mpls.numero_mpls or f'BOZZA-{mpls.id}',
+            'cliente_nome': mpls.cliente_nome or 'N/A',
+            'cliente_codice': mpls.cliente_codice or 'N/A',
+            'indirizzo': 'N/A',  # Da implementare se necessario
+            'data_creazione': data_creazione,
+            'stato': mpls.stato or 'bozza',
+            'commessa_numero': commessa_numero,
+            'descrizione': mpls.descrizione or 'N/A',
+            'ore_manodopera': mpls.ore_manodopera or 0,
+            'sovrapprezzo': mpls.sovrapprezzo or 0,
+            'articoli': []
+        }
         
-        totale_costi = 0
-        totale_vendita = 0
+        # Aggiungi articoli
+        for art in articoli:
+            mpls_data['articoli'].append({
+                'codice': art.codice or 'N/A',
+                'descrizione': art.descrizione or 'N/A',
+                'quantita': art.quantita or 0,
+                'fornitore': getattr(art, 'fornitore', 'N/A') or 'N/A',
+                'prezzo_costo': art.prezzo_costo or 0,
+                'prezzo_vendita': art.prezzo_vendita or 0
+            })
         
-        for articolo in articoli:
-            costo_totale = (articolo.quantita or 0) * (articolo.prezzo_costo or 0)
-            vendita_totale = (articolo.quantita or 0) * (articolo.prezzo_vendita or 0)
-            totale_costi += costo_totale
-            totale_vendita += vendita_totale
-            
-            # Calcola ricarico se disponibile
-            ricarico = 0
-            if articolo.prezzo_costo and articolo.prezzo_costo > 0 and articolo.prezzo_vendita:
-                ricarico = ((articolo.prezzo_vendita - articolo.prezzo_costo) / articolo.prezzo_costo) * 100
-            
-            html_content += """
-                    <tr>
-                        <td>{}</td>
-                        <td>{}</td>
-                        <td>{}</td>
-                        <td>{}</td>
-                        <td>€ {:.2f}</td>
-                        <td>{:.1f}%</td>
-                        <td>€ {:.2f}</td>
-                        <td>€ {:.2f}</td>
-                    </tr>""".format(
-                articolo.codice or '-',
-                articolo.descrizione or '-',
-                articolo.quantita or 0,
-                getattr(articolo, 'fornitore', '-') or '-',
-                articolo.prezzo_costo if articolo.prezzo_costo else 0,
-                ricarico,
-                articolo.prezzo_vendita if articolo.prezzo_vendita else 0,
-                vendita_totale
-            )
-        
-        # Calcoli finali - usa costo orario fisso di 25€/ora se non specificato
-        costo_orario = 25.0  # Euro per ora - valore standard
-        costo_manodopera = (mpls.ore_manodopera or 0) * costo_orario
-        totale_netto = totale_vendita + costo_manodopera + (mpls.sovrapprezzo or 0)
-        margine = totale_netto - totale_costi - costo_manodopera
-        margine_percentuale = (margine / totale_netto * 100) if totale_netto > 0 else 0
-        
-        html_content += """
-                </tbody>
-            </table>
-            
-            <div class="totali">
-                <div class="info-grid">
-                    <div>
-                        <div class="info-item">
-                            <span class="info-label">Totale Costi Materiali:</span> € {totale_costi:.2f}
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Ore Manodopera:</span> {ore_manodopera} ore
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Costo Manodopera:</span> € {costo_manodopera:.2f}
-                        </div>
-                    </div>
-                    <div>
-                        <div class="info-item">
-                            <span class="info-label">Sovrapprezzo:</span> € {sovrapprezzo:.2f}
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Margine:</span> € {margine:.2f} ({margine_percentuale:.1f}%)
-                        </div>
-                        <div class="info-item totale-finale">
-                            <span class="info-label">TOTALE PREVENTIVO:</span> € {totale_netto:.2f}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 50px; font-size: 12px; color: #666;">
-                Documento generato automaticamente il {data_now}<br>
-                ACG CLIMA SERVICE S.R.L. - Sistema Gestione MPLS
-            </div>
-        </body>
-        </html>
-        """
-        
-        # Applica .format() con tutti i valori
-        html_content = html_content.format(
-            numero_mpls=mpls.numero_mpls,
-            cliente_nome=mpls.cliente_nome,
-            data_creazione=data_creazione,
-            stato=mpls.stato.upper(),
-            commessa_numero=commessa_numero,
-            descrizione=descrizione,
-            totale_costi=totale_costi,
-            ore_manodopera=mpls.ore_manodopera or 0,
-            costo_manodopera=costo_manodopera,
-            sovrapprezzo=mpls.sovrapprezzo or 0,
-            margine=margine,
-            margine_percentuale=margine_percentuale,
-            totale_netto=totale_netto,
-            data_now=datetime.now().strftime('%d/%m/%Y alle %H:%M')
-        )
+        # Genera HTML con nuovo template
+        html_content = MPLSTemplate.generate_html(mpls_data)
         
         response = make_response(html_content)
         response.headers['Content-Type'] = 'text/html'
