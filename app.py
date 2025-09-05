@@ -392,7 +392,7 @@ from models import (DDTIn, ArticoloIn, DDTOut, ArticoloOut,
                     Magazzino, Mastrino, MovimentoInterno, ArticoloMovimentoInterno,
                     Commessa, Preventivo, OrdineFornitore, DettaglioPreventivo, DettaglioOrdine,
                     OffertaFornitore, DettaglioOfferta, ConfigurazioneSistema, CollegamentoMastrini,
-                    MPLS, MaterialeMPLS, MPLSArticolo)
+                    MPLS, MaterialeMPLS, MPLSArticolo, AllegatoCommessa)
 
 # Filtri Jinja2 personalizzati
 @app.template_filter('from_json')
@@ -1045,13 +1045,17 @@ def dettaglio_commessa(id):
         # Ordina per data decrescente
         ddt_collegati.sort(key=lambda x: x['data_documento'] if x['data_documento'] else datetime.min.date(), reverse=True)
         
+        # Carica allegati della commessa
+        allegati = AllegatoCommessa.query.filter_by(commessa_id=id).order_by(AllegatoCommessa.data_caricamento.desc()).all()
+        
         return render_template('commessa-detail.html',
                              commessa=commessa,
                              ddt_collegati=ddt_collegati,
                              preventivi_collegati=preventivi_collegati,
                              ordini_collegati=ordini_collegati,
                              mpls_collegati=mpls_collegati,
-                             offerte_collegate=offerte_collegate)
+                             offerte_collegate=offerte_collegate,
+                             allegati=allegati)
     except Exception as e:
         print(f"Errore dettaglio commessa: {e}")
         return str(e), 500
@@ -1075,6 +1079,125 @@ def chiudi_commessa(id):
     except Exception as e:
         db.session.rollback()
         print(f"Errore chiusura commessa: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/commesse/<int:commessa_id>/allegati/upload', methods=['POST'])
+def upload_allegato_commessa(commessa_id):
+    """Upload allegato per una commessa"""
+    try:
+        import os
+        import uuid
+        from werkzeug.utils import secure_filename
+        
+        commessa = Commessa.query.get_or_404(commessa_id)
+        
+        if 'allegato_file' not in request.files:
+            return jsonify({'success': False, 'error': 'Nessun file selezionato'}), 400
+            
+        file = request.files['allegato_file']
+        descrizione = request.form.get('descrizione', '')
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'Nessun file selezionato'}), 400
+        
+        # Verifica estensioni permesse
+        ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'xls', 'xlsx', 'txt', 'zip', 'rar'}
+        
+        def allowed_file(filename):
+            return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+        
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'error': 'Tipo di file non permesso'}), 400
+        
+        # Crea directory se non esiste
+        upload_folder = os.path.join(os.getcwd(), 'uploads', 'allegati_commesse')
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        # Genera nome file sicuro
+        original_filename = secure_filename(file.filename)
+        file_extension = original_filename.rsplit('.', 1)[1].lower()
+        unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
+        
+        file_path = os.path.join(upload_folder, unique_filename)
+        file.save(file_path)
+        
+        # Salva nel database
+        allegato = AllegatoCommessa(
+            commessa_id=commessa_id,
+            nome_file_originale=original_filename,
+            nome_file_sistema=unique_filename,
+            tipo_file=file_extension,
+            dimensione_file=os.path.getsize(file_path),
+            caricato_da='Sistema',  # TODO: Implementare autenticazione utenti
+            descrizione=descrizione
+        )
+        
+        db.session.add(allegato)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Allegato caricato con successo',
+            'allegato': allegato.to_dict()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore upload allegato: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/commesse/<int:commessa_id>/allegati/<int:allegato_id>/download')
+def download_allegato_commessa(commessa_id, allegato_id):
+    """Download allegato di una commessa"""
+    try:
+        import os
+        from flask import send_file
+        
+        allegato = AllegatoCommessa.query.filter_by(
+            id=allegato_id, 
+            commessa_id=commessa_id
+        ).first_or_404()
+        
+        file_path = os.path.join(os.getcwd(), 'uploads', 'allegati_commesse', allegato.nome_file_sistema)
+        
+        if not os.path.exists(file_path):
+            return "File non trovato", 404
+            
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=allegato.nome_file_originale
+        )
+        
+    except Exception as e:
+        print(f"Errore download allegato: {e}")
+        return str(e), 500
+
+@app.route('/commesse/<int:commessa_id>/allegati/<int:allegato_id>/elimina', methods=['POST'])
+def elimina_allegato_commessa(commessa_id, allegato_id):
+    """Elimina allegato di una commessa"""
+    try:
+        import os
+        
+        allegato = AllegatoCommessa.query.filter_by(
+            id=allegato_id,
+            commessa_id=commessa_id
+        ).first_or_404()
+        
+        # Elimina file fisico
+        file_path = os.path.join(os.getcwd(), 'uploads', 'allegati_commesse', allegato.nome_file_sistema)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        # Elimina da database
+        db.session.delete(allegato)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Allegato eliminato con successo'})
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore eliminazione allegato: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/commesse/import-excel', methods=['GET', 'POST'])

@@ -309,6 +309,47 @@ class Commessa(db.Model):
             'note': self.note
         }
 
+class AllegatoCommessa(db.Model):
+    """Allegati esterni per le commesse"""
+    __tablename__ = 'allegati_commesse'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    commessa_id = db.Column(db.Integer, db.ForeignKey('commessa.id'), nullable=False)
+    nome_file_originale = db.Column(db.String(255), nullable=False)
+    nome_file_sistema = db.Column(db.String(255), nullable=False)
+    tipo_file = db.Column(db.String(50))  # pdf, jpg, png, doc, etc.
+    dimensione_file = db.Column(db.Integer)  # in bytes
+    data_caricamento = db.Column(db.DateTime, default=datetime.now)
+    caricato_da = db.Column(db.String(100))  # Nome utente che ha caricato
+    descrizione = db.Column(db.Text)  # Descrizione opzionale del file
+    
+    # Relazione con Commessa
+    commessa = db.relationship('Commessa', backref='allegati')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'commessa_id': self.commessa_id,
+            'nome_file_originale': self.nome_file_originale,
+            'nome_file_sistema': self.nome_file_sistema,
+            'tipo_file': self.tipo_file,
+            'dimensione_file': self.dimensione_file,
+            'data_caricamento': self.data_caricamento.strftime('%Y-%m-%d %H:%M:%S') if self.data_caricamento else None,
+            'caricato_da': self.caricato_da,
+            'descrizione': self.descrizione
+        }
+    
+    def get_dimensione_readable(self):
+        """Converte dimensione in formato leggibile"""
+        if not self.dimensione_file:
+            return "N/A"
+        
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if self.dimensione_file < 1024.0:
+                return f"{self.dimensione_file:.1f} {unit}"
+            self.dimensione_file /= 1024.0
+        return f"{self.dimensione_file:.1f} TB"
+
 class OffertaFornitore(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     numero_offerta = db.Column(db.String(50), unique=True)

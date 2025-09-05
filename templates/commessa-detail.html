@@ -359,6 +359,99 @@
         </div>
     </div>
 
+    <!-- Sezione Allegati -->
+    <div class="card-detail">
+        <div class="card-header">
+            <h3>📎 Allegati Esterni</h3>
+            <div style="display: flex; gap: 10px;">
+                <span class="count-badge">{{ allegati|length }}</span>
+                {% if commessa.stato == 'aperta' %}
+                <button class="btn btn-success btn-sm" onclick="showUploadModal()">📁 Carica Allegato</button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            {% if allegati %}
+            <div class="allegati-grid">
+                {% for allegato in allegati %}
+                <div class="allegato-item">
+                    <div class="allegato-icon">
+                        {% if allegato.tipo_file in ['pdf'] %}
+                            📄
+                        {% elif allegato.tipo_file in ['jpg', 'jpeg', 'png', 'gif'] %}
+                            🖼️
+                        {% elif allegato.tipo_file in ['doc', 'docx'] %}
+                            📝
+                        {% elif allegato.tipo_file in ['xls', 'xlsx'] %}
+                            📊
+                        {% elif allegato.tipo_file in ['zip', 'rar'] %}
+                            🗜️
+                        {% else %}
+                            📎
+                        {% endif %}
+                    </div>
+                    <div class="allegato-info">
+                        <div class="allegato-nome">{{ allegato.nome_file_originale }}</div>
+                        <div class="allegato-details">
+                            <span class="allegato-data">{{ allegato.data_caricamento.strftime('%d/%m/%Y %H:%M') }}</span>
+                            <span class="allegato-size">{{ allegato.get_dimensione_readable() }}</span>
+                        </div>
+                        {% if allegato.descrizione %}
+                        <div class="allegato-descrizione">{{ allegato.descrizione }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="allegato-actions">
+                        <a href="/commesse/{{ commessa.id }}/allegati/{{ allegato.id }}/download" 
+                           class="btn btn-sm btn-primary" title="Scarica">⬇️</a>
+                        {% if commessa.stato == 'aperta' %}
+                        <button class="btn btn-sm btn-danger" 
+                                onclick="eliminaAllegato({{ allegato.id }})" title="Elimina">🗑️</button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: #888;">
+                <div style="font-size: 48px; margin-bottom: 15px;">📎</div>
+                <div>Nessun allegato caricato</div>
+                {% if commessa.stato == 'aperta' %}
+                <button class="btn btn-success" onclick="showUploadModal()" style="margin-top: 15px;">📁 Carica Primo Allegato</button>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal Upload Allegato -->
+    <div id="uploadModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📁 Carica Allegato</h3>
+                <span class="modal-close" onclick="hideUploadModal()">&times;</span>
+            </div>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="allegato_file">Seleziona File:</label>
+                        <input type="file" id="allegato_file" name="allegato_file" required
+                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.txt,.zip,.rar">
+                        <small>Tipi supportati: PDF, DOC, DOCX, JPG, PNG, XLS, XLSX, TXT, ZIP, RAR</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="descrizione">Descrizione (opzionale):</label>
+                        <textarea id="descrizione" name="descrizione" rows="3" 
+                                  placeholder="Descrivi brevemente il contenuto del file..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="hideUploadModal()" class="btn btn-secondary">Annulla</button>
+                    <button type="submit" class="btn btn-success">📁 Carica Allegato</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
     function chiudiCommessa(id) {
         if (confirm('Sei sicuro di voler chiudere questa commessa?')) {
@@ -381,6 +474,81 @@
                 console.error('Error:', error);
                 alert('Errore durante la chiusura della commessa');
             });
+        }
+    }
+
+    // Funzioni per gestione allegati
+    function showUploadModal() {
+        document.getElementById('uploadModal').style.display = 'block';
+    }
+
+    function hideUploadModal() {
+        document.getElementById('uploadModal').style.display = 'none';
+        document.getElementById('uploadForm').reset();
+    }
+
+    // Upload allegato
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Caricamento...';
+        
+        fetch(`/commesse/{{ commessa.id }}/allegati/upload`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Allegato caricato con successo!');
+                hideUploadModal();
+                location.reload();
+            } else {
+                alert('Errore: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Errore durante il caricamento del file');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    });
+
+    // Elimina allegato
+    function eliminaAllegato(allegatoId) {
+        if (confirm('Sei sicuro di voler eliminare questo allegato?')) {
+            fetch(`/commesse/{{ commessa.id }}/allegati/${allegatoId}/elimina`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Allegato eliminato con successo');
+                    location.reload();
+                } else {
+                    alert('Errore: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore durante l\'eliminazione dell\'allegato');
+            });
+        }
+    }
+
+    // Chiudi modal cliccando fuori
+    window.onclick = function(event) {
+        const modal = document.getElementById('uploadModal');
+        if (event.target == modal) {
+            hideUploadModal();
         }
     }
     </script>
@@ -466,6 +634,144 @@
     .badge-manutenzione-straordinaria { background: #fef3c7; color: #92400e; }
     .badge-in { background: #dcfce7; color: #166534; }
     .badge-out { background: #fee2e2; color: #dc2626; }
+
+    /* Stili Allegati */
+    .allegati-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+    }
+    
+    .allegato-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+    }
+    
+    .allegato-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+    
+    .allegato-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .allegato-nome {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 5px;
+        word-break: break-all;
+    }
+    
+    .allegato-details {
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 5px;
+    }
+    
+    .allegato-details span {
+        margin-right: 15px;
+    }
+    
+    .allegato-descrizione {
+        font-size: 13px;
+        color: #475569;
+        font-style: italic;
+    }
+    
+    .allegato-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    /* Stili Modal */
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        color: #1e293b;
+    }
+    
+    .modal-close {
+        font-size: 24px;
+        cursor: pointer;
+        color: #64748b;
+    }
+    
+    .modal-close:hover {
+        color: #dc2626;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .modal-footer {
+        padding: 20px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #374151;
+    }
+    
+    .form-group input[type="file"],
+    .form-group textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .form-group small {
+        display: block;
+        margin-top: 5px;
+        color: #6b7280;
+        font-size: 12px;
+    }
 
     @media (max-width: 768px) {
         .detail-grid {
