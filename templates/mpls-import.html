@@ -186,7 +186,10 @@
                         <h3>📋 Dati Generali</h3>
                         <div class="form-group">
                             <label for="cliente_nome">Nome Cliente:</label>
-                            <input type="text" id="cliente_nome" class="form-control" readonly>
+                            <div class="info-item">
+                                <input type="text" id="cliente_nome" class="form-control" placeholder="Digita per cercare cliente...">
+                                <div id="cliente_suggestions" class="autocomplete-suggestions" style="display: none;"></div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="numero_offerta">Numero Offerta:</label>
@@ -280,6 +283,68 @@
 
     <script>
         let parsedData = null;
+        let selectedCliente = null;
+
+        // Autocompletamento clienti
+        function setupClienteAutocomplete() {
+            const clienteInput = document.getElementById('cliente_nome');
+            const suggestionsDiv = document.getElementById('cliente_suggestions');
+            let debounceTimer;
+
+            clienteInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                const query = this.value.trim();
+                
+                if (query.length < 2) {
+                    suggestionsDiv.style.display = 'none';
+                    selectedCliente = null;
+                    return;
+                }
+
+                debounceTimer = setTimeout(() => {
+                    fetch(`/api/clienti/search?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(clienti => {
+                            suggestionsDiv.innerHTML = '';
+                            
+                            if (clienti.length === 0) {
+                                suggestionsDiv.innerHTML = '<div class="suggestion-item">Nessun cliente trovato</div>';
+                                suggestionsDiv.style.display = 'block';
+                                return;
+                            }
+
+                            clienti.forEach(cliente => {
+                                const div = document.createElement('div');
+                                div.className = 'suggestion-item';
+                                div.innerHTML = `
+                                    <strong>${cliente.ragione_sociale}</strong>
+                                    ${cliente.partita_iva ? `<br><small>P.IVA: ${cliente.partita_iva}</small>` : ''}
+                                `;
+                                
+                                div.addEventListener('click', () => {
+                                    clienteInput.value = cliente.ragione_sociale;
+                                    selectedCliente = cliente;
+                                    suggestionsDiv.style.display = 'none';
+                                });
+                                
+                                suggestionsDiv.appendChild(div);
+                            });
+                            
+                            suggestionsDiv.style.display = 'block';
+                        })
+                        .catch(error => {
+                            console.error('Errore ricerca clienti:', error);
+                        });
+                }, 300);
+            });
+
+            // Nascondi suggestions quando si clicca altrove
+            document.addEventListener('click', function(e) {
+                if (!clienteInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+        }
 
         // Upload e parsing PDF
         document.getElementById('parse-btn').addEventListener('click', function() {
@@ -339,8 +404,10 @@
 
         // Display risultati parsing
         function displayResults(data) {
-            // Popola campi generali
-            document.getElementById('cliente_nome').value = data.cliente_nome || '';
+            // Popola campi generali - solo se non è già stato selezionato un cliente manualmente
+            if (!selectedCliente) {
+                document.getElementById('cliente_nome').value = data.cliente_nome || '';
+            }
             document.getElementById('numero_offerta').value = data.numero_offerta || '';
             document.getElementById('data_offerta').value = convertDateToISO(data.data_offerta) || '';
             document.getElementById('totale_offerta').value = data.totale_offerta || '';
@@ -384,8 +451,9 @@
 
             // Prepara dati per MPLS
             const mplsData = {
-                // Dati generali dal parsing
-                cliente_nome: parsedData.cliente_nome || '',
+                // Dati generali - usa cliente selezionato se disponibile
+                cliente_nome: selectedCliente ? selectedCliente.ragione_sociale : document.getElementById('cliente_nome').value,
+                cliente_codice: selectedCliente ? selectedCliente.partita_iva : '',
                 descrizione: parsedData.descrizione || '',
                 indirizzo: parsedData.indirizzo || '',
                 
@@ -425,6 +493,11 @@
                 console.error('Errore:', error);
                 alert('Errore nella richiesta: ' + error.message);
             });
+        });
+
+        // Inizializza autocompletamento al caricamento pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            setupClienteAutocomplete();
         });
     </script>
 </body>
