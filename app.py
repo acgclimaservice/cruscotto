@@ -8427,6 +8427,69 @@ def stampa_mpls(id):
         traceback.print_exc()
         return f"Errore PDF: {e}", 500
 
+@app.route('/mpls/<int:id>/crea-preventivo', methods=['POST'])
+def crea_preventivo_da_mpls(id):
+    """Crea un preventivo da MPLS nascondendo costi e ricarichi"""
+    try:
+        mpls = MPLS.query.get_or_404(id)
+        articoli = MPLSArticolo.query.filter_by(mpls_id=id).all()
+
+        # Genera numero preventivo
+        ultimo_numero = db.session.query(db.func.max(Preventivo.id)).scalar() or 0
+        numero_preventivo = f"PREV-{datetime.now().year}-{str(ultimo_numero + 1).zfill(4)}"
+
+        # Crea preventivo
+        nuovo_preventivo = Preventivo(
+            numero_preventivo=numero_preventivo,
+            data_preventivo=datetime.now().date(),
+            cliente_nome=mpls.cliente_nome or 'Cliente da MPLS',
+            oggetto=f"Preventivo da MPLS {mpls.numero_mpls}",
+            stato='bozza',
+            iva=22,
+            note=f"Preventivo generato automaticamente da MPLS {mpls.numero_mpls}"
+        )
+
+        db.session.add(nuovo_preventivo)
+        db.session.flush()  # Per ottenere l'ID
+
+        # Crea dettagli preventivo (SENZA costi e ricarichi)
+        totale_netto = 0
+        for art in articoli:
+            prezzo_vendita = float(art.prezzo_vendita or 0)
+            quantita = float(art.quantita or 1)
+            totale_riga = quantita * prezzo_vendita
+            totale_netto += totale_riga
+
+            dettaglio = DettaglioPreventivo(
+                preventivo_id=nuovo_preventivo.id,
+                codice_articolo=art.codice or '',
+                descrizione=art.descrizione or '',
+                quantita=quantita,
+                unita_misura='PZ',
+                prezzo_unitario=prezzo_vendita,
+                # NON includere costo_unitario per nascondere i costi
+                sconto_percentuale=0,
+                totale_riga=totale_riga
+            )
+            db.session.add(dettaglio)
+
+        # Aggiorna totali preventivo
+        nuovo_preventivo.totale_netto = totale_netto
+        nuovo_preventivo.totale_lordo = totale_netto * (1 + nuovo_preventivo.iva / 100)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'preventivo_id': nuovo_preventivo.id,
+            'numero_preventivo': numero_preventivo
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore creazione preventivo da MPLS: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/mpls/da-ordine/<int:ordine_id>')
 def crea_mpls_da_ordine(ordine_id):
     """Crea MPLS partendo da Ordine"""

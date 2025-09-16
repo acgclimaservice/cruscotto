@@ -77,12 +77,40 @@
                 <option value="aperta" {{ 'selected' if stato_filtro == 'aperta' else '' }}>Aperte</option>
                 <option value="chiusa" {{ 'selected' if stato_filtro == 'chiusa' else '' }}>Chiuse</option>
             </select>
-            <select id="filtro-cliente" onchange="applicaFiltri()">
-                <option value="">Tutti i clienti</option>
-                {% for cliente in clienti_disponibili %}
-                <option value="{{ cliente }}" {{ 'selected' if cliente_filtro == cliente else '' }}>{{ cliente }}</option>
-                {% endfor %}
-            </select>
+            <div style="position: relative; display: inline-block;">
+                <input
+                    id="filtro-cliente"
+                    type="text"
+                    placeholder="Cerca cliente..."
+                    value="{{ cliente_filtro or '' }}"
+                    onkeyup="filterClients()"
+                    onfocus="showClientList()"
+                    style="width: 200px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"
+                >
+                <div id="client-suggestions" style="
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    right: 0;
+                    background: white;
+                    border: 1px solid #ddd;
+                    border-top: none;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    display: none;
+                    z-index: 1000;
+                    border-radius: 0 0 4px 4px;
+                ">
+                    <div class="client-option" onclick="selectClient('')" style="padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;">
+                        <em>Tutti i clienti</em>
+                    </div>
+                    {% for cliente in clienti_disponibili %}
+                    <div class="client-option" onclick="selectClient('{{ cliente }}')" style="padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;">
+                        {{ cliente }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
             <select id="filtro-tipologia" onchange="applicaFiltri()">
                 <option value="">Tutte le tipologie</option>
                 <option value="Riqualificazione" {{ 'selected' if tipologia_filtro == 'Riqualificazione' else '' }}>Riqualificazione</option>
@@ -214,6 +242,61 @@
             });
         }
     }
+
+    // Funzioni per autocompletamento clienti
+    function filterClients() {
+        const input = document.getElementById('filtro-cliente');
+        const suggestions = document.getElementById('client-suggestions');
+        const filter = input.value.toLowerCase();
+
+        // Mostra le opzioni
+        suggestions.style.display = 'block';
+
+        // Filtra le opzioni
+        const options = suggestions.querySelectorAll('.client-option');
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            if (text.includes(filter) || option.onclick.toString().includes("selectClient('')")) {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+
+        // Applica filtri dopo un breve ritardo
+        setTimeout(applicaFiltri, 300);
+    }
+
+    function showClientList() {
+        document.getElementById('client-suggestions').style.display = 'block';
+    }
+
+    function selectClient(cliente) {
+        document.getElementById('filtro-cliente').value = cliente;
+        document.getElementById('client-suggestions').style.display = 'none';
+        applicaFiltri();
+    }
+
+    // Chiudi dropdown quando si clicca fuori
+    document.addEventListener('click', function(event) {
+        const clientFilter = document.getElementById('filtro-cliente');
+        const suggestions = document.getElementById('client-suggestions');
+
+        if (!clientFilter.contains(event.target) && !suggestions.contains(event.target)) {
+            suggestions.style.display = 'none';
+        }
+    });
+
+    // Aggiungi stile hover per le opzioni
+    document.addEventListener('DOMContentLoaded', function() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .client-option:hover {
+                background-color: #f3f4f6 !important;
+            }
+        `;
+        document.head.appendChild(style);
+    });
     </script>
 
     <style>

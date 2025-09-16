@@ -39,6 +39,7 @@
                     {% if mpls.stato == 'bozza' %}
                     <a href="/mpls/{{ mpls.id }}/modifica" class="btn btn-warning">✏️ Modifica</a>
                     {% endif %}
+                    <button class="btn btn-success" onclick="creaPreventivoDaMpls({{ mpls.id }})">📋 Crea Preventivo</button>
                     <button class="btn btn-primary" onclick="window.open('/mpls/{{ mpls.id }}/stampa', '_blank')">🖨️ Stampa MPLS</button>
                     <a href="/mpls" class="btn btn-secondary">← Torna alla Lista</a>
                 </div>
@@ -436,5 +437,41 @@
             color: #92400e;
         }
     </style>
+
+    <script>
+    function creaPreventivoDaMpls(mplsId) {
+        if (confirm('Creare un preventivo da questo MPLS? I costi di acquisto e ricarichi verranno nascosti.')) {
+            // Mostra loading
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Creazione...';
+            btn.disabled = true;
+
+            fetch(`/mpls/${mplsId}/crea-preventivo`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Preventivo creato con successo!');
+                    window.open(`/preventivi/${data.preventivo_id}`, '_blank');
+                } else {
+                    alert('Errore nella creazione del preventivo: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Errore:', error);
+                alert('Errore di comunicazione con il server');
+            })
+            .finally(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+    }
+    </script>
 </body>
 </html>
