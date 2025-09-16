@@ -63,8 +63,8 @@ class EnhancedAIParser(MultiAIPDFParser):
 
         return None
 
-    def normalize_supplier_name(self, parsed_data):
-        """Normalizza i nomi fornitori secondo regole specifiche"""
+    def normalize_supplier_data(self, parsed_data, pdf_text=None):
+        """Normalizza i dati fornitori secondo regole specifiche"""
         if not parsed_data or 'fornitore' not in parsed_data:
             return parsed_data
 
@@ -74,6 +74,28 @@ class EnhancedAIParser(MultiAIPDFParser):
         if 'CAMBIELLI' in fornitore_raw:
             parsed_data['fornitore'] = '0000000030 - CAMBIELLI SPA'
             print(f"🏢 Fornitore normalizzato: CAMBIELLI -> {parsed_data['fornitore']}")
+
+            # Per CAMBIELLI: cerca formato numero offerta XC/STD/xxxxxxx
+            import re
+            cambielli_pattern = r'XC/STD/\d+'
+
+            # Prima cerca nel numero già estratto
+            numero_offerta = parsed_data.get('numero_offerta') or parsed_data.get('numero_ddt', '')
+            match = re.search(cambielli_pattern, str(numero_offerta))
+
+            # Se non trovato, cerca nel testo completo del PDF
+            if not match and pdf_text:
+                match = re.search(cambielli_pattern, pdf_text)
+
+            if match:
+                numero_corretto = match.group()
+                if 'numero_offerta' in parsed_data:
+                    parsed_data['numero_offerta'] = numero_corretto
+                if 'numero_ddt' in parsed_data:
+                    parsed_data['numero_ddt'] = numero_corretto
+                print(f"📄 Numero offerta CAMBIELLI normalizzato: {numero_corretto}")
+            else:
+                print("⚠️ Formato XC/STD/xxxxxxx non trovato per CAMBIELLI")
 
         # Qui puoi aggiungere altre regole di normalizzazione
         # elif 'RIELLO' in fornitore_raw:
@@ -88,6 +110,7 @@ class EnhancedAIParser(MultiAIPDFParser):
 
 🏢 REGOLE NORMALIZZAZIONE FORNITORI:
 - Se vedi "CAMBIELLI" nel documento, usa ESATTAMENTE: "0000000030 - CAMBIELLI SPA"
+- Per CAMBIELLI: il numero offerta ha SEMPRE formato "XC/STD/xxxxxxx" (cerca questo pattern)
 - Cerca sempre il nome completo del fornitore anche se parzialmente nascosto
 """
         enhanced_prompt = base_prompt + normalization_rules
@@ -184,7 +207,7 @@ IMPORTANTE:
             parsed_data = json.loads(content)
 
             # Applica normalizzazione fornitori
-            parsed_data = self.normalize_supplier_name(parsed_data)
+            parsed_data = self.normalize_supplier_data(parsed_data, pdf_text)
 
             parsed_data['ai_used'] = 'claude_enhanced'
             parsed_data['ai_reason'] = 'Claude AI Enhanced con regole apprese'
@@ -319,7 +342,7 @@ IMPORTANTE:
                 parsed_data = json.loads(content)
 
                 # Applica normalizzazione fornitori
-                parsed_data = self.normalize_supplier_name(parsed_data)
+                parsed_data = self.normalize_supplier_data(parsed_data, pdf_text)
 
                 parsed_data['ai_used'] = 'claude_enhanced_ordine'
                 parsed_data['ai_reason'] = 'Claude AI Enhanced per ordini con regole apprese'
