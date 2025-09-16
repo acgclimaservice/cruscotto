@@ -98,6 +98,28 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 **Status**: ✅ RISOLTO
 
+### ✅ Data: 2025-09-16 - 16:25
+**Sezione testata**: Ordini (entrambi i template)
+**Controllo**: Verifica navigation menu consistency
+
+**Errori trovati**:
+1. **Navigation menu incompleto in ordini.html** - Mancavano sezioni principali
+   - Menu aveva solo: Dashboard, DDT IN/OUT, Ordini, Preventivi, Catalogo
+   - Mancavano: Offerte, MPLS, Movimenti, Inventario, Commesse, Impostazioni, FIXPOINT
+2. **Navigation menu molto limitato in ordini-import.html** - Estremamente ridotto
+   - Menu aveva solo: Dashboard, Ordini
+   - Mancavano: tutte le altre sezioni principali del sistema
+   - **Risultato**: Navigazione severamente limitata, UX povera
+
+**Riparazioni effettuate**:
+1. Aggiornato navigation menu in templates/ordini.html:
+   - Aggiunte tutte le sezioni mancanti con icone appropriate
+2. Aggiornato navigation menu in templates/ordini-import.html:
+   - Trasformato da 2 voci a navigation completo con tutte le sezioni
+   - Menu ora coerente con standard del sistema
+
+**Status**: ✅ RISOLTO
+
 ### ✅ Data: 2025-09-16 - 15:45
 **Sezione testata**: DDT IN
 **Controllo**: Verifica navigazione e template consistency
@@ -160,9 +182,9 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📊 Statistiche Riparazioni
 
-**Totale controlli**: 7
-**Errori trovati**: 8
-**Errori risolti**: 8
+**Totale controlli**: 8
+**Errori trovati**: 10
+**Errori risolti**: 10
 **Successo rate**: 100%
 
 ---
