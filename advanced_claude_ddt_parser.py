@@ -216,6 +216,9 @@ class AdvancedClaudeDDTParser:
         # Step 3: Layout-specific instructions
         layout_prompt = self._build_layout_prompt(analysis['layout_type'])
 
+        # Step 4: Semantic reasoning instructions
+        reasoning_prompt = self._build_reasoning_prompt()
+
         # Combina tutti i prompt
         full_prompt = f"""
 {schema_prompt}
@@ -223,6 +226,8 @@ class AdvancedClaudeDDTParser:
 {context_prompt}
 
 {layout_prompt}
+
+{reasoning_prompt}
 
 IMPORTANTE:
 - Rispondi SOLO con JSON valido, nessun altro testo
@@ -235,8 +240,9 @@ METODO DI LAVORO:
 1. Analizza tutto il testo per capire la struttura
 2. Identifica sezioni chiave (intestazione, articoli, totali)
 3. Estrai i dati seguendo la logica del documento
-4. Valida che i dati estratti abbiano senso
-5. Restituisci JSON finale
+4. RAGIONA su ogni campo: ha senso logico?
+5. Valida semanticamente i dati estratti
+6. Restituisci JSON finale
 """
 
         # Chiamata Claude con contenuto ottimizzato
@@ -327,7 +333,7 @@ LAYOUT SPECIFICO CAMBIELLI:
 - Fornitore: sempre "0000000030 - CAMBIELLI SPA"
 - Numero offerta: formato "XC/STD/xxxxxxx"
 - Oggetto: vicino a parola "riferimento"
-- Note: nel fondo del PDF vicino a "NOTE"
+- Note: nel fondo del PDF vicino a "NOTE" - cerca condizioni commerciali
 """
         elif layout_type == 'scanned':
             return """
@@ -343,6 +349,37 @@ LAYOUT STANDARD:
 - Segui la struttura logica del documento
 - Intestazione -> Articoli -> Totali
 - Attenzione a tabelle multi-colonna
+"""
+
+    def _build_reasoning_prompt(self) -> str:
+        """Costruisce prompt per ragionamento semantico sui campi"""
+        return """
+🧠 RAGIONAMENTO SEMANTICO - VALIDA SEMPRE LA LOGICA:
+
+CAMPO NOTE - USA IL BUON SENSO:
+❌ NON sono note: "Firma Per Accettazione", "Importo I.V.A.", "Totale offerta", firme, intestazioni
+✅ SONO note: condizioni di pagamento, modalità consegna, validità offerta, clausole contrattuali
+
+Esempi di VERE note:
+- "EVENTUALE CONSEGNA AL MARCIAPIEDE SALDO ALLA CONSEGNA SALVO DIVERSI ACCORDI"
+- "VALIDA 10 GG DATA OFFERTA - SALVO APPROVAZIONE DELL'AZIENDA"
+- "Pagamento a 30 giorni data fattura"
+- "Consegna franco magazzino"
+- "Prezzi IVA esclusa"
+
+CAMPO FORNITORE - LOGICA:
+✅ È il fornitore: chi INVIA la merce, emette il documento, ha P.IVA in alto
+❌ NON è il fornitore: "ACG CLIMA SERVICE" (è quasi sempre il destinatario)
+
+CAMPO NUMERO_DDT/OFFERTA - LOGICA:
+✅ Formato tipico: numeri, lettere, slash, trattini (es: "2024/001", "XC/STD/123")
+❌ NON è numero: date, importi, descrizioni
+
+CAMPO ARTICOLI - RAGIONA:
+✅ Devono avere: descrizione prodotto, quantità, prezzo
+❌ Ignora: intestazioni tabella, totali, righe vuote
+
+REGOLA D'ORO: Se un dato estratto non ha senso logico nel contesto, cerca altrove!
 """
 
     def _parse_with_vision(self, prompt: str, content: Dict) -> Dict[str, Any]:
@@ -440,6 +477,9 @@ LAYOUT STANDARD:
         self._validate_numbers(data)
         self._validate_required_fields(data, doc_type)
 
+        # Validazione semantica intelligente
+        self._validate_semantic_logic(data)
+
         return {'success': True, 'data': data}
 
     def _validate_dates(self, data: Dict):
@@ -492,6 +532,83 @@ LAYOUT STANDARD:
         for field in required_fields:
             if field not in data or not data[field]:
                 print(f"⚠️ Campo obbligatorio mancante: {field}")
+
+    def _validate_semantic_logic(self, data: Dict):
+        """Validazione semantica intelligente dei campi estratti"""
+
+        # Validazione NOTE - il campo più problematico
+        if 'note' in data and data['note']:
+            note_text = str(data['note']).upper()
+
+            # Pattern che NON dovrebbero essere note
+            invalid_note_patterns = [
+                'FIRMA.*ACCETTAZIONE',
+                'IMPORTO.*IVA',
+                'TOTALE.*OFFERTA',
+                'CLIENTE',
+                r'^[A-Z\s]{1,20}$',  # Troppo breve/generico
+                'PREVENTIVO',
+                'FATTURA',
+                'DOCUMENTO'
+            ]
+
+            # Pattern che DOVREBBERO essere note
+            valid_note_patterns = [
+                'EVENTUALE.*CONSEGNA',
+                'SALDO.*CONSEGNA',
+                'VALIDA.*GG',
+                'ACCORDI',
+                'APPROVAZIONE',
+                'PAGAMENTO',
+                'CONSEGNA.*FRANCO',
+                'GIORNI.*DATA',
+                'PREZZI.*IVA'
+            ]
+
+            import re
+
+            # Check se le note sembrano non valide
+            is_invalid = any(re.search(pattern, note_text) for pattern in invalid_note_patterns)
+            is_valid = any(re.search(pattern, note_text) for pattern in valid_note_patterns)
+
+            if is_invalid and not is_valid:
+                print(f"🤔 Note sembrano non valide: '{data['note'][:50]}...'")
+                print("🔍 Suggerimento: cerca condizioni commerciali nel documento")
+                # Potresti anche azzerare il campo se proprio non ha senso
+                # data['note'] = None
+            elif is_valid:
+                print(f"✅ Note sembrano valide: condizioni commerciali rilevate")
+
+        # Validazione FORNITORE
+        if 'fornitore' in data and data['fornitore']:
+            fornitore = str(data['fornitore']).upper()
+            if 'ACG CLIMA SERVICE' in fornitore:
+                print(f"⚠️ Fornitore sospetto: '{data['fornitore']}' (ACG è di solito il destinatario)")
+
+        # Validazione NUMERO_DDT
+        if 'numero_ddt' in data and data['numero_ddt']:
+            numero = str(data['numero_ddt'])
+            # Check se sembra una data invece di un numero
+            if re.match(r'^\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}$', numero):
+                print(f"⚠️ Numero DDT sembra una data: '{numero}'")
+
+        # Validazione ARTICOLI
+        if 'articoli' in data and data['articoli']:
+            valid_articles = []
+            for art in data['articoli']:
+                if isinstance(art, dict):
+                    # Check se ha campi sensati
+                    has_description = art.get('descrizione') and len(str(art['descrizione'])) > 5
+                    has_quantity = art.get('quantita') and float(art['quantita']) > 0
+
+                    if has_description and has_quantity:
+                        valid_articles.append(art)
+                    else:
+                        print(f"🗑️ Articolo scartato (non valido): {art}")
+
+            original_count = len(data['articoli'])
+            data['articoli'] = valid_articles
+            print(f"📦 Articoli validati: {len(valid_articles)} validi su {original_count} totali")
 
     def _post_process_data(self, validated_result: Dict, doc_type: str) -> Dict[str, Any]:
         """Post-processing finale dei dati"""
