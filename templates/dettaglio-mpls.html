@@ -197,7 +197,7 @@
                         </thead>
                         <tbody>
                             {% set materiali_acquisto = (mpls.subtotale_materiali_vendita or 0) - ((mpls.subtotale_materiali_vendita or 0) * 0.2) %}
-                            {% set manodopera_acquisto = (mpls.ore_manodopera or 0) * 25 %}
+                            {% set manodopera_acquisto = (mpls.ore_manodopera or 0) * 22 %}
                             {% set margine_materiali = (mpls.subtotale_materiali_vendita or 0) - materiali_acquisto %}
                             {% set margine_manodopera = (mpls.subtotale_manodopera_vendita or 0) - manodopera_acquisto %}
 
