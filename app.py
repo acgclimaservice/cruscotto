@@ -672,8 +672,8 @@ def parse_pdf_claude():
         
         # Usa Multi-AI Parser con entrambe le AI simultaneamente
         try:
-            from multi_ai_pdf_parser import MultiAIPDFParser
-            parser = MultiAIPDFParser()
+            from enhanced_ai_parser import EnhancedAIParser
+            parser = EnhancedAIParser()
             
             # Ottieni status delle AI disponibili
             ai_status = parser.get_ai_status()
@@ -2681,7 +2681,7 @@ def process_batch_files(job_id):
     print(f"DEBUG THREAD: ENTRATO in process_batch_files con job_id={job_id}")
     
     from models import BatchImportJob, BatchImportFile, DDTIn, ArticoloIn, Fornitore
-    from multi_ai_pdf_parser import MultiAIPDFParser
+    from enhanced_ai_parser import EnhancedAIParser
     
     print(f"DEBUG THREAD: Import completati, iniziando processing per job {job_id}")
     
@@ -2696,7 +2696,7 @@ def process_batch_files(job_id):
             batch_files = BatchImportFile.query.filter_by(job_id=job_id).all()
             print(f"DEBUG THREAD: Trovati {len(batch_files)} file per il job {job_id}")
             
-            parser = MultiAIPDFParser()
+            parser = EnhancedAIParser()
             job.status = 'processing'
             db.session.commit()
             
@@ -6350,7 +6350,7 @@ def ordini_import_page():
 def parse_ordine_pdf():
     """Parse PDF offerta fornitore per creare ordine"""
     try:
-        from multi_ai_pdf_parser import MultiAIPDFParser
+        from enhanced_ai_parser import EnhancedAIParser
         import tempfile
         import os
         import base64
@@ -6375,7 +6375,7 @@ def parse_ordine_pdf():
             pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
         
         # Parse con AI
-        parser = MultiAIPDFParser()
+        parser = EnhancedAIParser()
         result = parser.parse_ordine_pdf(temp_filename, ai_service)
         
         # Cleanup
@@ -8684,8 +8684,8 @@ def mpls_parse_pdf():
         
         # Usa Multi-AI Parser (stesso del DDT)
         try:
-            from multi_ai_pdf_parser import MultiAIPDFParser
-            parser = MultiAIPDFParser()
+            from enhanced_ai_parser import EnhancedAIParser
+            parser = EnhancedAIParser()
             
             # Parse con AI - default Claude per MPLS
             preferred_ai = 'claude'

@@ -19,29 +19,32 @@ training_bp = Blueprint('training', __name__)
 def show_correction_page(pdf_hash):
     """Mostra interfaccia di correzione per un parsing"""
 
-    # Prova a recuperare dati dalla sessione
+    # Prova a recuperare dati reali dal parsing
     try:
         parsing_data = request.args.get('data')
         if parsing_data:
-            parsing_data = json.loads(parsing_data)
+            # Decodifica i dati dal parametro URL
+            import urllib.parse
+            parsing_data = json.loads(urllib.parse.unquote(parsing_data))
+            print(f"✅ Dati parsing ricevuti: {parsing_data}")
         else:
-            # Dati mock per test
+            # Nessun dato fornito - usa dati di esempio
             parsing_data = {
-                'fornitore': 'FORNITORE ESTRATTO MALE',
-                'numero_ddt': 'NUM123',
-                'data_ddt': '2025-01-15',
-                'totale_fattura': '1500.00',
-                'articoli': [
-                    {'codice': 'ART001', 'descrizione': 'Articolo 1', 'quantita': 2, 'prezzo_unitario': 100.0}
-                ]
+                'fornitore': 'Nessun dato - utilizzare dal parsing reale',
+                'numero_ddt': 'N/A',
+                'data_ddt': '2025-01-01',
+                'totale_fattura': '0.00',
+                'articoli': []
             }
+            print("⚠️ Nessun dato di parsing fornito, usando dati di esempio")
     except Exception as e:
-        print(f"Errore caricamento dati: {e}")
+        print(f"❌ Errore caricamento dati: {e}")
         parsing_data = {
-            'fornitore': 'ERRORE CARICAMENTO',
+            'fornitore': f'ERRORE CARICAMENTO: {str(e)}',
             'numero_ddt': 'N/A',
             'data_ddt': '2025-01-01',
-            'totale_fattura': '0.00'
+            'totale_fattura': '0.00',
+            'articoli': []
         }
 
     # Statistiche semplici
@@ -121,7 +124,7 @@ def show_correction_page(pdf_hash):
             const formData = new FormData(this);
             const data = Object.fromEntries(formData.entries());
             data.pdf_hash = '{pdf_hash}';
-            data.parsing_originale = '{json.dumps(parsing_data)}';
+            data.parsing_originale = {json.dumps(json.dumps(parsing_data))};
 
             fetch('/ai/parsing/salva-correzione', {{
                 method: 'POST',

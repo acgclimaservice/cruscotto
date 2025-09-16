@@ -872,11 +872,11 @@
             // Crea hash del PDF per ID sessione
             const pdfHash = Math.random().toString(36).substring(7);
 
-            // Salva i dati di parsing in sessione
-            sessionStorage.setItem('parsing_data_' + pdfHash, JSON.stringify(currentPdfData));
+            // Prepara i dati per passarli al route
+            const dataToPass = encodeURIComponent(JSON.stringify(currentPdfData.data || currentPdfData));
 
-            // Reindirizza a pagina correzione
-            window.location.href = `/ai/parsing/correction/${pdfHash}`;
+            // Reindirizza a pagina correzione con dati
+            window.location.href = `/ai/parsing/correction/${pdfHash}?data=${dataToPass}`;
         }
 
         function confirmParsing() {
