@@ -129,9 +129,9 @@ def training_dashboard():
     # Fornitori con più correzioni
     supplier_stats = db.session.query(
         ParsingTrainingExample.fornitore_nome,
-        db.func.count(ParsingTrainingExample.id).label('count')
+        func.count(ParsingTrainingExample.id).label('count')
     ).group_by(ParsingTrainingExample.fornitore_nome)\
-     .order_by(db.text('count DESC'))\
+     .order_by(text('count DESC'))\
      .limit(10).all()
 
     return render_template('training-dashboard.html',

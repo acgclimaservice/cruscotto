@@ -633,6 +633,14 @@
                         📦 Articoli: <strong>${data.data.articoli ? data.data.articoli.length : 0}</strong><br>
                         📅 Data offerta: <strong>${data.data.data_offerta || 'Non rilevata'}</strong>
                     </div>
+                    <div style="margin-top: 15px;">
+                        <button type="button" class="btn btn-warning" onclick="correctParsing()" style="margin-right: 10px;">
+                            🔧 I dati sono sbagliati? Correggi e Insegna all'AI
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="confirmParsing()">
+                            ✅ Dati corretti - Procedi
+                        </button>
+                    </div>
                 `;
             }, 1000);
         }
@@ -852,6 +860,38 @@
             document.getElementById('pdfInput').value = '';
             currentPdfData = null;
             articoliCounter = 0;
+        }
+
+        // Funzioni AI Learning
+        function correctParsing() {
+            if (!currentPdfData) {
+                alert('Nessun dato di parsing disponibile');
+                return;
+            }
+
+            // Crea hash del PDF per ID sessione
+            const pdfHash = Math.random().toString(36).substring(7);
+
+            // Salva i dati di parsing in sessione
+            sessionStorage.setItem('parsing_data_' + pdfHash, JSON.stringify(currentPdfData));
+
+            // Reindirizza a pagina correzione
+            window.location.href = `/ai/parsing/correction/${pdfHash}`;
+        }
+
+        function confirmParsing() {
+            // Invia feedback positivo
+            fetch('/ai/parsing/feedback-positivo', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    pdf_hash: 'temp_' + Date.now(),
+                    parsing_data: currentPdfData
+                })
+            }).catch(e => console.log('Feedback positivo non inviato:', e));
+
+            // Procedi con creazione ordine
+            document.getElementById('ordineForm').scrollIntoView({behavior: 'smooth'});
         }
     </script>
 </body>
