@@ -433,6 +433,14 @@ try:
 except Exception as e:
     print(f"Parsing AI non disponibile: {e}")
 
+# Registra blueprint AI training (sistema apprendimento)
+try:
+    from routes.routes_parsing_training import training_bp
+    app.register_blueprint(training_bp, url_prefix="/ai")
+    print("Sistema AI Learning caricato")
+except Exception as e:
+    print(f"AI Learning non disponibile: {e}")
+
 # Registra blueprints fornitori e clienti
 try:
     from routes.routes_fornitori import fornitori_bp
