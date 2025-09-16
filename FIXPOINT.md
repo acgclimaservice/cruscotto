@@ -161,6 +161,25 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 **Status**: ✅ RISOLTO
 
+### ✅ Data: 2025-09-16 - 16:40
+**Sezione testata**: Impostazioni
+**Controllo**: Verifica navigation menu consistency
+
+**Errori trovati**:
+1. **Navigation menu estremamente limitato in impostazioni.html** - CRITICO
+   - Menu aveva solo: Dashboard, Impostazioni (2 voci totali!)
+   - Mancavano: TUTTE le altre 11 sezioni principali del sistema
+   - **Risultato**: Navigazione praticamente inutilizzabile, utenti "bloccati" nella sezione
+   - **Severità**: ALTA - questo è il peggior caso di navigation inconsistency trovato
+
+**Riparazioni effettuate**:
+1. Aggiornato navigation menu in templates/impostazioni.html:
+   - Trasformato da 2 voci a navigation completo con 13 voci
+   - Aggiunte TUTTE le sezioni mancanti: DDT IN/OUT, Ordini, Preventivi, Offerte, MPLS, Catalogo, Movimenti, Inventario, Commesse, FIXPOINT
+   - Menu ora completamente funzionale e coerente
+
+**Status**: ✅ RISOLTO
+
 ### ✅ Data: 2025-09-16 - 15:45
 **Sezione testata**: DDT IN
 **Controllo**: Verifica navigazione e template consistency
@@ -223,9 +242,9 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📊 Statistiche Riparazioni
 
-**Totale controlli**: 10
-**Errori trovati**: 13
-**Errori risolti**: 13
+**Totale controlli**: 11
+**Errori trovati**: 14
+**Errori risolti**: 14
 **Successo rate**: 100%
 
 ---
