@@ -78,6 +78,55 @@ class EnhancedAIParser(MultiAIPDFParser):
         print("⚠️ Oggetto ordine CAMBIELLI non trovato vicino a 'riferimento'")
         return None
 
+    def extract_cambielli_note(self, pdf_text):
+        """Estrae note CAMBIELLI dal fondo del PDF vicino alla parola 'note'"""
+        if not pdf_text:
+            return None
+
+        import re
+        text = pdf_text.upper()
+
+        # Pattern per trovare testo vicino a "NOTE" (varianti)
+        note_patterns = [
+            r'NOTE[:\s-]*([A-Z\s\w\d\.,\-/()%]{20,200})',
+            r'NOTE[:\s]*(.+?)(?=\n\n|$)',
+            r'EVENTUALE[:\s]*(.+?)(?=\n\n|$)',
+            r'(?:SALDO|CONSEGNA|VALIDA)[:\s]*(.+?)(?=\n\n|$)'
+        ]
+
+        for pattern in note_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+            for match in matches:
+                note = match.strip()
+
+                # Pulisci il testo estratto
+                note = re.sub(r'^[:\s\-\.]+', '', note)  # Rimuovi caratteri iniziali
+                note = re.sub(r'[:\s\-\.]+$', '', note)  # Rimuovi caratteri finali
+
+                # Verifica che contenga parole chiave tipiche delle note CAMBIELLI
+                if any(keyword in note.upper() for keyword in [
+                    'EVENTUALE', 'CONSEGNA', 'SALDO', 'MARCIAPIEDE', 'VALIDA',
+                    'OFFERTA', 'ACCORDI', 'APPROVAZIONE', 'AZIENDA'
+                ]) and len(note) > 15:
+                    print(f"📝 Note CAMBIELLI trovate con pattern: {pattern}")
+                    return note.title()  # Capitalizza per estetica
+
+        # Cerca nel fondo del documento (ultime righe)
+        lines = pdf_text.split('\n')
+        bottom_text = '\n'.join(lines[-10:]).upper()  # Ultime 10 righe
+
+        general_note_pattern = r'([A-Z\s\w\d\.,\-/()%]{30,150}(?:SALDO|CONSEGNA|VALIDA|ACCORDI)[A-Z\s\w\d\.,\-/()%]{0,100})'
+        matches = re.findall(general_note_pattern, bottom_text, re.IGNORECASE)
+
+        for match in matches:
+            note = match.strip()
+            if len(note) > 20:
+                print(f"📝 Note CAMBIELLI trovate nel fondo documento")
+                return note.title()
+
+        print("⚠️ Note CAMBIELLI non trovate nel documento")
+        return None
+
     def normalize_supplier_data(self, parsed_data, pdf_text=None):
         """Normalizza i dati fornitori secondo regole specifiche"""
         if not parsed_data or 'fornitore' not in parsed_data:
@@ -127,6 +176,18 @@ class EnhancedAIParser(MultiAIPDFParser):
                         parsed_data['oggetto_ordine'] = oggetto_ordine
                     print(f"🏠 Oggetto ordine CAMBIELLI estratto: {oggetto_ordine}")
 
+            # Per CAMBIELLI: estrai note dal fondo del documento
+            if pdf_text:
+                note_cambielli = self.extract_cambielli_note(pdf_text)
+                if note_cambielli:
+                    # Se esistono già note, aggiungi quelle di CAMBIELLI
+                    existing_notes = parsed_data.get('note', '')
+                    if existing_notes:
+                        parsed_data['note'] = f"{existing_notes}\n\nNote fornitore: {note_cambielli}"
+                    else:
+                        parsed_data['note'] = note_cambielli
+                    print(f"📝 Note CAMBIELLI aggiunte: {note_cambielli[:50]}...")
+
         # Qui puoi aggiungere altre regole di normalizzazione per altri fornitori
         # elif 'RIELLO' in fornitore_raw:
         #     parsed_data['fornitore'] = '0000000031 - RIELLO SPA'
@@ -146,6 +207,7 @@ class EnhancedAIParser(MultiAIPDFParser):
 - Per CAMBIELLI: fornitore = "0000000030 - CAMBIELLI SPA"
 - Per CAMBIELLI: numero offerta formato "XC/STD/xxxxxxx"
 - Per CAMBIELLI: oggetto ordine vicino a parola "riferimento" (condominio/RSA/cliente)
+- Per CAMBIELLI: note sempre nel fondo del PDF vicino a "NOTE" (consegna/saldo/validità)
 """
 
         return ""

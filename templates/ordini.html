@@ -6,6 +6,37 @@
     <title>Ordini Fornitori - Sistema DDT</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
     <script src="{{ url_for('static', filename='autocompletamento.js') }}"></script>
+
+    <style>
+        /* Uniforma dimensioni pulsanti sezione ordini */
+        .actions .btn,
+        .card .btn:not(.btn-sm),
+        .button-container .btn {
+            min-width: 150px;
+            height: 42px;
+            line-height: 1.2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        /* Eccezioni per pulsanti piccoli nelle tabelle */
+        .btn-sm {
+            min-width: auto;
+            height: auto;
+        }
+
+        /* Pulsanti azione ordini nella tabella */
+        .ordine-actions .btn-sm {
+            min-width: 90px;
+            height: 32px;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
