@@ -869,14 +869,31 @@
                 return;
             }
 
-            // Crea hash del PDF per ID sessione
+            // Invia i dati al server via POST invece di URL
             const pdfHash = Math.random().toString(36).substring(7);
+            const parsingData = currentPdfData.data || currentPdfData;
 
-            // Prepara i dati per passarli al route
-            const dataToPass = encodeURIComponent(JSON.stringify(currentPdfData.data || currentPdfData));
-
-            // Reindirizza a pagina correzione con dati
-            window.location.href = `/ai/parsing/correction/${pdfHash}?data=${dataToPass}`;
+            // Invia i dati al server per salvarli temporaneamente
+            fetch('/ai/parsing/salva-dati-temporanei', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    pdf_hash: pdfHash,
+                    parsing_data: parsingData
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Ora apri la pagina di correzione solo con l'hash
+                    window.location.href = `/ai/parsing/correction/${pdfHash}`;
+                } else {
+                    alert('Errore nel salvare i dati: ' + result.error);
+                }
+            })
+            .catch(error => {
+                alert('Errore di connessione: ' + error);
+            });
         }
 
         function confirmParsing() {

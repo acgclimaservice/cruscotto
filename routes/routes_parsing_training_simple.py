@@ -15,28 +15,60 @@ except ImportError:
 
 training_bp = Blueprint('training', __name__)
 
+# Storage temporaneo per i dati di parsing (in memoria)
+temporary_parsing_data = {}
+
+@training_bp.route('/parsing/salva-dati-temporanei', methods=['POST'])
+def salva_dati_temporanei():
+    """Salva temporaneamente i dati di parsing per evitare URL troppo lunghi"""
+    try:
+        data = request.json
+        pdf_hash = data.get('pdf_hash')
+        parsing_data = data.get('parsing_data')
+
+        if not pdf_hash or not parsing_data:
+            return jsonify({'success': False, 'error': 'Dati mancanti'})
+
+        # Salva in memoria temporaneamente
+        temporary_parsing_data[pdf_hash] = parsing_data
+        print(f"💾 Dati temporanei salvati per hash: {pdf_hash}")
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        print(f"❌ Errore salvataggio dati temporanei: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @training_bp.route('/parsing/correction/<pdf_hash>')
 def show_correction_page(pdf_hash):
     """Mostra interfaccia di correzione per un parsing"""
 
-    # Prova a recuperare dati reali dal parsing
+    # Prova a recuperare dati dai temporanei o dai parametri URL
     try:
-        parsing_data = request.args.get('data')
+        # Prima prova a recuperare dai dati temporanei
+        parsing_data = temporary_parsing_data.get(pdf_hash)
+
         if parsing_data:
-            # Decodifica i dati dal parametro URL
-            import urllib.parse
-            parsing_data = json.loads(urllib.parse.unquote(parsing_data))
-            print(f"✅ Dati parsing ricevuti: {parsing_data}")
+            print(f"✅ Dati parsing recuperati dal storage temporaneo: {pdf_hash}")
+            # Rimuovi i dati temporanei dopo l'uso
+            del temporary_parsing_data[pdf_hash]
         else:
-            # Nessun dato fornito - usa dati di esempio
-            parsing_data = {
-                'fornitore': 'Nessun dato - utilizzare dal parsing reale',
-                'numero_ddt': 'N/A',
-                'data_ddt': '2025-01-01',
-                'totale_fattura': '0.00',
-                'articoli': []
-            }
-            print("⚠️ Nessun dato di parsing fornito, usando dati di esempio")
+            # Fallback ai parametri URL (compatibilità vecchia versione)
+            url_data = request.args.get('data')
+            if url_data:
+                import urllib.parse
+                parsing_data = json.loads(urllib.parse.unquote(url_data))
+                print(f"✅ Dati parsing ricevuti da URL: {parsing_data}")
+            else:
+                # Nessun dato fornito - usa dati di esempio
+                parsing_data = {
+                    'fornitore': 'Nessun dato - utilizzare dal parsing reale',
+                    'numero_ddt': 'N/A',
+                    'data_ddt': '2025-01-01',
+                    'totale_fattura': '0.00',
+                    'articoli': []
+                }
+                print("⚠️ Nessun dato di parsing trovato, usando dati di esempio")
     except Exception as e:
         print(f"❌ Errore caricamento dati: {e}")
         parsing_data = {
