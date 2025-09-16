@@ -76,6 +76,28 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 **Status**: ✅ RISOLTO
 
+### ✅ Data: 2025-09-16 - 16:20
+**Sezione testata**: Movimenti (entrambi i template)
+**Controllo**: Verifica navigation menu consistency
+
+**Errori trovati**:
+1. **Navigation menu incompleto in movimenti.html** - Mancavano sezioni principali
+   - Menu aveva solo: Dashboard, DDT IN/OUT, Catalogo, Movimenti, Inventario
+   - Mancavano: Ordini, Preventivi, Offerte, MPLS, Commesse, Impostazioni, FIXPOINT
+2. **Navigation menu incompleto in movimenti-interni.html** - Molto limitato
+   - Menu aveva solo: Dashboard, DDT IN/OUT, Inventario, Movimenti Interni
+   - Mancavano: molte sezioni principali del sistema
+   - **Risultato**: Navigazione frammentata, UX inconsistente
+
+**Riparazioni effettuate**:
+1. Aggiornato navigation menu in templates/movimenti.html:
+   - Aggiunte tutte le sezioni mancanti con icone appropriate
+2. Aggiornato navigation menu in templates/movimenti-interni.html:
+   - Aggiunte tutte le sezioni mancanti incluso link ai Movimenti generali
+   - Menu ora completo e coerente con standard del sistema
+
+**Status**: ✅ RISOLTO
+
 ### ✅ Data: 2025-09-16 - 15:45
 **Sezione testata**: DDT IN
 **Controllo**: Verifica navigazione e template consistency
@@ -138,9 +160,9 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📊 Statistiche Riparazioni
 
-**Totale controlli**: 6
-**Errori trovati**: 6
-**Errori risolti**: 6
+**Totale controlli**: 7
+**Errori trovati**: 8
+**Errori risolti**: 8
 **Successo rate**: 100%
 
 ---
