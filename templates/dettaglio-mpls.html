@@ -213,6 +213,10 @@
                             {% set margine_materiale_consumo = (mpls.materiale_consumo or 0) - materiale_consumo_acquisto %}
                             {% set margine_sovrapprezzo = (mpls.sovrapprezzo or 0) - sovrapprezzo_acquisto %}
 
+                            {# Totali calcolati #}
+                            {% set totale_costi_acquisto = materiali_acquisto + manodopera_acquisto + costo_gestione_acquisto + spese_brevi_acquisto + materiale_consumo_acquisto + sovrapprezzo_acquisto %}
+                            {% set totale_margine = (mpls.totale_vendita or 0) - totale_costi_acquisto %}
+
                             <tr>
                                 <td><strong>Materiali</strong></td>
                                 <td class="cost-amount">€{{ "%.2f"|format(materiali_acquisto) }}</td>
@@ -253,9 +257,9 @@
                         <tfoot>
                             <tr class="total-row">
                                 <td><strong>TOTALE</strong></td>
-                                <td class="cost-amount"><strong>€{{ "%.2f"|format(mpls.costo_totale_interno or 0) }}</strong></td>
+                                <td class="cost-amount"><strong>€{{ "%.2f"|format(totale_costi_acquisto) }}</strong></td>
                                 <td class="sell-amount"><strong>€{{ "%.2f"|format(mpls.totale_vendita or 0) }}</strong></td>
-                                <td class="margin-amount"><strong>€{{ "%.2f"|format(mpls.margine_euro or 0) }} ({{ "%.1f"|format(mpls.margine_percentuale or 0) }}%)</strong></td>
+                                <td class="margin-amount"><strong>€{{ "%.2f"|format(totale_margine) }} ({{ "%.1f"|format((totale_margine / (mpls.totale_vendita or 1) * 100) if mpls.totale_vendita else 0) }}%)</strong></td>
                             </tr>
                             <tr class="iva-row">
                                 <td><strong>IVA (22%)</strong></td>
