@@ -138,7 +138,22 @@ IMPORTANTE:
             )
 
             content = message.content[0].text.strip()
+            print(f"🔍 Claude DDT Response RAW: {content[:500]}...")
+
+            # Pulisci la risposta da markdown e altri caratteri
             content = content.replace('```json', '').replace('```', '').strip()
+
+            # Cerca il JSON nella risposta se non inizia con {
+            if not content.startswith('{'):
+                json_start = content.find('{')
+                if json_start > -1:
+                    content = content[json_start:]
+                    print(f"🔧 JSON estratto da posizione {json_start}")
+
+            print(f"🔍 JSON da parsare: {content[:300]}...")
+
+            if not content:
+                raise ValueError("Risposta vuota da Claude")
 
             parsed_data = json.loads(content)
             parsed_data['ai_used'] = 'claude_enhanced'
@@ -254,7 +269,22 @@ IMPORTANTE:
                 )
 
                 content = message.content[0].text.strip()
+                print(f"🔍 Claude Response RAW: {content[:500]}...")
+
+                # Pulisci la risposta da markdown e altri caratteri
                 content = content.replace('```json', '').replace('```', '').strip()
+
+                # Cerca il JSON nella risposta se non inizia con {
+                if not content.startswith('{'):
+                    json_start = content.find('{')
+                    if json_start > -1:
+                        content = content[json_start:]
+                        print(f"🔧 JSON estratto da posizione {json_start}")
+
+                print(f"🔍 JSON da parsare: {content[:300]}...")
+
+                if not content:
+                    raise ValueError("Risposta vuota da Claude")
 
                 parsed_data = json.loads(content)
                 parsed_data['ai_used'] = 'claude_enhanced_ordine'
@@ -268,8 +298,10 @@ IMPORTANTE:
                 return {'success': True, 'data': parsed_data}
 
         except Exception as e:
-            print(f"Errore Enhanced Claude Ordine: {e}")
-            return {'success': False, 'error': str(e)}
+            print(f"❌ Errore Enhanced Claude Ordine: {e}")
+            print("🔄 Fallback al parser normale per ordini...")
+            # Fallback al parser normale della classe parent
+            return super().parse_ordine_with_claude(file_path)
 
     def set_learning_enabled(self, enabled=True):
         """Abilita/disabilita il sistema di apprendimento"""
