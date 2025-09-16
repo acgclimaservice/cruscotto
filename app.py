@@ -8544,7 +8544,7 @@ def crea_preventivo_da_mpls(id):
                 dettaglio_manodopera = DettaglioPreventivo(
                     preventivo_id=nuovo_preventivo.id,
                     codice_articolo='MANODOPERA',
-                    descrizione=f'Manodopera tecnica specializzata ({mpls.ore_manodopera} ore)',
+                    descrizione='Manodopera tecnica specializzata',
                     quantita=mpls.ore_manodopera,
                     unita_misura='ORE',
                     prezzo_unitario=prezzo_manodopera / mpls.ore_manodopera,  # Prezzo orario
