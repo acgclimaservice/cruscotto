@@ -40,6 +40,24 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 **Status**: ✅ RISOLTO
 
+### ✅ Data: 2025-09-16 - 16:10
+**Sezione testata**: Catalogo
+**Controllo**: Verifica navigation menu consistency
+
+**Errori trovati**:
+1. **Navigation menu incompleto** - Mancavano sezioni principali
+   - Menu Catalogo aveva solo: Dashboard, DDT IN/OUT, Catalogo, Inventario
+   - Mancavano: Ordini, Preventivi, Offerte, MPLS, Movimenti, Commesse, Impostazioni, FIXPOINT
+   - **Risultato**: Navigazione inconsistente, utenti non potevano accedere a tutte le sezioni
+
+**Riparazioni effettuate**:
+1. Aggiornato navigation menu in templates/catalogo.html:
+   - Aggiunte tutte le sezioni mancanti con icone appropriate
+   - Menu ora coerente con altre sezioni del sistema
+   - Ordine alfabetico logico mantenuto
+
+**Status**: ✅ RISOLTO
+
 ### ✅ Data: 2025-09-16 - 15:45
 **Sezione testata**: DDT IN
 **Controllo**: Verifica navigazione e template consistency
@@ -102,9 +120,9 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📊 Statistiche Riparazioni
 
-**Totale controlli**: 4
-**Errori trovati**: 4
-**Errori risolti**: 4
+**Totale controlli**: 5
+**Errori trovati**: 5
+**Errori risolti**: 5
 **Successo rate**: 100%
 
 ---
