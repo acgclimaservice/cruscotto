@@ -29,14 +29,14 @@
         <div class="dashboard" style="grid-template-columns: 1fr 1fr 1fr;">
             <div class="card">
                 <h2><span class="icon">📨</span>Offerte Ricevute</h2>
-                <div class="stat-value">{{ offerte_ricevute|default(0) }}</div>
+                <div class="stat-value">{{ stats.create|default(0) }}</div>
                 <div class="stat-label">In attesa di valutazione</div>
                 <a href="#" class="btn">Visualizza Tutte</a>
             </div>
             
             <div class="card">
                 <h2><span class="icon">✅</span>Offerte Accettate</h2>
-                <div class="stat-value">{{ offerte_accettate|default(0) }}</div>
+                <div class="stat-value">{{ stats.accettate|default(0) }}</div>
                 <div class="stat-label">Questo mese</div>
                 <a href="#" class="btn">Storico</a>
             </div>
