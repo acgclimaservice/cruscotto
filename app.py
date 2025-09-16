@@ -648,10 +648,10 @@ def parse_pdf_claude_advanced():
         import os
         import base64
 
-        if 'pdf' not in request.files:
+        if 'file' not in request.files:
             return jsonify({'success': False, 'error': 'Nessun file caricato'}), 400
 
-        pdf_file = request.files['pdf']
+        pdf_file = request.files['file']
         if pdf_file.filename == '' or not pdf_file.filename.lower().endswith('.pdf'):
             return jsonify({'success': False, 'error': 'File non valido'}), 400
 
@@ -6099,6 +6099,12 @@ def stampa_ordine_pdf(id):
                         <td>{ordine.priorita.upper() if ordine.priorita else '-'}</td>
                         <td><strong>Telefono:</strong></td>
                         <td>{ordine.fornitore.telefono if ordine.fornitore else '-'}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Numero Offerta:</strong></td>
+                        <td>{ordine.numero_offerta_fornitore or '-'}</td>
+                        <td><strong>Data Offerta:</strong></td>
+                        <td>{ordine.data_offerta_fornitore.strftime('%d/%m/%Y') if ordine.data_offerta_fornitore else '-'}</td>
                     </tr>
                 </table>
             </div>

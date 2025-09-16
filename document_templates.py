@@ -794,6 +794,8 @@ class OrdineFornitoreTemplate(DocumentTemplate):
                     <p><strong>{ordine_data.get('fornitore', 'N/A')}</strong></p>
                     <p>Data Ordine: {ordine_data.get('data_ordine', current_date)}</p>
                     <p>Riferimento: {ordine_data.get('riferimento', 'N/A')}</p>
+                    <p>Numero Offerta: {ordine_data.get('numero_offerta_fornitore', 'N/A')}</p>
+                    <p>Data Offerta: {ordine_data.get('data_offerta_fornitore', 'N/A')}</p>
                 </div>
                 
                 <div class="section">
