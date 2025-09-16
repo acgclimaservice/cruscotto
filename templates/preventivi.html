@@ -123,6 +123,7 @@
                                         <form method="POST" action="/preventivi/{{ preventivo.id }}/invia" style="display: inline;">
                                             <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Inviare questo preventivo?')">📤 Invia</button>
                                         </form>
+                                        <button class="btn btn-sm btn-danger" onclick="eliminaPreventivo({{ preventivo.id }})">🗑️ Elimina</button>
                                     {% elif preventivo.stato == 'inviato' %}
                                         <form method="POST" action="/preventivi/{{ preventivo.id }}/accetta" style="display: inline;">
                                             <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Segnare come accettato?')">✅ Accettato</button>
@@ -144,5 +145,41 @@
             {% endif %}
         </div>
     </div>
+
+    <script>
+    function eliminaPreventivo(id) {
+        if (confirm('ATTENZIONE: Sei sicuro di voler eliminare definitivamente questo preventivo? Questa operazione NON può essere annullata!')) {
+            // Mostra loading sul bottone
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Eliminazione...';
+            btn.disabled = true;
+
+            fetch(`/preventivi/${id}/elimina`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Preventivo eliminato con successo');
+                    location.reload();
+                } else {
+                    alert('Errore: ' + data.error);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore durante l\'eliminazione del preventivo');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+    }
+    </script>
 </body>
 </html>

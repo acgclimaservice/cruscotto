@@ -7577,6 +7577,39 @@ def rifiuta_preventivo(id):
         db.session.rollback()
         return jsonify({'errore': str(e)}), 500
 
+@app.route('/preventivi/<int:id>/elimina', methods=['DELETE'])
+def elimina_preventivo(id):
+    """Elimina preventivo definitivamente"""
+    try:
+        preventivo = Preventivo.query.get_or_404(id)
+
+        # Controlla se il preventivo può essere eliminato
+        if preventivo.stato not in ['bozza']:
+            return jsonify({
+                'success': False,
+                'error': f'Non è possibile eliminare un preventivo in stato "{preventivo.stato}". Solo preventivi in bozza possono essere eliminati.'
+            }), 400
+
+        # Elimina prima i dettagli del preventivo
+        DettaglioPreventivo.query.filter_by(preventivo_id=id).delete()
+
+        # Poi elimina il preventivo
+        db.session.delete(preventivo)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Preventivo eliminato con successo'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore eliminazione preventivo {id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Errore durante l\'eliminazione: {str(e)}'
+        }), 500
+
 @app.route('/api/articoli/search')
 def search_articoli():
     """API per autocompletamento articoli"""
