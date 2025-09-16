@@ -4,6 +4,11 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📋 Controlli Effettuati
 
+### 🔍 Data: 2025-09-16 - 15:47
+**Sezione testata**: FIXPOINT Web
+**Controllo**: Verifica rendering Markdown e JavaScript
+**Status**: IN CORSO
+
 ### ✅ Data: 2025-09-16 - 15:45
 **Sezione testata**: DDT IN
 **Controllo**: Verifica navigazione e template consistency
