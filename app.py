@@ -8514,6 +8514,24 @@ def crea_preventivo_da_mpls(id):
             )
             db.session.add(dettaglio)
 
+        # Aggiungi manodopera se presente nell'MPLS
+        if mpls.ore_manodopera and mpls.ore_manodopera > 0:
+            # Calcola prezzo vendita manodopera (dal subtotale_manodopera_vendita dell'MPLS)
+            prezzo_manodopera = safe_float(mpls.subtotale_manodopera_vendita, 0)
+
+            if prezzo_manodopera > 0:
+                dettaglio_manodopera = DettaglioPreventivo(
+                    preventivo_id=nuovo_preventivo.id,
+                    codice_articolo='MANODOPERA',
+                    descrizione=f'Manodopera tecnica specializzata ({mpls.ore_manodopera} ore)',
+                    quantita=mpls.ore_manodopera,
+                    unita_misura='ORE',
+                    prezzo_unitario=prezzo_manodopera / mpls.ore_manodopera,  # Prezzo orario
+                    sconto_percentuale=0,
+                    totale_riga=prezzo_manodopera
+                )
+                db.session.add(dettaglio_manodopera)
+
         # Usa il totale vendita dell'MPLS (non ricalcolare)
         totale_vendita_mpls = safe_float(mpls.totale_vendita, 0)
         nuovo_preventivo.totale_netto = totale_vendita_mpls
@@ -8673,7 +8691,7 @@ def save_mpls():
         flash(f"Errore nel salvataggio: {str(e)}", "error")
         return redirect('/mpls/nuovo')
 
-@app.route('/mpls/<int:id>/modifica')
+@app.route('/mpls/<int:id>/modifica', methods=['GET', 'POST'])
 def modifica_mpls(id):
     """Modifica MPLS esistente"""
     try:
