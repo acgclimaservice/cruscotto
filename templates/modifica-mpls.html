@@ -82,15 +82,19 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="commessa_id">Commessa Associata</label>
-                            <select id="commessa_id" name="commessa_id" {% if mpls.stato != 'bozza' %}disabled{% endif %} class="form-control">
-                                <option value="">-- Seleziona Commessa (Opzionale) --</option>
-                                {% for commessa in commesse %}
-                                <option value="{{ commessa.id }}" {% if mpls.commessa_id == commessa.id %}selected{% endif %}>
-                                    {{ commessa.numero_progressivo }} - {{ commessa.cliente_nome }} - {{ commessa.descrizione[:50] }}{% if commessa.descrizione|length > 50 %}...{% endif %}
-                                </option>
-                                {% endfor %}
-                            </select>
+                            <label for="note">Note Tecniche</label>
+                            <textarea id="note" name="note" rows="3" {% if mpls.stato != 'bozza' %}readonly{% endif %} class="form-control" placeholder="Note tecniche aggiuntive...">{{ mpls.note or '' }}</textarea>
+                        </div>
+
+                        <div class="form-group" style="position: relative;">
+                            <label for="commessa">Commessa Associata</label>
+                            <input type="text" id="commessa" name="commessa"
+                                   value="{{ mpls.commessa or '' }}"
+                                   {% if mpls.stato != 'bozza' %}readonly{% endif %}
+                                   class="form-control"
+                                   placeholder="Digita per cercare commessa..."
+                                   autocomplete="off">
+                            <div id="commessa-suggestions" class="autocomplete-suggestions"></div>
                             <small class="text-muted">Collega questo MPLS a una commessa esistente</small>
                         </div>
 
@@ -459,6 +463,35 @@
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 10px;
         }
+
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .autocomplete-suggestions.show {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #f0f0f0;
+        }
     </style>
 
     <script>
@@ -647,6 +680,12 @@
             const clienteInput = document.getElementById('cliente_nome');
             if (clienteInput) {
                 AutocompleteHelpers.setupClientiAutocomplete(clienteInput);
+            }
+
+            // Inizializza autocompletamento commesse
+            const commessaInput = document.getElementById('commessa');
+            if (commessaInput) {
+                AutocompleteHelpers.setupCommesseAutocomplete(commessaInput);
             }
             {% endif %}
             

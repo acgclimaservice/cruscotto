@@ -113,11 +113,6 @@
                                 <input type="number" name="dettagli[0][costo]" min="0" step="0.01" placeholder="0.00">
                             </div>
                             <div class="form-group">
-                                <label>Sconto %</label>
-                                <input type="number" name="dettagli[0][sconto]" min="0" max="100" step="0.01" value="0"
-                                       onchange="calcolaTotaleRiga(0)">
-                            </div>
-                            <div class="form-group">
                                 <label>Totale Riga</label>
                                 <input type="number" class="totale-riga" readonly placeholder="0.00">
                             </div>
@@ -213,11 +208,6 @@
                         <input type="number" name="dettagli[${dettaglioIndex}][costo]" min="0" step="0.01" placeholder="0.00">
                     </div>
                     <div class="form-group">
-                        <label>Sconto %</label>
-                        <input type="number" name="dettagli[${dettaglioIndex}][sconto]" min="0" max="100" step="0.01" value="0"
-                               onchange="calcolaTotaleRiga(${dettaglioIndex})">
-                    </div>
-                    <div class="form-group">
                         <label>Totale Riga</label>
                         <input type="number" class="totale-riga" readonly placeholder="0.00">
                     </div>
@@ -257,9 +247,8 @@
             
             const quantita = parseFloat(row.querySelector('[name*="[quantita]"]').value) || 0;
             const prezzo = parseFloat(row.querySelector('[name*="[prezzo_unitario]"]').value) || 0;
-            const sconto = parseFloat(row.querySelector('[name*="[sconto]"]').value) || 0;
-            
-            const totaleRiga = quantita * prezzo * (1 - sconto/100);
+
+            const totaleRiga = quantita * prezzo;
             row.querySelector('.totale-riga').value = totaleRiga.toFixed(2);
             
             calcolaTotaliGenerali();
@@ -361,10 +350,6 @@
                             <input type="number" name="dettagli[${index}][costo]" value="${articolo.costo_unitario || 0}" min="0" step="0.01" placeholder="0.00">
                         </div>
                         <div class="form-group">
-                            <label>Sconto %</label>
-                            <input type="number" name="dettagli[${index}][sconto]" min="0" max="100" step="0.01" value="0" onchange="calcolaTotaleRiga(${index})">
-                        </div>
-                        <div class="form-group">
                             <label>Totale Riga</label>
                             <input type="number" class="totale-riga" value="${articolo.totale_riga || 0}" readonly placeholder="0.00">
                         </div>
@@ -422,7 +407,7 @@
         }
 
         .dettaglio-grid {
-            grid-template-columns: 1fr 2fr 80px 60px 100px 100px 80px 100px 50px;
+            grid-template-columns: 1fr 2fr 80px 60px 100px 100px 100px 50px;
             gap: 10px;
             align-items: end;
         }

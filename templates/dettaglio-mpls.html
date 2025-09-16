@@ -180,80 +180,85 @@
             </div>
             {% endif %}
 
-            <!-- Totali Enhanced -->
+            <!-- Riepilogo Costi e Margini -->
             <div class="card">
                 <div class="card-header">
-                    <h3>💰 Totali Enhanced</h3>
+                    <h3>💰 Riepilogo Costi e Margini</h3>
                 </div>
                 <div class="card-body">
-                    <div class="totali-enhanced">
-                        <!-- Subtotali -->
-                        <div class="totale-section">
-                            <h4>Subtotali</h4>
-                            <div class="totale-item">
-                                <label>Materiali (con ricarico):</label>
-                                <span>€{{ "%.2f"|format(mpls.subtotale_materiali_vendita or 0) }}</span>
-                            </div>
-                            <div class="totale-item">
-                                <label>Manodopera:</label>
-                                <span>€{{ "%.2f"|format(mpls.subtotale_manodopera_vendita or 0) }}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Costi Accessori -->
-                        <div class="totale-section">
-                            <h4>Costi Accessori</h4>
-                            <div class="totale-item">
-                                <label>Costo Gestione:</label>
-                                <span>€{{ "%.2f"|format(mpls.costo_gestione or 0) }}</span>
-                            </div>
-                            <div class="totale-item">
-                                <label>Spese Brevi:</label>
-                                <span>€{{ "%.2f"|format(mpls.spese_brevi or 0) }}</span>
-                            </div>
-                            <div class="totale-item">
-                                <label>Materiale Consumo:</label>
-                                <span>€{{ "%.2f"|format(mpls.materiale_consumo or 0) }}</span>
-                            </div>
-                            <div class="totale-item">
-                                <label>Sovrapprezzo:</label>
-                                <span>€{{ "%.2f"|format(mpls.sovrapprezzo or 0) }}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Totali Finali -->
-                        <div class="totale-section final">
-                            <h4>Totali Finali</h4>
-                            <div class="totale-item">
-                                <label>Totale Vendita (IVA esclusa):</label>
-                                <span class="amount-large">€{{ "%.2f"|format(mpls.totale_vendita or 0) }}</span>
-                            </div>
-                            <div class="totale-item">
-                                <label>IVA (22%):</label>
-                                <span>€{{ "%.2f"|format(mpls.totale_iva or 0) }}</span>
-                            </div>
-                            <div class="totale-item finale">
-                                <label>Totale IVA Inclusa:</label>
-                                <span class="amount-final">€{{ "%.2f"|format(mpls.totale_ivato or 0) }}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Margini -->
-                        <div class="totale-section margin">
-                            <h4>Analisi Margini</h4>
-                            <div class="totale-item">
-                                <label>Costi Interni:</label>
-                                <span>€{{ "%.2f"|format(mpls.costo_totale_interno or 0) }}</span>
-                            </div>
-                            <div class="totale-item margin-highlight">
-                                <label>Margine:</label>
-                                <span class="margin-amount">
-                                    €{{ "%.2f"|format(mpls.margine_euro or 0) }}
-                                    ({{ "%.1f"|format(mpls.margine_percentuale or 0) }}%)
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                    <table class="costs-summary-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%;">Descrizione</th>
+                                <th style="width: 20%; text-align: right;">Costi Acquisto</th>
+                                <th style="width: 20%; text-align: right;">Costi Vendita</th>
+                                <th style="width: 25%; text-align: right;">Margine</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set materiali_acquisto = (mpls.subtotale_materiali_vendita or 0) - ((mpls.subtotale_materiali_vendita or 0) * 0.2) %}
+                            {% set manodopera_acquisto = (mpls.ore_manodopera or 0) * 25 %}
+                            {% set margine_materiali = (mpls.subtotale_materiali_vendita or 0) - materiali_acquisto %}
+                            {% set margine_manodopera = (mpls.subtotale_manodopera_vendita or 0) - manodopera_acquisto %}
+
+                            <tr>
+                                <td><strong>Materiali</strong></td>
+                                <td class="cost-amount">€{{ "%.2f"|format(materiali_acquisto) }}</td>
+                                <td class="sell-amount">€{{ "%.2f"|format(mpls.subtotale_materiali_vendita or 0) }}</td>
+                                <td class="margin-amount">€{{ "%.2f"|format(margine_materiali) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Manodopera</strong></td>
+                                <td class="cost-amount">€{{ "%.2f"|format(manodopera_acquisto) }}</td>
+                                <td class="sell-amount">€{{ "%.2f"|format(mpls.subtotale_manodopera_vendita or 0) }}</td>
+                                <td class="margin-amount">€{{ "%.2f"|format(margine_manodopera) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Costo Gestione</td>
+                                <td class="cost-amount">€{{ "%.2f"|format(mpls.costo_gestione or 0) }}</td>
+                                <td class="sell-amount">€{{ "%.2f"|format(mpls.costo_gestione or 0) }}</td>
+                                <td class="margin-amount">€0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Spese Brevi</td>
+                                <td class="cost-amount">€{{ "%.2f"|format(mpls.spese_brevi or 0) }}</td>
+                                <td class="sell-amount">€{{ "%.2f"|format(mpls.spese_brevi or 0) }}</td>
+                                <td class="margin-amount">€0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Materiale Consumo</td>
+                                <td class="cost-amount">€{{ "%.2f"|format(mpls.materiale_consumo or 0) }}</td>
+                                <td class="sell-amount">€{{ "%.2f"|format(mpls.materiale_consumo or 0) }}</td>
+                                <td class="margin-amount">€0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Sovrapprezzo</td>
+                                <td class="cost-amount">€0.00</td>
+                                <td class="sell-amount">€{{ "%.2f"|format(mpls.sovrapprezzo or 0) }}</td>
+                                <td class="margin-amount">€{{ "%.2f"|format(mpls.sovrapprezzo or 0) }}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td><strong>TOTALE</strong></td>
+                                <td class="cost-amount"><strong>€{{ "%.2f"|format(mpls.costo_totale_interno or 0) }}</strong></td>
+                                <td class="sell-amount"><strong>€{{ "%.2f"|format(mpls.totale_vendita or 0) }}</strong></td>
+                                <td class="margin-amount"><strong>€{{ "%.2f"|format(mpls.margine_euro or 0) }} ({{ "%.1f"|format(mpls.margine_percentuale or 0) }}%)</strong></td>
+                            </tr>
+                            <tr class="iva-row">
+                                <td><strong>IVA (22%)</strong></td>
+                                <td class="cost-amount">-</td>
+                                <td class="sell-amount">€{{ "%.2f"|format(mpls.totale_iva or 0) }}</td>
+                                <td class="margin-amount">-</td>
+                            </tr>
+                            <tr class="final-row">
+                                <td><strong>TOTALE IVA INCLUSA</strong></td>
+                                <td class="cost-amount">-</td>
+                                <td class="sell-amount"><strong>€{{ "%.2f"|format(mpls.totale_ivato or 0) }}</strong></td>
+                                <td class="margin-amount">-</td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
             </div>
 
@@ -445,6 +450,65 @@
             justify-content: center;
             text-decoration: none;
             white-space: nowrap;
+        }
+
+        .costs-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        .costs-summary-table th,
+        .costs-summary-table td {
+            padding: 12px 8px;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        .costs-summary-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #2d3748;
+            border-bottom: 2px solid #cbd5e0;
+        }
+
+        .costs-summary-table .cost-amount {
+            text-align: right;
+            color: #dc2626;
+            font-weight: 500;
+        }
+
+        .costs-summary-table .sell-amount {
+            text-align: right;
+            color: #059669;
+            font-weight: 500;
+        }
+
+        .costs-summary-table .margin-amount {
+            text-align: right;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+
+        .costs-summary-table .total-row {
+            background: #f1f5f9;
+            border-top: 2px solid #64748b;
+            font-weight: 600;
+        }
+
+        .costs-summary-table .iva-row {
+            background: #fef3c7;
+            border-top: 1px solid #f59e0b;
+        }
+
+        .costs-summary-table .final-row {
+            background: #dcfce7;
+            border-top: 2px solid #16a34a;
+            font-weight: 700;
+        }
+
+        .costs-summary-table tbody tr:hover {
+            background: #f8fafc;
         }
     </style>
 

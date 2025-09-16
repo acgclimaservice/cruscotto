@@ -8495,11 +8495,32 @@ def crea_preventivo_da_mpls(id):
         db.session.add(nuovo_preventivo)
         db.session.flush()  # Per ottenere l'ID
 
-        # Crea dettagli preventivo (SENZA costi e ricarichi)
+        # Calcola costi accessori da distribuire proporzionalmente
+        costo_gestione = safe_float(mpls.costo_gestione, 0)
+        spese_brevi = safe_float(mpls.spese_brevi, 0)
+        materiale_consumo = safe_float(mpls.materiale_consumo, 0)
+        sovrapprezzo = safe_float(mpls.sovrapprezzo, 0)
+        totale_costi_accessori = costo_gestione + spese_brevi + materiale_consumo + sovrapprezzo
+
+        # Calcola totale materiali per la distribuzione proporzionale
+        totale_materiali = sum(safe_float(art.quantita, 1) * safe_float(art.prezzo_vendita, 0) for art in articoli)
+
+        # Crea dettagli preventivo CON costi accessori distribuiti proporzionalmente
         for art in articoli:
-            prezzo_vendita = safe_float(art.prezzo_vendita, 0)
+            prezzo_vendita_base = safe_float(art.prezzo_vendita, 0)
             quantita = safe_float(art.quantita, 1)
-            totale_riga = quantita * prezzo_vendita
+            totale_riga_base = quantita * prezzo_vendita_base
+
+            # Calcola quota proporzionale dei costi accessori per questo articolo
+            if totale_materiali > 0:
+                percentuale_articolo = totale_riga_base / totale_materiali
+                quota_costi_accessori = totale_costi_accessori * percentuale_articolo
+                # Distribuisci i costi accessori nel prezzo unitario
+                prezzo_unitario_finale = prezzo_vendita_base + (quota_costi_accessori / quantita if quantita > 0 else 0)
+            else:
+                prezzo_unitario_finale = prezzo_vendita_base
+
+            totale_riga_finale = quantita * prezzo_unitario_finale
 
             dettaglio = DettaglioPreventivo(
                 preventivo_id=nuovo_preventivo.id,
@@ -8507,10 +8528,10 @@ def crea_preventivo_da_mpls(id):
                 descrizione=art.descrizione or '',
                 quantita=quantita,
                 unita_misura='PZ',
-                prezzo_unitario=prezzo_vendita,
+                prezzo_unitario=prezzo_unitario_finale,
                 # NON includere costo_unitario per nascondere i costi
                 sconto_percentuale=0,
-                totale_riga=totale_riga
+                totale_riga=totale_riga_finale
             )
             db.session.add(dettaglio)
 
