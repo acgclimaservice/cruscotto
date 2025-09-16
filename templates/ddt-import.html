@@ -137,12 +137,16 @@
                 
             <div style="margin: 20px 0; text-align: center; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
                 <h3>Scegli il motore AI per il parsing:</h3>
-                <label style="margin-right: 20px; cursor: pointer;">
-                    <input type="radio" name="ai_provider" value="claude" checked> 
-                    🤖 Claude AI (consigliato)
+                <label style="margin-right: 15px; cursor: pointer;">
+                    <input type="radio" name="ai_provider" value="claude">
+                    🤖 Claude AI (classico)
+                </label>
+                <label style="margin-right: 15px; cursor: pointer;">
+                    <input type="radio" name="ai_provider" value="claude-advanced" checked>
+                    🚀 Claude AI Evoluto (Vision + Multi-step)
                 </label>
                 <label style="cursor: pointer;">
-                    <input type="radio" name="ai_provider" value="gemini"> 
+                    <input type="radio" name="ai_provider" value="gemini">
                     🧠 Gemini AI
                 </label>
             </div>
@@ -431,8 +435,12 @@
         // Avvia animazione barra di progresso
         startDDTProgressAnimation(selectedAI);
         
-        // USA IL PARSER MULTI-AI
-        fetch('/ddt-import/parse-pdf-claude', {
+        // Scegli endpoint basato su AI selezionata
+        const endpoint = selectedAI === 'claude-advanced' ?
+            '/ddt-import/parse-pdf-claude-advanced' :
+            '/ddt-import/parse-pdf-claude';
+
+        fetch(endpoint, {
             method: 'POST',
             body: formData
         })
@@ -955,6 +963,13 @@
                 title.innerHTML = '✅ Dati Estratti da <strong>Claude AI</strong>';
                 badge.title = reason || 'Claude AI selezionato e completato con successo';
                 break;
+            case 'claude-advanced':
+                badge.classList.add('claude');
+                icon.textContent = '🚀';
+                text.textContent = 'Elaborato con Claude AI Evoluto';
+                title.innerHTML = '✅ Dati Estratti da <strong>Claude AI Evoluto</strong>';
+                badge.title = reason || 'Claude AI Evoluto con Vision e Multi-step reasoning';
+                break;
             case 'gemini':
                 badge.classList.add('gemini');
                 icon.textContent = '🧠';
@@ -1009,9 +1024,16 @@
         // Aggiorna il titolo con l'AI selezionata
         const loadingTitle = document.getElementById('ai-loading-title');
         if (loadingTitle) {
-            loadingTitle.textContent = selectedAI === 'gemini' ? 
-                'Gemini AI sta analizzando il documento...' : 
-                'Claude AI sta analizzando il documento...';
+            switch(selectedAI) {
+                case 'gemini':
+                    loadingTitle.textContent = 'Gemini AI sta analizzando il documento...';
+                    break;
+                case 'claude-advanced':
+                    loadingTitle.textContent = 'Claude AI Evoluto sta analizzando con Vision + Multi-step...';
+                    break;
+                default:
+                    loadingTitle.textContent = 'Claude AI sta analizzando il documento...';
+            }
         }
     }
     

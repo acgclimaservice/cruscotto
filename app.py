@@ -639,6 +639,51 @@ def check_fornitore_esistente(fornitore_data):
             }
         }
 
+@app.route('/ddt-import/parse-pdf-claude-advanced', methods=['POST'])
+def parse_pdf_claude_advanced():
+    """Parse PDF con sistema evoluto Claude Advanced"""
+    try:
+        from advanced_claude_ddt_parser import parse_ddt_with_advanced_claude
+        import tempfile
+        import os
+        import base64
+
+        if 'pdf' not in request.files:
+            return jsonify({'success': False, 'error': 'Nessun file caricato'}), 400
+
+        pdf_file = request.files['pdf']
+        if pdf_file.filename == '' or not pdf_file.filename.lower().endswith('.pdf'):
+            return jsonify({'success': False, 'error': 'File non valido'}), 400
+
+        # Salva temporaneamente il PDF
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+            pdf_file.save(temp_file.name)
+            temp_filename = temp_file.name
+
+        try:
+            # Parsing con sistema evoluto
+            with open(temp_filename, 'rb') as f:
+                result = parse_ddt_with_advanced_claude(f, 'ddt_in')
+
+            # Aggiungi PDF base64 se richiesto
+            if result.get('success'):
+                with open(temp_filename, 'rb') as f:
+                    pdf_base64 = base64.b64encode(f.read()).decode('utf-8')
+                    result['data']['pdf_base64'] = pdf_base64
+
+            return jsonify(result)
+
+        finally:
+            # Cleanup
+            try:
+                os.unlink(temp_filename)
+            except:
+                pass
+
+    except Exception as e:
+        print(f"Errore parsing evoluto: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/ddt-import/parse-pdf-claude', methods=['POST'])
 def parse_pdf_claude():
     """Parsing PDF con Multi-AI Parser (Claude + Gemini simultaneamente)"""
