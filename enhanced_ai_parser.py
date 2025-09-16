@@ -63,6 +63,56 @@ class EnhancedAIParser(MultiAIPDFParser):
 
         return None
 
+    def extract_cambielli_oggetto(self, pdf_text):
+        """Estrae oggetto ordine CAMBIELLI dalla zona vicino a 'riferimento'"""
+        if not pdf_text:
+            return None
+
+        import re
+        text = pdf_text.upper()
+
+        # Pattern per trovare testo vicino a "RIFERIMENTO"
+        riferimento_patterns = [
+            r'RIFERIMENTO[:\s-]*([A-Z\s\w\d\.,\-/()]{10,80})',
+            r'RIF[:\s.-]*([A-Z\s\w\d\.,\-/()]{10,80})',
+            r'RIFERIMENTO[:\s]*(.+?)(?=\n|OGGETTO|DESCRIZIONE|$)',
+            r'VS[:\s]*RIF[:\s]*([A-Z\s\w\d\.,\-/()]{10,80})'
+        ]
+
+        for pattern in riferimento_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                oggetto = match.strip()
+
+                # Pulisci il testo estratto
+                oggetto = re.sub(r'^[:\s\-\.]+', '', oggetto)  # Rimuovi caratteri iniziali
+                oggetto = re.sub(r'[:\s\-\.]+$', '', oggetto)  # Rimuovi caratteri finali
+
+                # Verifica che sia un oggetto valido (contiene parole significative)
+                if any(keyword in oggetto.upper() for keyword in [
+                    'CONDOMINIO', 'RSA', 'RESIDENZA', 'CASA', 'VILLA', 'PALAZZO',
+                    'CENTRO', 'ISTITUTO', 'OSPEDALE', 'SCUOLA', 'UFFICIO'
+                ]) and len(oggetto) > 5:
+                    print(f"🔍 Oggetto CAMBIELLI trovato con pattern: {pattern}")
+                    return oggetto.title()  # Capitalizza per estetica
+
+        # Fallback: cerca pattern più generici
+        fallback_patterns = [
+            r'(?:LAVORI|FORNITURA|INSTALLAZIONE)[:\s]*([A-Z\s\w\d\.,\-/()]{15,60})',
+            r'(?:PRESSO|PER)[:\s]*([A-Z\s\w\d\.,\-/()]{15,60})'
+        ]
+
+        for pattern in fallback_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            for match in matches:
+                oggetto = match.strip()
+                if len(oggetto) > 10:
+                    print(f"🔍 Oggetto CAMBIELLI trovato (fallback): {pattern}")
+                    return oggetto.title()
+
+        print("⚠️ Oggetto ordine CAMBIELLI non trovato vicino a 'riferimento'")
+        return None
+
     def normalize_supplier_data(self, parsed_data, pdf_text=None):
         """Normalizza i dati fornitori secondo regole specifiche"""
         if not parsed_data or 'fornitore' not in parsed_data:
@@ -97,6 +147,22 @@ class EnhancedAIParser(MultiAIPDFParser):
             else:
                 print("⚠️ Formato XC/STD/xxxxxxx non trovato per CAMBIELLI")
 
+            # Per CAMBIELLI: estrai oggetto ordine vicino a "riferimento"
+            if pdf_text:
+                oggetto_ordine = self.extract_cambielli_oggetto(pdf_text)
+                if oggetto_ordine:
+                    # Aggiungi ai dati estratti (il campo può variare tra DDT e ordini)
+                    if 'oggetto' in parsed_data:
+                        parsed_data['oggetto'] = oggetto_ordine
+                    elif 'descrizione' in parsed_data:
+                        parsed_data['descrizione'] = oggetto_ordine
+                    elif 'note' in parsed_data:
+                        parsed_data['note'] = oggetto_ordine
+                    else:
+                        # Crea campo oggetto se non esiste
+                        parsed_data['oggetto_ordine'] = oggetto_ordine
+                    print(f"🏠 Oggetto ordine CAMBIELLI estratto: {oggetto_ordine}")
+
         # Qui puoi aggiungere altre regole di normalizzazione
         # elif 'RIELLO' in fornitore_raw:
         #     parsed_data['fornitore'] = '0000000031 - RIELLO SPA'
@@ -111,6 +177,7 @@ class EnhancedAIParser(MultiAIPDFParser):
 🏢 REGOLE NORMALIZZAZIONE FORNITORI:
 - Se vedi "CAMBIELLI" nel documento, usa ESATTAMENTE: "0000000030 - CAMBIELLI SPA"
 - Per CAMBIELLI: il numero offerta ha SEMPRE formato "XC/STD/xxxxxxx" (cerca questo pattern)
+- Per CAMBIELLI: l'oggetto ordine è SEMPRE vicino alla parola "riferimento" (condominio/RSA/cliente)
 - Cerca sempre il nome completo del fornitore anche se parzialmente nascosto
 """
         enhanced_prompt = base_prompt + normalization_rules
