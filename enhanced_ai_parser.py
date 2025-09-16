@@ -63,10 +63,37 @@ class EnhancedAIParser(MultiAIPDFParser):
 
         return None
 
+    def normalize_supplier_name(self, parsed_data):
+        """Normalizza i nomi fornitori secondo regole specifiche"""
+        if not parsed_data or 'fornitore' not in parsed_data:
+            return parsed_data
+
+        fornitore_raw = str(parsed_data['fornitore']).upper()
+
+        # Regola CAMBIELLI: se contiene "CAMBIELLI" sostituisci sempre
+        if 'CAMBIELLI' in fornitore_raw:
+            parsed_data['fornitore'] = '0000000030 - CAMBIELLI SPA'
+            print(f"🏢 Fornitore normalizzato: CAMBIELLI -> {parsed_data['fornitore']}")
+
+        # Qui puoi aggiungere altre regole di normalizzazione
+        # elif 'RIELLO' in fornitore_raw:
+        #     parsed_data['fornitore'] = '0000000031 - RIELLO SPA'
+
+        return parsed_data
+
     def enhance_prompt_with_learning(self, base_prompt, pdf_text):
         """Migliora il prompt base con le regole apprese"""
+        # Aggiungi regole di normalizzazione al prompt
+        normalization_rules = """
+
+🏢 REGOLE NORMALIZZAZIONE FORNITORI:
+- Se vedi "CAMBIELLI" nel documento, usa ESATTAMENTE: "0000000030 - CAMBIELLI SPA"
+- Cerca sempre il nome completo del fornitore anche se parzialmente nascosto
+"""
+        enhanced_prompt = base_prompt + normalization_rules
+
         if not self.learning_enabled:
-            return base_prompt
+            return enhanced_prompt
 
         # Rileva fornitore dal testo
         detected_supplier = self.detect_supplier_from_text(pdf_text)
@@ -76,11 +103,10 @@ class EnhancedAIParser(MultiAIPDFParser):
             learned_rules = self.get_learned_rules_for_supplier(detected_supplier)
 
             if learned_rules:
-                enhanced_prompt = base_prompt + learned_rules
+                enhanced_prompt = enhanced_prompt + learned_rules
                 print(f"🎯 Prompt migliorato con {len(learned_rules)} caratteri di regole specifiche")
-                return enhanced_prompt
 
-        return base_prompt
+        return enhanced_prompt
 
     def parse_ddt_with_claude(self, file_obj):
         """Override del parser Claude con apprendimento"""
@@ -156,6 +182,10 @@ IMPORTANTE:
                 raise ValueError("Risposta vuota da Claude")
 
             parsed_data = json.loads(content)
+
+            # Applica normalizzazione fornitori
+            parsed_data = self.normalize_supplier_name(parsed_data)
+
             parsed_data['ai_used'] = 'claude_enhanced'
             parsed_data['ai_reason'] = 'Claude AI Enhanced con regole apprese'
 
@@ -287,6 +317,10 @@ IMPORTANTE:
                     raise ValueError("Risposta vuota da Claude")
 
                 parsed_data = json.loads(content)
+
+                # Applica normalizzazione fornitori
+                parsed_data = self.normalize_supplier_name(parsed_data)
+
                 parsed_data['ai_used'] = 'claude_enhanced_ordine'
                 parsed_data['ai_reason'] = 'Claude AI Enhanced per ordini con regole apprese'
 
