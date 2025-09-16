@@ -138,6 +138,29 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 **Status**: ✅ RISOLTO
 
+### ✅ Data: 2025-09-16 - 16:35
+**Sezione testata**: Commesse (2 template principali)
+**Controllo**: Verifica navigation menu consistency
+
+**Errori trovati**:
+1. **Navigation menu incompleto in commesse.html** - Mancavano sezioni principali
+   - Menu aveva sezioni miste ma mancavano: Ordini, MPLS, FIXPOINT
+   - Include voci extra: Clienti, Fornitori, Movimenti Interni (non standard)
+2. **Navigation menu incompleto in commesse-modifica.html** - Stessa inconsistenza
+   - Stesso problema di menu non standard del template principale
+   - **Risultato**: Navigazione non coerente con altri template del sistema
+
+**Riparazioni effettuate**:
+1. Aggiornato navigation menu in templates/commesse.html:
+   - Aggiunte sezioni mancanti: Ordini, MPLS, FIXPOINT
+   - Rimossi link non standard: Clienti, Fornitori, Movimenti Interni
+   - Menu ora coerente con standard del sistema
+2. Aggiornato navigation menu in templates/commesse-modifica.html:
+   - Stesse correzioni per coerenza
+   - Menu standardizzato con altre sezioni
+
+**Status**: ✅ RISOLTO
+
 ### ✅ Data: 2025-09-16 - 15:45
 **Sezione testata**: DDT IN
 **Controllo**: Verifica navigazione e template consistency
@@ -200,9 +223,9 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📊 Statistiche Riparazioni
 
-**Totale controlli**: 9
-**Errori trovati**: 11
-**Errori risolti**: 11
+**Totale controlli**: 10
+**Errori trovati**: 13
+**Errori risolti**: 13
 **Successo rate**: 100%
 
 ---
