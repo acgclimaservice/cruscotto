@@ -430,7 +430,7 @@
         document.getElementById('upload-area').style.display = 'none';
         document.getElementById('loading-ai').style.display = 'block';
         
-        console.log('Uploading PDF for parsing with:', selectedAI.toUpperCase(), 'AI');
+        // console.log('Uploading PDF for parsing with:', selectedAI.toUpperCase(), 'AI');
         
         // Avvia animazione barra di progresso
         startDDTProgressAnimation(selectedAI);
@@ -445,11 +445,11 @@
             body: formData
         })
         .then(response => {
-            console.log('Response status:', response.status);
+            // console.log('Response status:', response.status);
             return response.json();
         })
         .then(result => {
-            console.log('Claude AI Result:', result);
+            // console.log('Claude AI Result:', result);
             
             // Completa animazione di progresso
             completeDDTProgress();
@@ -458,10 +458,10 @@
                 document.getElementById('loading-ai').style.display = 'none';
                 
                 if (result.success && result.data) {
-                    console.log('Real data from Claude AI');
+                    // console.log('Real data from Claude AI');
                     showResults(result.data);
                 } else {
-                    console.log('Claude AI Error:', result.error);
+                    // console.log('Claude AI Error:', result.error);
                     showCopyableError('Errore parsing Claude AI', result.error || 'Analisi fallita');
                     resetForm();
                 }
@@ -482,7 +482,7 @@
     }
 
     function showResults(data) {
-        console.log('Showing real extracted data:', data);
+        // console.log('Showing real extracted data:', data);
         
         // Mostra quale AI è stata usata
         displayAIUsed(data.ai_used || 'unknown', data.ai_reason);
