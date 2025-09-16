@@ -201,6 +201,18 @@
                             {% set margine_materiali = (mpls.subtotale_materiali_vendita or 0) - materiali_acquisto %}
                             {% set margine_manodopera = (mpls.subtotale_manodopera_vendita or 0) - manodopera_acquisto %}
 
+                            {# Calcoli costi accessori secondo nuova logica #}
+                            {% set costo_gestione_acquisto = 10.0 if (mpls.costo_gestione or 0) > 0 else 0.0 %}
+                            {% set spese_brevi_acquisto = 0.0 %}
+                            {% set materiale_consumo_acquisto = ((mpls.materiale_consumo or 0) * 0.5) %}
+                            {% set sovrapprezzo_acquisto = 0.0 %}
+
+                            {# Margini costi accessori #}
+                            {% set margine_gestione = (mpls.costo_gestione or 0) - costo_gestione_acquisto %}
+                            {% set margine_spese_brevi = (mpls.spese_brevi or 0) - spese_brevi_acquisto %}
+                            {% set margine_materiale_consumo = (mpls.materiale_consumo or 0) - materiale_consumo_acquisto %}
+                            {% set margine_sovrapprezzo = (mpls.sovrapprezzo or 0) - sovrapprezzo_acquisto %}
+
                             <tr>
                                 <td><strong>Materiali</strong></td>
                                 <td class="cost-amount">€{{ "%.2f"|format(materiali_acquisto) }}</td>
@@ -215,9 +227,9 @@
                             </tr>
                             <tr>
                                 <td>Costo Gestione</td>
-                                <td class="cost-amount">€{{ "%.2f"|format(mpls.costo_gestione or 0) }}</td>
+                                <td class="cost-amount">€{{ "%.2f"|format(costo_gestione_acquisto) }}</td>
                                 <td class="sell-amount">€{{ "%.2f"|format(mpls.costo_gestione or 0) }}</td>
-                                <td class="margin-amount">€0.00</td>
+                                <td class="margin-amount">€{{ "%.2f"|format(margine_gestione) }}</td>
                             </tr>
                             <tr>
                                 <td>Spese Brevi</td>
