@@ -233,9 +233,9 @@
                             </tr>
                             <tr>
                                 <td>Spese Brevi</td>
-                                <td class="cost-amount">€{{ "%.2f"|format(mpls.spese_brevi or 0) }}</td>
+                                <td class="cost-amount">€{{ "%.2f"|format(spese_brevi_acquisto) }}</td>
                                 <td class="sell-amount">€{{ "%.2f"|format(mpls.spese_brevi or 0) }}</td>
-                                <td class="margin-amount">€0.00</td>
+                                <td class="margin-amount">€{{ "%.2f"|format(margine_spese_brevi) }}</td>
                             </tr>
                             <tr>
                                 <td>Materiale Consumo</td>
