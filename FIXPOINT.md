@@ -120,6 +120,24 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 **Status**: ✅ RISOLTO
 
+### ✅ Data: 2025-09-16 - 16:30
+**Sezione testata**: Preventivi
+**Controllo**: Verifica navigation menu consistency
+
+**Errori trovati**:
+1. **Navigation menu incompleto in preventivi.html** - Mancavano sezioni principali
+   - Menu aveva solo: Dashboard, DDT IN/OUT, Offerte, Preventivi, Catalogo
+   - Mancavano: Ordini, MPLS, Movimenti, Inventario, Commesse, Impostazioni, FIXPOINT
+   - **Risultato**: Navigazione limitata, accesso ridotto alle sezioni del sistema
+
+**Riparazioni effettuate**:
+1. Aggiornato navigation menu in templates/preventivi.html:
+   - Aggiunte tutte le sezioni mancanti con icone appropriate
+   - Riorganizzato ordine per coerenza con standard del sistema
+   - Menu ora completo e funzionale
+
+**Status**: ✅ RISOLTO
+
 ### ✅ Data: 2025-09-16 - 15:45
 **Sezione testata**: DDT IN
 **Controllo**: Verifica navigazione e template consistency
@@ -182,9 +200,9 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📊 Statistiche Riparazioni
 
-**Totale controlli**: 8
-**Errori trovati**: 10
-**Errori risolti**: 10
+**Totale controlli**: 9
+**Errori trovati**: 11
+**Errori risolti**: 11
 **Successo rate**: 100%
 
 ---
