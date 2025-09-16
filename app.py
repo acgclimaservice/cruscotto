@@ -8755,6 +8755,7 @@ def update_mpls(id):
         mpls.cliente_nome = request.form.get('cliente_nome')
         mpls.cliente_codice = request.form.get('cliente_codice', '')
         mpls.descrizione = request.form.get('descrizione', '')
+        mpls.note = request.form.get('note', '')
         mpls.stato = request.form.get('stato', 'bozza')
         
         # Aggiorna parametri Enhanced
@@ -8773,13 +8774,13 @@ def update_mpls(id):
         mpls.is_guazzotti = bool(request.form.get('is_guazzotti'))
         print(f"[DEBUG UPDATE] is_guazzotti: {mpls.is_guazzotti}")
         
-        # Commessa associata
+        # Commessa associata (ora come testo invece di ID)
         try:
-            commessa_id = request.form.get('commessa_id')
-            mpls.commessa_id = int(commessa_id) if commessa_id else None
-            print(f"[DEBUG UPDATE] commessa_id OK: {mpls.commessa_id}")
+            commessa_text = request.form.get('commessa', '')
+            mpls.commessa = commessa_text
+            print(f"[DEBUG UPDATE] commessa OK: {mpls.commessa}")
         except Exception as e:
-            print(f"[DEBUG UPDATE] Errore commessa_id: {e}")
+            print(f"[DEBUG UPDATE] Errore commessa: {e}")
         
         # Aggiorna totali Enhanced
         mpls.subtotale_materiali_vendita = float(request.form.get('subtotale_materiali_vendita', 0))
