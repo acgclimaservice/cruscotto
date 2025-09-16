@@ -548,7 +548,6 @@ class PreventivoTemplate(DocumentTemplate):
                 <div class="section">
                     <h3>OGGETTO</h3>
                     <p>{preventivo_data.get('oggetto', 'Fornitura e installazione impianto climatizzazione')}</p>
-                    <p>Stato: {preventivo_data.get('stato', 'BOZZA').upper()}</p>
                 </div>
             </div>
             
@@ -596,11 +595,6 @@ class PreventivoTemplate(DocumentTemplate):
                         <tr class="total-row"><td colspan="5"><strong>TOTALE PREVENTIVO:</strong></td><td><strong>€ """ + f"{preventivo_data.get('totale_lordo', 0):.2f}" + """</strong></td></tr>
                     </tfoot>
                 </table>
-            </div>
-            
-            <div class="document-footer">
-                <p>Documento generato automaticamente il {current_date}</p>
-                <p>Sistema Gestione DDT - {DocumentTemplate.COMPANY_DATA['ragione_sociale']}</p>
             </div>
         </body>
         </html>

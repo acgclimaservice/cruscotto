@@ -8451,7 +8451,7 @@ def crea_preventivo_da_mpls(id):
         nuovo_preventivo = Preventivo(
             numero_preventivo=numero_preventivo,
             data_preventivo=datetime.now().date(),
-            cliente_nome=mpls.cliente_nome or 'Cliente da MPLS',
+            cliente_nome=mpls.cliente_nome or (mpls.commessa.cliente_nome if mpls.commessa else 'Cliente da MPLS'),
             oggetto=mpls.descrizione or f"Preventivo da MPLS {mpls.numero_mpls}",
             commessa_id=mpls.commessa_id,  # Eredita commessa dall'MPLS
             stato='bozza',
@@ -8463,12 +8463,10 @@ def crea_preventivo_da_mpls(id):
         db.session.flush()  # Per ottenere l'ID
 
         # Crea dettagli preventivo (SENZA costi e ricarichi)
-        totale_netto = 0
         for art in articoli:
             prezzo_vendita = safe_float(art.prezzo_vendita, 0)
             quantita = safe_float(art.quantita, 1)
             totale_riga = quantita * prezzo_vendita
-            totale_netto += totale_riga
 
             dettaglio = DettaglioPreventivo(
                 preventivo_id=nuovo_preventivo.id,
@@ -8483,9 +8481,10 @@ def crea_preventivo_da_mpls(id):
             )
             db.session.add(dettaglio)
 
-        # Aggiorna totali preventivo
-        nuovo_preventivo.totale_netto = totale_netto
-        nuovo_preventivo.totale_lordo = totale_netto * (1 + nuovo_preventivo.iva / 100)
+        # Usa il totale vendita dell'MPLS (non ricalcolare)
+        totale_vendita_mpls = safe_float(mpls.totale_vendita, 0)
+        nuovo_preventivo.totale_netto = totale_vendita_mpls
+        nuovo_preventivo.totale_lordo = totale_vendita_mpls * (1 + nuovo_preventivo.iva / 100)
 
         db.session.commit()
 
