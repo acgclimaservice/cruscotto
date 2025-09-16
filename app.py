@@ -435,9 +435,9 @@ except Exception as e:
 
 # Registra blueprint AI training (sistema apprendimento)
 try:
-    from routes.routes_parsing_training import training_bp
+    from routes.routes_parsing_training_simple import training_bp
     app.register_blueprint(training_bp, url_prefix="/ai")
-    print("Sistema AI Learning caricato")
+    print("Sistema AI Learning (semplificato) caricato")
 except Exception as e:
     print(f"AI Learning non disponibile: {e}")
 
