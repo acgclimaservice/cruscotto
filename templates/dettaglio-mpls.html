@@ -239,9 +239,9 @@
                             </tr>
                             <tr>
                                 <td>Materiale Consumo</td>
-                                <td class="cost-amount">€{{ "%.2f"|format(mpls.materiale_consumo or 0) }}</td>
+                                <td class="cost-amount">€{{ "%.2f"|format(materiale_consumo_acquisto) }}</td>
                                 <td class="sell-amount">€{{ "%.2f"|format(mpls.materiale_consumo or 0) }}</td>
-                                <td class="margin-amount">€0.00</td>
+                                <td class="margin-amount">€{{ "%.2f"|format(margine_materiale_consumo) }}</td>
                             </tr>
                             <tr>
                                 <td>Sovrapprezzo</td>
