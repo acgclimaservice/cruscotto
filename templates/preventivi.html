@@ -126,7 +126,7 @@
                                 <div class="action-buttons">
                                     <a href="/preventivi/{{ preventivo.id }}" class="btn btn-sm">👁️ Visualizza</a>
                                     {% if preventivo.stato == 'bozza' %}
-                                        <button class="btn btn-sm btn-primary" onclick="alert('Funzionalità in sviluppo - Modifica preventivo')">✍️ Modifica</button>
+                                        <button class="btn btn-sm btn-primary" disabled title="Funzionalità in sviluppo - Modifica preventivo">✍️ Modifica</button>
                                         <form method="POST" action="/preventivi/{{ preventivo.id }}/invia" style="display: inline;">
                                             <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Inviare questo preventivo?')">📤 Invia</button>
                                         </form>

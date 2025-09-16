@@ -226,6 +226,28 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 **Status**: ✅ RISOLTO
 
+### ✅ Data: 2025-09-16 - 16:55
+**Sezione testata**: UX - JavaScript Alert Placeholders
+**Controllo**: Verifica placeholder functionalities e UX
+
+**Errori trovati**:
+1. **Alert placeholder "Funzionalità in sviluppo" - UX povera**
+   - 6+ bottoni con onclick="alert('Funzionalità in sviluppo')"
+   - File affected: offerte.html, ordini.html, dettaglio-preventivo.html, preventivi.html, nuovo-ddt-in.html
+   - **Risultato**: UX jarring e non professionale, alert popup disturbano workflow
+   - **Impact**: Percezione negativa utenti su sezioni "incomplete"
+
+**Riparazioni effettuate**:
+1. Convertiti tutti alert placeholder in disabled buttons con tooltip:
+   - templates/offerte.html: 2 bottoni Report/Import → disabled + title tooltip
+   - templates/ordini.html: 2 bottoni Report/Riordini → disabled + title tooltip
+   - templates/dettaglio-preventivo.html: 1 bottone Email → disabled + title tooltip
+   - templates/preventivi.html: 1 bottone Modifica → disabled + title tooltip
+   - templates/nuovo-ddt-in.html: 1 bottone Verifica Status → disabled + title tooltip
+   - UX ora professionale: bottoni chiaramente non disponibili con tooltip informativi
+
+**Status**: ✅ RISOLTO
+
 ### ✅ Data: 2025-09-16 - 15:45
 **Sezione testata**: DDT IN
 **Controllo**: Verifica navigazione e template consistency
@@ -288,9 +310,9 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📊 Statistiche Riparazioni
 
-**Totale controlli**: 13
-**Errori trovati**: 17
-**Errori risolti**: 17
+**Totale controlli**: 14
+**Errori trovati**: 18
+**Errori risolti**: 18
 **Successo rate**: 100%
 
 ---

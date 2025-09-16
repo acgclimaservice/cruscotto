@@ -180,7 +180,7 @@
             {% endif %}
             
             <a href="/preventivi/{{ preventivo.id }}/pdf" class="btn btn-secondary" target="_blank">📄 Stampa PDF</a>
-            <button class="btn btn-secondary" onclick="alert('Funzionalità in sviluppo - Invio Email')">📧 Invia Email</button>
+            <button class="btn btn-secondary" disabled title="Funzionalità in sviluppo - Invio Email">📧 Invia Email</button>
             
             {% if preventivo.stato in ['accettato', 'bozza'] %}
                 <button class="btn btn-primary" onclick="creaDDTOutDaPreventivo({{ preventivo.id }})">🔄 Crea DDT OUT</button>
