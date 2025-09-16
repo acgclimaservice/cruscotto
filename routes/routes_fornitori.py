@@ -120,24 +120,59 @@ def modifica_fornitore(id):
         return render_template('modifica-fornitore.html', fornitore=fornitore)
     
     if request.method == 'POST':
-        data = request.json
-        
-        fornitore.ragione_sociale = data.get('ragione_sociale', fornitore.ragione_sociale)
-        fornitore.partita_iva = data.get('partita_iva')
-        fornitore.codice_fiscale = data.get('codice_fiscale')
-        fornitore.indirizzo = data.get('indirizzo')
-        fornitore.citta = data.get('citta')
-        fornitore.provincia = data.get('provincia')
-        fornitore.cap = data.get('cap')
-        fornitore.telefono = data.get('telefono')
-        fornitore.email = data.get('email')
-        fornitore.pec = data.get('pec')
-        fornitore.condizioni_pagamento = data.get('condizioni_pagamento')
-        fornitore.lead_time_giorni = int(data.get('lead_time_giorni', 7))
-        fornitore.note = data.get('note')
-        
-        db.session.commit()
-        return jsonify({'success': True})
+        try:
+            # Supporta sia JSON che form data
+            if request.is_json:
+                data = request.json
+            else:
+                data = request.form.to_dict()
+
+            def get_data(key, default=''):
+                """Helper per ottenere dati da JSON o form"""
+                if request.is_json:
+                    return data.get(key, default)
+                else:
+                    return data.get(key, default).strip() if data.get(key) else default
+
+            fornitore.ragione_sociale = get_data('ragione_sociale', fornitore.ragione_sociale)
+            fornitore.partita_iva = get_data('partita_iva')
+            fornitore.codice_fiscale = get_data('codice_fiscale')
+            fornitore.indirizzo = get_data('indirizzo')
+            fornitore.citta = get_data('citta')
+            fornitore.provincia = get_data('provincia')
+            fornitore.cap = get_data('cap')
+            fornitore.telefono = get_data('telefono')
+            fornitore.email = get_data('email')
+            fornitore.pec = get_data('pec')
+            fornitore.codice_sdi = get_data('codice_sdi')
+            fornitore.condizioni_pagamento = get_data('condizioni_pagamento')
+
+            # Gestione lead_time con conversione sicura
+            lead_time_str = get_data('lead_time_giorni', '7')
+            try:
+                fornitore.lead_time_giorni = int(lead_time_str) if lead_time_str else 7
+            except ValueError:
+                fornitore.lead_time_giorni = 7
+
+            fornitore.note = get_data('note')
+
+            db.session.commit()
+
+            # Return appropriato per JSON o form
+            if request.is_json:
+                return jsonify({'success': True})
+            else:
+                flash('Fornitore modificato con successo!', 'success')
+                return redirect(url_for('fornitori_page'))
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Errore modifica fornitore: {e}")
+            if request.is_json:
+                return jsonify({'success': False, 'error': f'Errore durante modifica: {str(e)}'}), 500
+            else:
+                flash(f'Errore durante modifica: {str(e)}', 'error')
+                return render_template('modifica-fornitore.html', fornitore=fornitore)
 
 @fornitori_bp.route('/<int:id>/elimina', methods=['POST'])
 def elimina_fornitore(id):
