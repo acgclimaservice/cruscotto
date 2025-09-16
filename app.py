@@ -8431,6 +8431,15 @@ def stampa_mpls(id):
 def crea_preventivo_da_mpls(id):
     """Crea un preventivo da MPLS nascondendo costi e ricarichi"""
     try:
+        # Helper per conversione sicura float
+        def safe_float(value, default=0.0):
+            if value is None or value == '' or value == 'None':
+                return default
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                return default
+
         mpls = MPLS.query.get_or_404(id)
         articoli = MPLSArticolo.query.filter_by(mpls_id=id).all()
 
@@ -8438,15 +8447,16 @@ def crea_preventivo_da_mpls(id):
         ultimo_numero = db.session.query(db.func.max(Preventivo.id)).scalar() or 0
         numero_preventivo = f"PREV-{datetime.now().year}-{str(ultimo_numero + 1).zfill(4)}"
 
-        # Crea preventivo
+        # Crea preventivo con commessa_id dall'MPLS
         nuovo_preventivo = Preventivo(
             numero_preventivo=numero_preventivo,
             data_preventivo=datetime.now().date(),
             cliente_nome=mpls.cliente_nome or 'Cliente da MPLS',
-            oggetto=f"Preventivo da MPLS {mpls.numero_mpls}",
+            oggetto=mpls.descrizione or f"Preventivo da MPLS {mpls.numero_mpls}",
+            commessa_id=mpls.commessa_id,  # Eredita commessa dall'MPLS
             stato='bozza',
-            iva=22,
-            note=f"Preventivo generato automaticamente da MPLS {mpls.numero_mpls}"
+            iva=22
+            # note rimosse come richiesto
         )
 
         db.session.add(nuovo_preventivo)
@@ -8455,8 +8465,8 @@ def crea_preventivo_da_mpls(id):
         # Crea dettagli preventivo (SENZA costi e ricarichi)
         totale_netto = 0
         for art in articoli:
-            prezzo_vendita = float(art.prezzo_vendita or 0)
-            quantita = float(art.quantita or 1)
+            prezzo_vendita = safe_float(art.prezzo_vendita, 0)
+            quantita = safe_float(art.quantita, 1)
             totale_riga = quantita * prezzo_vendita
             totale_netto += totale_riga
 
