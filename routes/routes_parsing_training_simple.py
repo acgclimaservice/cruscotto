@@ -51,10 +51,103 @@ def show_correction_page(pdf_hash):
         'accuracy': 0.85
     }
 
-    return render_template('parsing-correction.html',
-                         parsing_data=parsing_data,
-                         pdf_hash=pdf_hash,
-                         stats=stats)
+    # Template inline per evitare errori se file mancante
+    template_html = f"""
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Correzione Parsing AI</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 40px; }}
+        .container {{ max-width: 800px; margin: 0 auto; }}
+        .section {{ margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }}
+        .incorrect {{ background: #fff8f8; border-color: #dc3545; }}
+        .correct {{ background: #f8fff9; border-color: #28a745; }}
+        input, textarea, select {{ width: 100%; padding: 8px; margin: 5px 0; }}
+        .btn {{ padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }}
+        .btn-success {{ background: #28a745; color: white; }}
+        .btn-secondary {{ background: #6c757d; color: white; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Correzione AI Parsing</h1>
+
+        <div class="section incorrect">
+            <h3>❌ Parsing AI Originale</h3>
+            <p><strong>Fornitore:</strong> {parsing_data.get('fornitore', 'N/A')}</p>
+            <p><strong>Numero:</strong> {parsing_data.get('numero_ddt', 'N/A')}</p>
+            <p><strong>Data:</strong> {parsing_data.get('data_ddt', 'N/A')}</p>
+            <p><strong>Totale:</strong> {parsing_data.get('totale_fattura', 'N/A')}</p>
+        </div>
+
+        <div class="section correct">
+            <h3>✅ Valori Corretti</h3>
+            <form id="correctionForm">
+                <label>Fornitore *</label>
+                <input type="text" name="fornitore_corretto" value="{parsing_data.get('fornitore', '')}" required>
+
+                <label>Numero Offerta</label>
+                <input type="text" name="numero_corretto" value="{parsing_data.get('numero_ddt', '')}">
+
+                <label>Data (YYYY-MM-DD)</label>
+                <input type="date" name="data_corretta" value="{parsing_data.get('data_ddt', '')}">
+
+                <label>Totale</label>
+                <input type="number" step="0.01" name="totale_corretto" value="{parsing_data.get('totale_fattura', '')}">
+
+                <label>Campo con errore principale:</label>
+                <select name="campo_principale">
+                    <option value="fornitore">Fornitore</option>
+                    <option value="numero_ddt">Numero Offerta</option>
+                    <option value="data_ddt">Data</option>
+                    <option value="totale_fattura">Totale</option>
+                </select>
+
+                <label>Note per l'AI:</label>
+                <textarea name="note_correzione" rows="3" placeholder="Come dovrebbe riconoscere correttamente questo campo..."></textarea>
+
+                <button type="submit" class="btn btn-success">💾 Salva Correzione</button>
+                <button type="button" onclick="window.history.back()" class="btn btn-secondary">← Indietro</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('correctionForm').onsubmit = function(e) {{
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            data.pdf_hash = '{pdf_hash}';
+            data.parsing_originale = '{json.dumps(parsing_data)}';
+
+            fetch('/ai/parsing/salva-correzione', {{
+                method: 'POST',
+                headers: {{'Content-Type': 'application/json'}},
+                body: JSON.stringify(data)
+            }})
+            .then(response => response.json())
+            .then(result => {{
+                if (result.success) {{
+                    alert('✅ ' + result.message);
+                    window.history.back();
+                }} else {{
+                    alert('❌ Errore: ' + result.error);
+                }}
+            }})
+            .catch(error => {{
+                alert('❌ Errore di connessione: ' + error);
+            }});
+        }};
+    </script>
+</body>
+</html>
+"""
+
+    from flask import Response
+    return Response(template_html, mimetype='text/html')
 
 @training_bp.route('/parsing/salva-correzione', methods=['POST'])
 def salva_correzione():
