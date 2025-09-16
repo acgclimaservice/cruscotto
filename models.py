@@ -187,6 +187,7 @@ class OrdineFornitore(db.Model):
     data_conferma = db.Column(db.Date)
     riferimento_fornitore = db.Column(db.String(100))
     numero_offerta_fornitore = db.Column(db.String(100))  # Numero offerta del fornitore
+    data_offerta_fornitore = db.Column(db.Date)  # Data offerta del fornitore
     priorita = db.Column(db.String(10), default='media')  # bassa, media, alta
     commessa = db.Column(db.String(50))
     pdf_allegato = db.Column(db.Text)  # Base64 encoded PDF

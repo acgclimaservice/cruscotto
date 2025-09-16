@@ -5580,7 +5580,13 @@ def nuovo_ordine():
             commessa=request.form.get('commessa', ''),
             numero_offerta_fornitore=request.form.get('numero_offerta_fornitore', '')
         )
-        
+
+        # Gestione data_offerta_fornitore
+        if request.form.get('data_offerta_fornitore'):
+            nuovo_ordine.data_offerta_fornitore = datetime.strptime(
+                request.form['data_offerta_fornitore'], '%Y-%m-%d'
+            ).date()
+
         if request.form.get('data_richiesta'):
             nuovo_ordine.data_richiesta = datetime.strptime(
                 request.form['data_richiesta'], '%Y-%m-%d'
@@ -5728,6 +5734,12 @@ def modifica_ordine(id):
         ordine.iva = float(request.form.get('iva', 22))
         ordine.commessa = request.form.get('commessa', '')
         ordine.numero_offerta_fornitore = request.form.get('numero_offerta_fornitore', '')
+
+        # Gestione data_offerta_fornitore
+        if request.form.get('data_offerta_fornitore'):
+            ordine.data_offerta_fornitore = datetime.strptime(
+                request.form['data_offerta_fornitore'], '%Y-%m-%d'
+            ).date()
 
         # Gestione fornitore_id
         fornitore_id_value = request.form.get('fornitore_id')
@@ -6459,6 +6471,8 @@ def crea_ordine_da_import():
             priorita=data.get('priorita', 'media'),
             data_ordine=datetime.strptime(data.get('data_offerta', datetime.now().strftime('%Y-%m-%d')), '%Y-%m-%d').date() if data.get('data_offerta') else datetime.now().date(),
             data_scadenza=datetime.strptime(data.get('validita_offerta'), '%Y-%m-%d').date() if data.get('validita_offerta') else None,
+            numero_offerta_fornitore=data.get('numero_offerta_fornitore', ''),
+            data_offerta_fornitore=datetime.strptime(data.get('data_offerta'), '%Y-%m-%d').date() if data.get('data_offerta') else None,
             stato='bozza',
             iva=22.0
         )
