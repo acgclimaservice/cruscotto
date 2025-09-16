@@ -10995,6 +10995,25 @@ def force_migration():
         logger.error(f"Error in force migration: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/fixpoint')
+def fixpoint():
+    """Sezione FIXPOINT - Controlli e Riparazioni Sistema"""
+    try:
+        # Leggi il file FIXPOINT.md
+        import os
+        fixpoint_path = os.path.join(os.path.dirname(__file__), 'FIXPOINT.md')
+
+        if os.path.exists(fixpoint_path):
+            with open(fixpoint_path, 'r', encoding='utf-8') as f:
+                fixpoint_content = f.read()
+        else:
+            fixpoint_content = "# FIXPOINT non trovato"
+
+        return render_template('fixpoint.html', fixpoint_content=fixpoint_content)
+    except Exception as e:
+        print(f"Errore FIXPOINT: {e}")
+        return f"Errore: {str(e)}", 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
