@@ -543,27 +543,36 @@
             const costoManodoperaInterno = oreManodopera * costoOrarioInterno;
             
             // 3. CALCOLO COSTI ACCESSORI
-            const costoGestione = isGuazzotti ? 0 : 30.0;
+            // Costo Gestione: acquisto 10€, vendita 30€
+            const costoGestioneVendita = isGuazzotti ? 0 : 30.0;
+            const costoGestioneAcquisto = isGuazzotti ? 0 : 10.0;
+
+            // Spese Brevi: acquisto 0€, vendita 30€
             const speseBrevi = (!isGuazzotti && oreManodopera > 0 && oreManodopera < 3) ? 30.0 : 0;
-            const materialeConsumo = (!isGuazzotti && costoMaterialiAcquisto > 0) ? Math.max(10.0, costoMaterialiAcquisto * 0.03) : 0;
-            
+            const speseBreviAcquisto = 0; // Sempre 0€ di costo acquisto
+
+            // Materiale Consumo: acquisto = 50% del vendita
+            const materialeConsumoVendita = (!isGuazzotti && costoMaterialiAcquisto > 0) ? Math.max(10.0, costoMaterialiAcquisto * 0.03) : 0;
+            const materialeConsumoAcquisto = materialeConsumoVendita * 0.5;
+
             // 4. TOTALI FINALI
-            const totaleCostiAccessori = costoGestione + speseBrevi + materialeConsumo;
+            const totaleCostiAccessori = costoGestioneVendita + speseBrevi + materialeConsumoVendita;
             const totaleVendita = subtotaleMateriali + subtotaleManodopera + totaleCostiAccessori + sovrapprezzo;
             const totaleIva = totaleVendita * 0.22;
             const totaleIvato = totaleVendita + totaleIva;
-            
+
             // 5. MARGINI
-            const costoTotaleInterno = costoMaterialiAcquisto + costoManodoperaInterno;
+            const costiAccessoriAcquisto = costoGestioneAcquisto + speseBreviAcquisto + materialeConsumoAcquisto;
+            const costoTotaleInterno = costoMaterialiAcquisto + costoManodoperaInterno + costiAccessoriAcquisto;
             const margineEuro = totaleVendita - costoTotaleInterno;
             const marginePercentuale = totaleVendita > 0 ? (margineEuro / totaleVendita) * 100 : 0;
             
             // 6. AGGIORNA UI
             document.getElementById('subtotaleMateriali').textContent = `€ ${subtotaleMateriali.toFixed(2)}`;
             document.getElementById('subtotaleManodopera').textContent = `€ ${subtotaleManodopera.toFixed(2)}`;
-            document.getElementById('costoGestione').textContent = `€ ${costoGestione.toFixed(2)}`;
+            document.getElementById('costoGestione').textContent = `€ ${costoGestioneVendita.toFixed(2)}`;
             document.getElementById('speseBrevi').textContent = `€ ${speseBrevi.toFixed(2)}`;
-            document.getElementById('materialeConsumo').textContent = `€ ${materialeConsumo.toFixed(2)}`;
+            document.getElementById('materialeConsumo').textContent = `€ ${materialeConsumoVendita.toFixed(2)}`;
             document.getElementById('sovrapprezzoDisplay').textContent = `€ ${sovrapprezzo.toFixed(2)}`;
             document.getElementById('totaleVendita').textContent = `€ ${totaleVendita.toFixed(2)}`;
             document.getElementById('totaleIva').textContent = `€ ${totaleIva.toFixed(2)}`;
@@ -575,9 +584,9 @@
             // 7. AGGIORNA CAMPI NASCOSTI Enhanced
             document.getElementById('hiddenSubtotaleMateriali').value = subtotaleMateriali.toFixed(2);
             document.getElementById('hiddenSubtotaleManodopera').value = subtotaleManodopera.toFixed(2);
-            document.getElementById('hiddenCostoGestione').value = costoGestione.toFixed(2);
+            document.getElementById('hiddenCostoGestione').value = costoGestioneVendita.toFixed(2);
             document.getElementById('hiddenSpeseBrevi').value = speseBrevi.toFixed(2);
-            document.getElementById('hiddenMaterialeConsumo').value = materialeConsumo.toFixed(2);
+            document.getElementById('hiddenMaterialeConsumo').value = materialeConsumoVendita.toFixed(2);
             document.getElementById('hiddenCostoTotaleInterno').value = costoTotaleInterno.toFixed(2);
             
             // Compatibilità campi esistenti

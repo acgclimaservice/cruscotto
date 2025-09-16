@@ -9153,22 +9153,30 @@ def _calcola_ricarico_materiale(prezzo_acquisto, quantita, is_guazzotti):
     return prezzo_vendita, ricarico
 
 def _calcola_costi_accessori_mpls(is_guazzotti, ore_manodopera, costo_materiali_acquisto):
-    """Calcola costi accessori secondo logica Gemini"""
-    
-    # Costo gestione: €30 fissi per clienti normali, €0 per Guazzotti
-    costo_gestione = 0.0 if is_guazzotti else 30.0
-    
-    # Spese brevi: €30 se intervento < 3 ore (solo clienti normali)
-    spese_brevi = 0.0
+    """Calcola costi accessori secondo logica corretta:
+    - Costo Gestione: acquisto 10€, vendita 30€
+    - Spese Brevi: acquisto 0€, vendita 30€
+    - Materiale Consumo: acquisto = 50% del vendita
+    """
+
+    # Costo gestione: acquisto 10€, vendita 30€
+    costo_gestione_vendita = 0.0 if is_guazzotti else 30.0
+    costo_gestione_acquisto = 0.0 if is_guazzotti else 10.0
+
+    # Spese brevi: acquisto 0€, vendita 30€ se intervento < 3 ore (solo clienti normali)
+    spese_brevi_vendita = 0.0
     if not is_guazzotti and ore_manodopera > 0 and ore_manodopera < 3:
-        spese_brevi = 30.0
-    
-    # Materiale consumo: minimo €10 o 3% del costo materiali (solo clienti normali)
-    materiale_consumo = 0.0
+        spese_brevi_vendita = 30.0
+    spese_brevi_acquisto = 0.0  # Sempre 0€ di costo acquisto
+
+    # Materiale consumo: acquisto = 50% del vendita (minimo €10 o 3% del costo materiali)
+    materiale_consumo_vendita = 0.0
     if not is_guazzotti and costo_materiali_acquisto > 0:
-        materiale_consumo = max(10.0, costo_materiali_acquisto * 0.03)
-    
-    return costo_gestione, spese_brevi, materiale_consumo
+        materiale_consumo_vendita = max(10.0, costo_materiali_acquisto * 0.03)
+    materiale_consumo_acquisto = materiale_consumo_vendita * 0.5
+
+    return (costo_gestione_vendita, spese_brevi_vendita, materiale_consumo_vendita,
+            costo_gestione_acquisto, spese_brevi_acquisto, materiale_consumo_acquisto)
 
 def _calcola_manodopera_mpls(ore_manodopera, is_guazzotti):
     """Calcola costi manodopera secondo logica Gemini"""
@@ -9239,27 +9247,29 @@ def _ricalcola_totali_mpls(mpls):
         )
         
         # 3. CALCOLO COSTI ACCESSORI AUTOMATICI
-        costo_gestione, spese_brevi, materiale_consumo = _calcola_costi_accessori_mpls(
+        (costo_gestione_vendita, spese_brevi_vendita, materiale_consumo_vendita,
+         costo_gestione_acquisto, spese_brevi_acquisto, materiale_consumo_acquisto) = _calcola_costi_accessori_mpls(
             is_guazzotti, ore_manodopera, costo_materiali_acquisto
         )
-        
+
         # 4. TOTALI FINALI
-        totale_costi_accessori = costo_gestione + spese_brevi + materiale_consumo
+        totale_costi_accessori = costo_gestione_vendita + spese_brevi_vendita + materiale_consumo_vendita
+        totale_costi_accessori_acquisto = costo_gestione_acquisto + spese_brevi_acquisto + materiale_consumo_acquisto
         totale_vendita = subtotale_materiali_vendita + subtotale_manodopera_vendita + totale_costi_accessori + sovrapprezzo
         totale_iva = totale_vendita * (iva_percentuale / 100)
         totale_ivato = totale_vendita + totale_iva
         
         # 5. CALCOLO MARGINI
-        costo_totale_interno = costo_materiali_acquisto + costo_manodopera_interno
+        costo_totale_interno = costo_materiali_acquisto + costo_manodopera_interno + totale_costi_accessori_acquisto
         margine_euro = totale_vendita - costo_totale_interno
         margine_percentuale = (margine_euro / totale_vendita * 100) if totale_vendita > 0 else 0
-        
+
         # 6. AGGIORNA MPLS con valori calcolati Enhanced
         mpls.subtotale_materiali_vendita = subtotale_materiali_vendita
         mpls.subtotale_manodopera_vendita = subtotale_manodopera_vendita
-        mpls.costo_gestione = costo_gestione
-        mpls.spese_brevi = spese_brevi
-        mpls.materiale_consumo = materiale_consumo
+        mpls.costo_gestione = costo_gestione_vendita
+        mpls.spese_brevi = spese_brevi_vendita
+        mpls.materiale_consumo = materiale_consumo_vendita
         mpls.costo_totale_interno = costo_totale_interno
         
         # Aggiorna campi compatibili con sistema esistente
