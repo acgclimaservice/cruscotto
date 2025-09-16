@@ -8453,7 +8453,7 @@ def crea_preventivo_da_mpls(id):
             data_preventivo=datetime.now().date(),
             cliente_nome=mpls.cliente_nome or (mpls.commessa.cliente_nome if mpls.commessa else 'Cliente da MPLS'),
             oggetto=mpls.descrizione or f"Preventivo da MPLS {mpls.numero_mpls}",
-            commessa_id=mpls.commessa_id,  # Eredita commessa dall'MPLS
+            commessa=mpls.commessa.numero_progressivo if mpls.commessa else None,  # Eredita numero commessa dall'MPLS
             stato='bozza',
             iva=22
             # note rimosse come richiesto

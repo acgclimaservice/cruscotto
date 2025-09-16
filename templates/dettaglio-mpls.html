@@ -37,11 +37,11 @@
                 </div>
                 <div style="display: flex; gap: 10px;">
                     {% if mpls.stato == 'bozza' %}
-                    <a href="/mpls/{{ mpls.id }}/modifica" class="btn btn-warning">✏️ Modifica</a>
+                    <a href="/mpls/{{ mpls.id }}/modifica" class="btn btn-warning mpls-btn">✏️ Modifica</a>
                     {% endif %}
-                    <button class="btn btn-success" onclick="creaPreventivoDaMpls({{ mpls.id }})">📋 Crea Preventivo</button>
-                    <button class="btn btn-primary" onclick="window.open('/mpls/{{ mpls.id }}/stampa', '_blank')">🖨️ Stampa MPLS</button>
-                    <a href="/mpls" class="btn btn-secondary">← Torna alla Lista</a>
+                    <button class="btn btn-success mpls-btn" onclick="creaPreventivoDaMpls({{ mpls.id }})">📋 Crea Preventivo</button>
+                    <button class="btn btn-primary mpls-btn" onclick="window.open('/mpls/{{ mpls.id }}/stampa', '_blank')">🖨️ Stampa MPLS</button>
+                    <a href="/mpls" class="btn btn-secondary mpls-btn">← Torna alla Lista</a>
                 </div>
             </div>
 
@@ -435,6 +435,16 @@
             background: #fef3c7;
             border-color: #f59e0b;
             color: #92400e;
+        }
+
+        .mpls-btn {
+            min-width: 150px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            white-space: nowrap;
         }
     </style>
 
