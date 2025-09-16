@@ -4,6 +4,11 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📋 Controlli Effettuati
 
+### 🔍 Data: 2025-09-16 - 15:45
+**Sezione testata**: DDT IN
+**Controllo**: Verifica parsing PDF e creazione DDT IN
+**Status**: IN CORSO
+
 ### ✅ Data: 2025-09-16
 **Sezione testata**: Offerte
 **Controllo**: Verifica template variables consistency
