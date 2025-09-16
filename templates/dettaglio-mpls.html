@@ -245,9 +245,9 @@
                             </tr>
                             <tr>
                                 <td>Sovrapprezzo</td>
-                                <td class="cost-amount">€0.00</td>
+                                <td class="cost-amount">€{{ "%.2f"|format(sovrapprezzo_acquisto) }}</td>
                                 <td class="sell-amount">€{{ "%.2f"|format(mpls.sovrapprezzo or 0) }}</td>
-                                <td class="margin-amount">€{{ "%.2f"|format(mpls.sovrapprezzo or 0) }}</td>
+                                <td class="margin-amount">€{{ "%.2f"|format(margine_sovrapprezzo) }}</td>
                             </tr>
                         </tbody>
                         <tfoot>
