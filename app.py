@@ -5569,7 +5569,8 @@ def nuovo_ordine():
             iva=float(request.form.get('iva', 22)),
             note=request.form.get('note', ''),
             priorita=request.form.get('priorita', 'media'),
-            commessa=request.form.get('commessa', '')
+            commessa=request.form.get('commessa', ''),
+            numero_offerta_fornitore=request.form.get('numero_offerta_fornitore', '')
         )
         
         if request.form.get('data_richiesta'):
@@ -5718,7 +5719,8 @@ def modifica_ordine(id):
         ordine.priorita = request.form.get('priorita', 'media')
         ordine.iva = float(request.form.get('iva', 22))
         ordine.commessa = request.form.get('commessa', '')
-        
+        ordine.numero_offerta_fornitore = request.form.get('numero_offerta_fornitore', '')
+
         # Gestione fornitore_id
         fornitore_id_value = request.form.get('fornitore_id')
         ordine.fornitore_id = int(fornitore_id_value) if fornitore_id_value else None

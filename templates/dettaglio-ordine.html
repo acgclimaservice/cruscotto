@@ -75,6 +75,18 @@
                 <span class="info-label">Scadenza</span>
                 <span class="info-value">{{ ordine.data_scadenza.strftime('%d/%m/%Y') if ordine.data_scadenza else '-' }}</span>
             </div>
+            {% if ordine.numero_offerta_fornitore %}
+            <div class="info-item">
+                <span class="info-label">Numero Offerta Fornitore</span>
+                <span class="info-value">{{ ordine.numero_offerta_fornitore }}</span>
+            </div>
+            {% endif %}
+            {% if ordine.commessa %}
+            <div class="info-item">
+                <span class="info-label">Commessa</span>
+                <span class="info-value">{{ ordine.commessa }}</span>
+            </div>
+            {% endif %}
         </div>
 
         {% if ordine.note %}
