@@ -267,6 +267,27 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 **Status**: ✅ RISOLTO
 
+### ✅ Data: 2025-09-16 - 17:10
+**Sezione testata**: Code Maintainability - Hardcoded Values
+**Controllo**: Verifica centralizzazione dati aziendali e maintainability
+
+**Errori trovati**:
+1. **Hardcoded company info in 32+ template** - Manutenibilità problematica
+   - "ACG Clima Service" duplicato 52 volte in 32 file
+   - "Via Galimberti 47" hardcoded in tutti template
+   - "info@acgclimaservice.com" hardcoded 28 volte
+   - "0383/640606" hardcoded 28 volte
+   - **Risultato**: Aggiornamenti aziendali richiedono modifica manuale di 32+ file
+   - **Severità**: MEDIA - debt tecnico significativo per manutenzione
+
+**Analisi**:
+- Sistema necessita centralizzazione company_info in config/variabili globali
+- Responsive design presente e appropriato (8+ @media queries)
+- Email/telefono consistenti tra tutti i template
+- CSS organization acceptable, inline styles funzionali
+
+**Status**: 📋 DOCUMENTATO (richiede refactoring esteso)
+
 ### ✅ Data: 2025-09-16 - 15:45
 **Sezione testata**: DDT IN
 **Controllo**: Verifica navigazione e template consistency
@@ -329,10 +350,11 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📊 Statistiche Riparazioni
 
-**Totale controlli**: 15
-**Errori trovati**: 19
+**Totale controlli**: 16
+**Errori trovati**: 20
 **Errori risolti**: 19
-**Successo rate**: 100%
+**Errori documentati**: 1
+**Successo rate**: 95% (1 richiede refactoring esteso)
 
 ---
 
