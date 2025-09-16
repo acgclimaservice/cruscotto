@@ -641,9 +641,9 @@ def check_fornitore_esistente(fornitore_data):
 
 @app.route('/ddt-import/parse-pdf-claude-advanced', methods=['POST'])
 def parse_pdf_claude_advanced():
-    """Parse PDF con sistema evoluto Claude Advanced"""
+    """Parse PDF con sistema evoluto Claude Advanced LITE (compatibile PythonAnywhere)"""
     try:
-        from advanced_claude_ddt_parser import parse_ddt_with_advanced_claude
+        from advanced_claude_ddt_parser_lite import parse_ddt_with_advanced_claude_lite
         import tempfile
         import os
         import base64
@@ -661,9 +661,9 @@ def parse_pdf_claude_advanced():
             temp_filename = temp_file.name
 
         try:
-            # Parsing con sistema evoluto
+            # Parsing con sistema evoluto LITE
             with open(temp_filename, 'rb') as f:
-                result = parse_ddt_with_advanced_claude(f, 'ddt_in')
+                result = parse_ddt_with_advanced_claude_lite(f, 'ddt_in')
 
             # Aggiungi PDF base64 se richiesto
             if result.get('success'):
