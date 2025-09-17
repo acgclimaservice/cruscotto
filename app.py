@@ -7769,7 +7769,7 @@ def test_smtp_invio():
         # Messaggio di test
         msg = MIMEText("Test invio email dal Sistema Gestione DDT - Configurazione SMTP corretta!", 'plain', 'utf-8')
         msg['From'] = email_mittente
-        msg['To'] = email_mittente  # Invia a se stesso per test
+        msg['To'] = 'alberto.contardi@acgclimaservice.com'  # Invia ad Alberto per test
         msg['Subject'] = "Test SMTP - Sistema Gestione DDT"
         
         # Connessione e invio
@@ -7782,11 +7782,12 @@ def test_smtp_invio():
         
         return jsonify({
             'success': True,
-            'message': f'Email di test inviata con successo a {email_mittente}',
+            'message': f'Email di test inviata con successo a alberto.contardi@acgclimaservice.com',
             'dettagli': {
                 'server': smtp_server,
                 'porta': smtp_port,
-                'mittente': email_mittente
+                'mittente': email_mittente,
+                'destinatario': 'alberto.contardi@acgclimaservice.com'
             }
         })
         
