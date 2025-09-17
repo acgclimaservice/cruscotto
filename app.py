@@ -28,7 +28,7 @@ app = Flask(__name__)
 
 # Setup detailed logging system
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,  # Changed from DEBUG to INFO for production
     format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
@@ -38,7 +38,7 @@ logging.basicConfig(
 
 # Create logger for our app
 logger = logging.getLogger('CRUSCOTTO_DEBUG')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Middleware to log ALL requests and responses (NO EMOJI - Windows compatibility)
 @app.before_request
@@ -3014,7 +3014,6 @@ def dettaglio_ddt_out(id):
         return str(e), 500
 
 @app.route("/ddt-out/nuovo", methods=["GET", "POST"])
-@app.route("/ddt/out/nuovo", methods=["GET", "POST"])
 def nuovo_ddt_out():
     """Crea nuovo DDT OUT"""
     if request.method == "GET":
