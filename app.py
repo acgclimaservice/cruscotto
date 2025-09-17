@@ -11014,6 +11014,25 @@ def fixpoint():
         print(f"Errore FIXPOINT: {e}")
         return f"Errore: {str(e)}", 500
 
+@app.route('/todo')
+def todo():
+    """Sezione TODO - Lista Attività e Richieste Utente"""
+    try:
+        # Leggi il file TODO.md
+        import os
+        todo_path = os.path.join(os.path.dirname(__file__), 'TODO.md')
+
+        if os.path.exists(todo_path):
+            with open(todo_path, 'r', encoding='utf-8') as f:
+                todo_content = f.read()
+        else:
+            todo_content = "# TODO non trovato"
+
+        return render_template('todo.html', todo_content=todo_content)
+    except Exception as e:
+        print(f"Errore TODO: {e}")
+        return f"Errore: {str(e)}", 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔧 FIXPOINT - Controlli e Riparazioni Sistema</title>
+    <title>📝 TODO - Sistema DDT</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -24,8 +24,8 @@
                 </div>
             </div>
             <div class="system-info">
-                <h2>🔧 FIXPOINT</h2>
-                <p>Controlli sistematici e riparazioni</p>
+                <h2>📝 TODO</h2>
+                <p>Lista attività e richieste utente</p>
             </div>
         </div>
 
@@ -43,8 +43,8 @@
                 <li><a href="/inventario">📦 Inventario</a></li>
                 <li><a href="/commesse">🏗️ Commesse</a></li>
                 <li><a href="/impostazioni">⚙️ Impostazioni</a></li>
-                <li><a href="/fixpoint" class="active">🔧 FIXPOINT</a></li>
-                <li><a href="/todo">📝 TODO</a></li>
+                <li><a href="/fixpoint">🔧 FIXPOINT</a></li>
+                <li><a href="/todo" class="active">📝 TODO</a></li>
             </ul>
         </nav>
 
@@ -127,7 +127,7 @@
 
     <script>
         // Converte il contenuto Markdown in HTML usando JSON encoding per evitare problemi JavaScript
-        const markdownContent = {{ fixpoint_content|tojson }};
+        const markdownContent = {{ todo_content|tojson }};
         document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
     </script>
 </body>

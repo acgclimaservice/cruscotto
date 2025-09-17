@@ -411,19 +411,4 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ---
 
-## 📝 TODO UTENTE
-
-*Sezione per richieste e correzioni da parte dell'utente*
-
-### 🆕 Nuovi TODO
-*(inserire qui le nuove richieste)*
-
-### ✅ TODO Completati
-*(todo completati verranno spostati qui)*
-
-### 🔄 TODO In Progresso
-*(todo attualmente in lavorazione)*
-
----
-
 *Ultimo aggiornamento: 2025-09-16 - 17:30*
