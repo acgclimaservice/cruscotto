@@ -1477,13 +1477,13 @@ def modifica_commessa(id):
         return render_template('commesse-modifica.html', commessa=commessa, clienti=clienti)
     
     try:
-        # Aggiorna i dati della commessa
-        numero_progressivo = request.form.get('numero_progressivo', '').strip()
+        # Aggiorna i dati della commessa con validazione lunghezza
+        numero_progressivo = request.form.get('numero_progressivo', '').strip()[:50]
         cliente_id = request.form.get('cliente_id')
-        cliente_nome = request.form.get('cliente_nome', '').strip()
-        tipologia = request.form.get('tipologia', '').strip()
-        descrizione = request.form.get('descrizione', '').strip()
-        note = request.form.get('note', '').strip()
+        cliente_nome = request.form.get('cliente_nome', '').strip()[:200]
+        tipologia = request.form.get('tipologia', '').strip()[:100]
+        descrizione = request.form.get('descrizione', '').strip()[:500]
+        note = request.form.get('note', '').strip()[:1000]
         data_apertura_str = request.form.get('data_apertura', '').strip()
         stato = request.form.get('stato', 'aperta')
         
@@ -6098,144 +6098,16 @@ def pdf_allegato_ordine(id):
 
 @app.route('/ordini/<int:id>/pdf')
 def stampa_ordine_pdf(id):
-    """Stampa ordine come PDF usando DocumentTemplate"""
+    """Stampa ordine come PDF usando template Jinja2"""
     try:
-        from document_templates import DocumentTemplate
-        
         ordine = OrdineFornitore.query.get_or_404(id)
         dettagli = DettaglioOrdine.query.filter_by(ordine_id=id).all()
-        
-        # Genera contenuto HTML utilizzando DocumentTemplate
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Ordine Fornitore</title>
-            <style>
-            {DocumentTemplate.get_styles()}
-            .items-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-            .items-table th, .items-table td {{ padding: 10px; border: 1px solid #ddd; text-align: left; }}
-            .items-table th {{ background-color: #003366; color: white; }}
-            .number {{ text-align: right; }}
-            .totals {{ margin-top: 20px; }}
-            .totals-table {{ width: 100%; }}
-            .totals-table td {{ padding: 8px; border: none; }}
-            </style>
-        </head>
-        <body>
-            {DocumentTemplate.get_header_company()}
-            
-            <div class="document-title">
-                <h1>ORDINE FORNITORE</h1>
-                <h2>{ordine.numero_ordine or f'BOZZA #{ordine.id}'}</h2>
-            </div>
-            
-            <div class="info-section">
-                <table class="info-table">
-                    <tr>
-                        <td><strong>Data Ordine:</strong></td>
-                        <td>{ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else '-'}</td>
-                        <td><strong>Fornitore:</strong></td>
-                        <td>{ordine.fornitore_nome or '-'}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Oggetto:</strong></td>
-                        <td>{ordine.oggetto or '-'}</td>
-                        <td><strong>P.IVA:</strong></td>
-                        <td>{ordine.fornitore.partita_iva if ordine.fornitore else '-'}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Stato:</strong></td>
-                        <td>{ordine.stato.upper() if ordine.stato else 'BOZZA'}</td>
-                        <td><strong>Email:</strong></td>
-                        <td>{ordine.fornitore.email if ordine.fornitore else '-'}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Priorità:</strong></td>
-                        <td>{ordine.priorita.upper() if ordine.priorita else '-'}</td>
-                        <td><strong>Telefono:</strong></td>
-                        <td>{ordine.fornitore.telefono if ordine.fornitore else '-'}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Numero Offerta:</strong></td>
-                        <td>{ordine.numero_offerta_fornitore or '-'}</td>
-                        <td><strong>Data Offerta:</strong></td>
-                        <td>{ordine.data_offerta_fornitore.strftime('%d/%m/%Y') if ordine.data_offerta_fornitore else '-'}</td>
-                    </tr>
-                </table>
-            </div>
-        """
-        
-        # Aggiungi dettagli articoli
-        if dettagli:
-            html_content += """
-            <div class="section">
-                <h3>Dettagli Articoli</h3>
-                <table class="items-table">
-                    <thead>
-                        <tr>
-                            <th>Codice</th>
-                            <th>Cod. Fornitore</th>
-                            <th>Descrizione</th>
-                            <th>Quantità</th>
-                            <th>Prezzo €</th>
-                            <th>Totale €</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            """
-            
-            totale_generale = 0
-            for dettaglio in dettagli:
-                quantita = float(dettaglio.quantita or 0)
-                prezzo = float(dettaglio.prezzo_unitario or 0)
-                totale_riga = quantita * prezzo
-                totale_generale += totale_riga
-                
-                html_content += f"""
-                        <tr>
-                            <td>{dettaglio.codice_articolo or '-'}</td>
-                            <td>{dettaglio.codice_fornitore or '-'}</td>
-                            <td>{dettaglio.descrizione or '-'}</td>
-                            <td class="number">{quantita:.2f}</td>
-                            <td class="number">€ {prezzo:.2f}</td>
-                            <td class="number">€ {totale_riga:.2f}</td>
-                        </tr>
-                """
-            
-            html_content += f"""
-                    </tbody>
-                </table>
-                
-                <div class="totals">
-                    <table class="totals-table">
-                        <tr>
-                            <td><strong>TOTALE NETTO:</strong></td>
-                            <td><strong>€ {(ordine.totale_netto if ordine.totale_netto else totale_generale):.2f}</strong></td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-            """
-        
-        # Note
-        if ordine.note:
-            html_content += f"""
-            <div class="section">
-                <h3>Note</h3>
-                <p>{ordine.note}</p>
-            </div>
-            """
-        
-        # Footer
-        html_content += f"""
-            <div class="footer">
-                <p>Documento generato automaticamente il {datetime.now().strftime('%d/%m/%Y alle %H:%M')}</p>
-            </div>
-        </body>
-        </html>
-        """
+
+        # Usa il template Jinja2 aggiornato con stile Invoice Ninja
+        html_content = render_template('stampa-ordine.html',
+                                     ordine=ordine,
+                                     dettagli=dettagli,
+                                     datetime=datetime)
         
         # Genera PDF usando pdfkit
         import pdfkit
@@ -11339,7 +11211,7 @@ if __name__ == '__main__':
         email_address = app.email_monitor.get_config('email_address')
         email_password = app.email_monitor.get_config('email_password')
         print(f"[EMAIL MONITOR DEBUG] email_address: {email_address}")
-        print(f"[EMAIL MONITOR DEBUG] email_password presente: {bool(email_password)}")
+        app.logger.debug(f"[EMAIL MONITOR DEBUG] email_password presente: {bool(email_password)}")
         
         # Debug stato thread
         print(f"[EMAIL MONITOR DEBUG] Monitor running: {app.email_monitor.running}")
