@@ -49,7 +49,15 @@
         </nav>
 
         <div class="fixpoint-content">
+            <div class="todo-actions">
+                <button id="editBtn" class="btn btn-primary" onclick="toggleEditMode()">✏️ Modifica TODO</button>
+                <button id="saveBtn" class="btn btn-success" onclick="saveTodo()" style="display: none;">💾 Salva</button>
+                <button id="cancelBtn" class="btn btn-secondary" onclick="cancelEdit()" style="display: none;">❌ Annulla</button>
+            </div>
             <div id="markdown-content"></div>
+            <div id="edit-content" style="display: none;">
+                <textarea id="todoEditor" rows="30" cols="100"></textarea>
+            </div>
         </div>
     </div>
 
@@ -123,12 +131,112 @@
             border-top: 1px solid #e5e7eb;
             margin: 30px 0;
         }
+
+        .todo-actions {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+
+        .todo-actions .btn {
+            margin-left: 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        #todoEditor {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+        }
     </style>
 
     <script>
         // Converte il contenuto Markdown in HTML usando JSON encoding per evitare problemi JavaScript
         const markdownContent = {{ todo_content|tojson }};
+        let originalContent = markdownContent;
         document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
+
+        function toggleEditMode() {
+            document.getElementById('markdown-content').style.display = 'none';
+            document.getElementById('edit-content').style.display = 'block';
+            document.getElementById('editBtn').style.display = 'none';
+            document.getElementById('saveBtn').style.display = 'inline-block';
+            document.getElementById('cancelBtn').style.display = 'inline-block';
+
+            // Carica il contenuto nell'editor
+            document.getElementById('todoEditor').value = originalContent;
+        }
+
+        function cancelEdit() {
+            document.getElementById('markdown-content').style.display = 'block';
+            document.getElementById('edit-content').style.display = 'none';
+            document.getElementById('editBtn').style.display = 'inline-block';
+            document.getElementById('saveBtn').style.display = 'none';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        function saveTodo() {
+            const newContent = document.getElementById('todoEditor').value;
+
+            // Invia i dati al server
+            fetch('/todo/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    content: newContent
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Aggiorna il contenuto visualizzato
+                    originalContent = newContent;
+                    document.getElementById('markdown-content').innerHTML = marked.parse(newContent);
+
+                    // Torna alla modalità visualizzazione
+                    cancelEdit();
+
+                    alert('TODO salvato con successo!');
+                } else {
+                    alert('Errore nel salvare il TODO: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Errore:', error);
+                alert('Errore nella comunicazione con il server');
+            });
+        }
     </script>
 </body>
 </html>

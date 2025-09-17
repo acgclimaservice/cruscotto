@@ -11042,6 +11042,32 @@ def todo():
         print(f"Errore TODO: {e}")
         return f"Errore: {str(e)}", 500
 
+@app.route('/todo/save', methods=['POST'])
+def save_todo():
+    """Salva le modifiche al file TODO.md"""
+    try:
+        import os
+        from flask import request, jsonify
+
+        # Ottieni il contenuto dal POST
+        data = request.get_json()
+        if not data or 'content' not in data:
+            return jsonify({'success': False, 'error': 'Contenuto mancante'}), 400
+
+        new_content = data['content']
+
+        # Scrivi nel file TODO.md
+        todo_path = os.path.join(os.path.dirname(__file__), 'todo.md')
+
+        with open(todo_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+
+        return jsonify({'success': True, 'message': 'TODO salvato con successo'})
+
+    except Exception as e:
+        print(f"Errore nel salvare TODO: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

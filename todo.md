@@ -19,16 +19,17 @@ Gestione delle richieste e correzioni dell'utente
 ## ✅ TODO COMPLETATI
 
 **✅ Fix TODO route case sensitivity** - Corretto nome file da 'TODO.md' a 'todo.md' in app.py:11023
+**✅ Add TODO edit functionality** - Aggiunta funzionalità di modifica diretta in sezione TODO con editor inline
 
 ---
 
 ## 📊 Statistiche TODO
 
-**Totale TODO**: 1
+**Totale TODO**: 2
 **In Progresso**: 0
-**Completati**: 1
+**Completati**: 2
 **Tasso completamento**: 100%
 
 ---
 
-*Ultimo aggiornamento: 2025-09-17 - 18:45*
+*Ultimo aggiornamento: 2025-09-17 - 18:47*
