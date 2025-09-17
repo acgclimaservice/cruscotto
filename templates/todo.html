@@ -51,7 +51,7 @@
         <div class="fixpoint-content">
             <div class="todo-actions">
                 <button id="editBtn" class="btn btn-primary" onclick="console.log('CLICK MODIFICA!'); toggleEditMode()">✏️ Modifica TODO</button>
-                <button id="saveBtn" class="btn btn-success" onclick="console.log('CLICK SALVA!'); saveTodo()" style="display: none;">💾 Salva</button>
+                <button id="saveBtn" class="btn btn-success" style="display: none;">💾 Salva</button>
                 <button id="cancelBtn" class="btn btn-secondary" onclick="cancelEdit()" style="display: none;">❌ Annulla</button>
             </div>
             <div id="markdown-content"></div>
@@ -208,6 +208,22 @@
             console.error('ERRORE nel caricamento markdown:', e);
             alert('ERRORE: ' + e.message);
         }
+
+        // Aggiungi event listener quando DOM è pronto
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, aggiungendo event listeners...');
+
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    console.log('CLICK SALVA VIA EVENT LISTENER!');
+                    saveTodo();
+                });
+                console.log('Event listener aggiunto a saveBtn');
+            } else {
+                console.error('saveBtn non trovato!');
+            }
+        });
 
         function toggleEditMode() {
             console.log('toggleEditMode() chiamata');
