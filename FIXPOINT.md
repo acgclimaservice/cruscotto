@@ -288,6 +288,28 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 **Status**: 📋 DOCUMENTATO (richiede refactoring esteso)
 
+### ✅ Data: 2025-09-16 - 17:15
+**Sezione testata**: Security - Data Validation e SQL Injection
+**Controllo**: Verifica potenziali vulnerabilità sicurezza
+
+**Errori trovati**:
+1. **SQL injection potential con f-string** - MEDIA severità
+   - 3+ f-string con interpolazione diretta: `f"SELECT COUNT(*) FROM {tabella}"`
+   - Variabili `tabella` e `date_filter_simple` in query senza parametrizzazione
+   - **Rischio**: Injection possibile se variabili controllate da user input
+2. **Information disclosure in error handling** - MEDIA severità
+   - 5+ endpoint ritornano `str(e)` direttamente al client
+   - Stack traces e dettagli sistema esposti a frontend
+   - **Rischio**: Enumeration database schema, path disclosure
+
+**Analisi positive**:
+- File upload validation presente (.pdf, .xlsx, .xls)
+- Basic input sanitization con .strip()
+- Uso SQLAlchemy ORM riduce injection risk nella maggior parte dei casi
+- Sistema interno riduce exposure risk
+
+**Status**: 📋 DOCUMENTATO (richiede security hardening)
+
 ### ✅ Data: 2025-09-16 - 15:45
 **Sezione testata**: DDT IN
 **Controllo**: Verifica navigazione e template consistency
@@ -350,11 +372,11 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ## 📊 Statistiche Riparazioni
 
-**Totale controlli**: 16
-**Errori trovati**: 20
+**Totale controlli**: 17
+**Errori trovati**: 22
 **Errori risolti**: 19
-**Errori documentati**: 1
-**Successo rate**: 95% (1 richiede refactoring esteso)
+**Errori documentati**: 3
+**Successo rate**: 86% (3 richiedono security/refactoring)
 
 ---
 
