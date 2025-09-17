@@ -333,7 +333,7 @@ FORMATO JSON RICHIESTO:
     "totale": 0.00,
     "articoli": [
         {
-            "codice": "codice articolo",
+            "codice": "codice articolo (OBBLIGATORIO - estrai sempre)",
             "descrizione": "descrizione prodotto",
             "quantita": 0.0,
             "prezzo_unitario": 0.00,
@@ -345,7 +345,9 @@ FORMATO JSON RICHIESTO:
 IMPORTANTE:
 - Il FORNITORE è chi emette l'offerta (mittente)
 - NUMERO_OFFERTA è il numero di riferimento dell'offerta
-- Quantità come numero puro, prezzi come decimali"""
+- Quantità come numero puro, prezzi come decimali
+- CODICE ARTICOLO: estrai SEMPRE il codice/SKU/parte per ogni articolo (anche se alfanumerico)
+- Se non trovi codice esplicito, usa riferimento fornitore o marca+modello"""
 
                 # Aggiungi regole specifiche
                 enhanced_prompt = base_prompt + self.get_supplier_specific_prompt(pdf_text)
