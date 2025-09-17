@@ -163,7 +163,9 @@ def toggle_rule(rule_id):
 def _genera_regola_da_correzione(example):
     """Genera automaticamente una regola di parsing da una correzione"""
 
-    fornitore_pattern = example.fornitore_nome.upper().replace(' ', '.*').replace('.', '\\.')
+    # Sanitize input e limita lunghezza per prevenire ReDoS
+    safe_name = example.fornitore_nome[:50] if example.fornitore_nome else ""
+    fornitore_pattern = re.escape(safe_name.upper()).replace('\\ ', '.*')
 
     # Costruisci prompt specifico basato sulla correzione
     prompt_aggiuntivo = f"""
