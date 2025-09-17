@@ -7822,9 +7822,13 @@ def test_graph_connection():
         # Test autenticazione con Microsoft Graph
         import requests
         
-        # Endpoint per ottenere token di accesso
-        token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
-        
+        # Endpoint per ottenere token di accesso - usa /consumers per account personali
+        # Se tenant_id contiene "consumers" o è un account personale, usa l'endpoint consumers
+        if tenant_id == 'consumers' or tenant_id == 'common' or 'personal' in tenant_id.lower():
+            token_url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+        else:
+            token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+
         token_data = {
             'client_id': client_id,
             'client_secret': client_secret,

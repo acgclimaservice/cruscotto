@@ -367,10 +367,10 @@
                 
                 <div style="margin-bottom: 15px;">
                     <label><strong>Tenant ID:</strong></label>
-                    <input type="text" id="outlook-tenant-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" 
-                           value="{{ configurazioni.outlook_tenant_id or '' }}"
+                    <input type="text" id="outlook-tenant-id" placeholder="consumers (per account personali) o tenant GUID"
+                           value="{{ configurazioni.outlook_tenant_id or 'consumers' }}"
                            style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
-                    <small style="color: #6c757d;">Tenant ID dell'organizzazione Microsoft 365</small>
+                    <small style="color: #6c757d;">Per account personali Microsoft usa "consumers", per aziendali usa il Tenant ID</small>
                 </div>
                 
                 <div style="margin-bottom: 15px;">
