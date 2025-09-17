@@ -7829,21 +7829,39 @@ def test_graph_connection():
         else:
             token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
 
-        token_data = {
-            'client_id': client_id,
-            'client_secret': client_secret,
-            'scope': 'https://graph.microsoft.com/.default',
-            'grant_type': 'client_credentials'
-        }
+        # Per account personali, usiamo scope specifici invece di .default
+        if tenant_id == 'consumers' or tenant_id == 'common' or 'personal' in tenant_id.lower():
+            # Account personali - scope limitati per test
+            token_data = {
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'scope': 'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Mail.Send',
+                'grant_type': 'client_credentials'
+            }
+        else:
+            # Account aziendali - scope default
+            token_data = {
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'scope': 'https://graph.microsoft.com/.default',
+                'grant_type': 'client_credentials'
+            }
         
         # Richiedi token
         token_response = requests.post(token_url, data=token_data, timeout=10)
         
         if token_response.status_code != 200:
-            error_data = token_response.json()
+            try:
+                error_data = token_response.json()
+                error_msg = error_data.get('error_description', error_data.get('error', 'Credenziali non valide'))
+                print(f"[DEBUG GRAPH] Token error: {error_data}")  # Debug log
+            except:
+                error_msg = f"HTTP {token_response.status_code}: {token_response.text}"
+                print(f"[DEBUG GRAPH] Raw error: {error_msg}")  # Debug log
+
             return jsonify({
                 'success': False,
-                'error': f"Errore autenticazione Microsoft Graph: {error_data.get('error_description', 'Credenziali non valide')}"
+                'error': f"Errore autenticazione Microsoft Graph: {error_msg}"
             }), 400
         
         token_info = token_response.json()
