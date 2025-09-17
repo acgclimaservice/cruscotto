@@ -260,7 +260,8 @@
       "Read(/D:\\CRUSCOTTO_1.2\\templates/**)",
       "Read(/D:\\CRUSCOTTO_1.2\\templates/**)",
       "Read(/D:\\CRUSCOTTO_1.2/**)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Read(//d/**)"
     ],
     "deny": [],
     "ask": []

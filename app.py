@@ -11020,7 +11020,7 @@ def todo():
     try:
         # Leggi il file TODO.md
         import os
-        todo_path = os.path.join(os.path.dirname(__file__), 'TODO.md')
+        todo_path = os.path.join(os.path.dirname(__file__), 'todo.md')
 
         if os.path.exists(todo_path):
             with open(todo_path, 'r', encoding='utf-8') as f:
