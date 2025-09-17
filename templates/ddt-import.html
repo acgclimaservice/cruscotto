@@ -511,24 +511,59 @@
         
         if (data.articoli && data.articoli.length > 0) {
             data.articoli.forEach((art, index) => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><input type="text" value="${art.codice || ''}" id="codice-${index}"></td>
-                        <td><input type="text" value="${art.descrizione || ''}" id="descrizione-${index}"></td>
-                        <td><input type="number" step="0.01" value="${art.quantita || 0}" id="quantita-${index}"></td>
-                        <td><input type="text" value="${art.unita_misura || 'PZ'}" id="unita_misura-${index}" style="width: 50px; text-align: center;"></td>
-                        <td><input type="number" step="0.01" value="${art.prezzo_unitario || 0}" id="prezzo-${index}"></td>
-                        <td>
-                            <div style="position: relative;">
-                                <input type="text" id="mastrino-${index}" name="articoli[${index}][mastrino]" 
-                                       placeholder="Seleziona mastrino..." style="width: 150px; border: 2px solid #ffc107;"
-                                       class="mastrino-input" required>
-                                <div id="mastrino-suggestions-${index}" class="autocomplete-suggestions" style="display: none;"></div>
-                            </div>
-                        </td>
-                        <td><button class="btn btn-small btn-danger" onclick="rimuoviRiga(${index})">×</button></td>
-                    </tr>
-                `;
+                // Creazione sicura elementi DOM senza innerHTML
+                const tr = document.createElement('tr');
+
+                // Funzione helper per creare celle sicure
+                function createCell(content, type = 'text', extraAttrs = {}) {
+                    const td = document.createElement('td');
+                    const input = document.createElement('input');
+                    input.type = type;
+                    input.value = content || (type === 'number' ? 0 : '');
+                    Object.keys(extraAttrs).forEach(attr => {
+                        input.setAttribute(attr, extraAttrs[attr]);
+                    });
+                    td.appendChild(input);
+                    return td;
+                }
+
+                tr.appendChild(createCell(art.codice, 'text', {id: `codice-${index}`}));
+                tr.appendChild(createCell(art.descrizione, 'text', {id: `descrizione-${index}`}));
+                tr.appendChild(createCell(art.quantita, 'number', {id: `quantita-${index}`, step: '0.01'}));
+                tr.appendChild(createCell(art.unita_misura || 'PZ', 'text', {id: `unita_misura-${index}`, style: 'width: 50px; text-align: center;'}));
+                tr.appendChild(createCell(art.prezzo_unitario, 'number', {id: `prezzo-${index}`, step: '0.01'}));
+
+                // Cella mastrino
+                const mastrinoCd = document.createElement('td');
+                const mastrinoDiv = document.createElement('div');
+                mastrinoDiv.style.position = 'relative';
+                const mastrinoInput = document.createElement('input');
+                mastrinoInput.type = 'text';
+                mastrinoInput.id = `mastrino-${index}`;
+                mastrinoInput.name = `articoli[${index}][mastrino]`;
+                mastrinoInput.placeholder = 'Seleziona mastrino...';
+                mastrinoInput.style.cssText = 'width: 150px; border: 2px solid #ffc107;';
+                mastrinoInput.className = 'mastrino-input';
+                mastrinoInput.required = true;
+                const mastrinSugg = document.createElement('div');
+                mastrinSugg.id = `mastrino-suggestions-${index}`;
+                mastrinSugg.className = 'autocomplete-suggestions';
+                mastrinSugg.style.display = 'none';
+                mastrinoDiv.appendChild(mastrinoInput);
+                mastrinoDiv.appendChild(mastrinSugg);
+                mastrinoCd.appendChild(mastrinoDiv);
+                tr.appendChild(mastrinoCd);
+
+                // Cella pulsante rimuovi
+                const btnCd = document.createElement('td');
+                const btnRimuovi = document.createElement('button');
+                btnRimuovi.className = 'btn btn-small btn-danger';
+                btnRimuovi.textContent = '×';
+                btnRimuovi.onclick = () => rimuoviRiga(index);
+                btnCd.appendChild(btnRimuovi);
+                tr.appendChild(btnCd);
+
+                tbody.appendChild(tr);
             });
             
             // Attiva autocompletamento mastrini per ogni campo
