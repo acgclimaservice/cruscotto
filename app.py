@@ -11037,6 +11037,8 @@ def todo():
 
 **Provo path alternativi:**"""
 
+        print(f"DEBUG: Rendering todo.html con content length: {len(todo_content)}")
+        print(f"DEBUG: Content preview: {todo_content[:100]}...")
         return render_template('todo.html', todo_content=todo_content)
     except Exception as e:
         print(f"Errore TODO: {e}")

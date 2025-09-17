@@ -194,7 +194,7 @@
         // Converte il contenuto Markdown in HTML usando JSON encoding per evitare problemi JavaScript
         try {
             console.log('Caricamento contenuto markdown...');
-            const markdownContent = {{ todo_content|tojson }};
+            var markdownContent = "TEST CONTENT";
             console.log('Markdown content loaded:', markdownContent);
             let originalContent = markdownContent;
             console.log('Parsing markdown...');
