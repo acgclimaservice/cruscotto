@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📝 TODO - Sistema DDT</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=4">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Rimossa dipendenza marked.js per compatibilità PythonAnywhere -->
 </head>
 <body>
     <div class="container">
@@ -183,12 +183,16 @@
         console.log('=== INIZIO SCRIPT TODO ===');
         // alert('JavaScript si sta caricando!'); // Rimosso alert di debug
 
-        // Test se marked è disponibile
-        if (typeof marked === 'undefined') {
-            console.error('ERRORE: marked.js non caricato!');
-            alert('ERRORE: marked.js non caricato!');
-        } else {
-            console.log('marked.js disponibile');
+        // Funzione per escape HTML
+        function escapeHtml(text) {
+            var map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
         // Converte il contenuto Markdown in HTML usando JSON encoding per evitare problemi JavaScript
@@ -197,14 +201,9 @@
             var markdownContent = {{ todo_content|tojson }};
             console.log('Markdown content loaded:', markdownContent);
             let originalContent = markdownContent;
-            console.log('Parsing markdown...');
-            if (typeof marked !== 'undefined') {
-                document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
-                console.log('Markdown parsed successfully');
-            } else {
-                document.getElementById('markdown-content').innerHTML = '<pre>' + markdownContent + '</pre>';
-                console.log('Markdown mostrato come testo');
-            }
+            console.log('Mostrando contenuto come testo...');
+            document.getElementById('markdown-content').innerHTML = '<pre style="white-space: pre-wrap; font-family: inherit; background: none; border: none; padding: 0;">' + escapeHtml(markdownContent) + '</pre>';
+            console.log('Contenuto mostrato come testo formattato');
         } catch(e) {
             console.error('ERRORE nel caricamento markdown:', e);
             alert('ERRORE: ' + e.message);
@@ -261,12 +260,8 @@
                     // Aggiorna il contenuto visualizzato
                     originalContent = newContent;
 
-                    // Aggiorna il contenuto markdown visualizzato
-                    if (typeof marked !== 'undefined') {
-                        document.getElementById('markdown-content').innerHTML = marked.parse(newContent);
-                    } else {
-                        document.getElementById('markdown-content').innerHTML = '<pre>' + newContent + '</pre>';
-                    }
+                    // Aggiorna il contenuto come testo formattato (senza markdown parser)
+                    document.getElementById('markdown-content').innerHTML = '<pre style="white-space: pre-wrap; font-family: inherit; background: none; border: none; padding: 0;">' + escapeHtml(newContent) + '</pre>';
 
                     // Torna alla modalità visualizzazione
                     cancelEdit();
