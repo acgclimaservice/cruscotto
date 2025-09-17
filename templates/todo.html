@@ -50,8 +50,8 @@
 
         <div class="fixpoint-content">
             <div class="todo-actions">
-                <button id="editBtn" class="btn btn-primary" onclick="toggleEditMode()">✏️ Modifica TODO</button>
-                <button id="saveBtn" class="btn btn-success" onclick="saveTodo()" style="display: none;">💾 Salva</button>
+                <button id="editBtn" class="btn btn-primary" onclick="console.log('CLICK MODIFICA!'); toggleEditMode()">✏️ Modifica TODO</button>
+                <button id="saveBtn" class="btn btn-success" onclick="console.log('CLICK SALVA!'); saveTodo()" style="display: none;">💾 Salva</button>
                 <button id="cancelBtn" class="btn btn-secondary" onclick="cancelEdit()" style="display: none;">❌ Annulla</button>
             </div>
             <div id="markdown-content"></div>
@@ -180,20 +180,35 @@
     </style>
 
     <script>
+        console.log('=== INIZIO SCRIPT TODO ===');
         // Converte il contenuto Markdown in HTML usando JSON encoding per evitare problemi JavaScript
-        const markdownContent = {{ todo_content|tojson }};
-        let originalContent = markdownContent;
-        document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
+        try {
+            console.log('Caricamento contenuto markdown...');
+            const markdownContent = {{ todo_content|tojson }};
+            console.log('Markdown content loaded:', markdownContent);
+            let originalContent = markdownContent;
+            console.log('Parsing markdown...');
+            document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
+            console.log('Markdown parsed successfully');
+        } catch(e) {
+            console.error('ERRORE nel caricamento markdown:', e);
+        }
 
         function toggleEditMode() {
-            document.getElementById('markdown-content').style.display = 'none';
-            document.getElementById('edit-content').style.display = 'block';
-            document.getElementById('editBtn').style.display = 'none';
-            document.getElementById('saveBtn').style.display = 'inline-block';
-            document.getElementById('cancelBtn').style.display = 'inline-block';
+            console.log('toggleEditMode() chiamata');
+            try {
+                document.getElementById('markdown-content').style.display = 'none';
+                document.getElementById('edit-content').style.display = 'block';
+                document.getElementById('editBtn').style.display = 'none';
+                document.getElementById('saveBtn').style.display = 'inline-block';
+                document.getElementById('cancelBtn').style.display = 'inline-block';
 
-            // Carica il contenuto nell'editor
-            document.getElementById('todoEditor').value = originalContent;
+                // Carica il contenuto nell'editor
+                document.getElementById('todoEditor').value = originalContent;
+                console.log('toggleEditMode() completata');
+            } catch(e) {
+                console.error('ERRORE in toggleEditMode:', e);
+            }
         }
 
         function cancelEdit() {
