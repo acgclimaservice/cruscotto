@@ -55,11 +55,17 @@ def log_request_info():
         elif request.form:
             logger.info(f"   Form Data: {dict(request.form)}")
 
-@app.after_request  
+@app.after_request
 def log_response_info(response):
     logger.info(f"RESPONSE: {response.status_code} for {request.method} {request.url}")
     logger.info(f"   Content-Type: {response.content_type}")
-    
+
+    # Add security headers
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+
     # Log response body for JSON responses
     if response.content_type and 'application/json' in response.content_type:
         try:
@@ -362,8 +368,10 @@ RELEASE_NOTES = {
 from models import db
 db.init_app(app)
 
-# Configura CORS per sviluppo
-CORS(app)
+# Configura CORS con restrizioni sicure
+CORS(app, origins=['http://localhost:8080', 'https://acgclimaservice.pythonanywhere.com'],
+     methods=['GET', 'POST'],
+     allow_headers=['Content-Type', 'Authorization'])
 
 # Import e inizializza Email Monitor
 from email_monitor import EmailMonitor
