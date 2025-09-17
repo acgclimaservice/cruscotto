@@ -11026,7 +11026,16 @@ def todo():
             with open(todo_path, 'r', encoding='utf-8') as f:
                 todo_content = f.read()
         else:
-            todo_content = "# TODO non trovato"
+            # Debug info per capire il problema
+            todo_content = f"""# TODO non trovato
+
+**Debug Info:**
+- Path cercato: `{todo_path}`
+- Directory app: `{os.path.dirname(__file__)}`
+- Directory corrente: `{os.getcwd()}`
+- File nella directory app: `{', '.join(os.listdir(os.path.dirname(__file__)))}`
+
+**Provo path alternativi:**"""
 
         return render_template('todo.html', todo_content=todo_content)
     except Exception as e:
