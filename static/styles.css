@@ -190,25 +190,7 @@ nav li a.active {
     font-size: 14px;
 }
 
-/* Buttons */
-.btn {
-    padding: 10px 20px;
-    background: #667eea;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s;
-    text-decoration: none;
-    display: inline-block;
-}
-
-.btn:hover {
-    background: #5a67d8;
-    transform: translateY(-1px);
-}
+/* Buttons - RIMOSSA DUPLICAZIONE - Vedi riga 882 per definizione standard */
 
 .btn-secondary {
     background: #e2e8f0;
@@ -878,19 +860,27 @@ input:focus, select:focus, textarea:focus {
     margin: 0;
 }
 
-/* Buttons migliorati */
+/* Buttons migliorati - STANDARD GLOBALE */
 .btn {
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
     transition: all 0.2s ease;
     text-decoration: none;
     display: inline-block;
     text-align: center;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
+    line-height: 1.4;
+    min-width: 120px;
+    box-sizing: border-box;
 }
 
 .btn:hover {
+    background: #5a67d8;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
