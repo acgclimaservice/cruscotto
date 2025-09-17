@@ -26,6 +26,27 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# Helper function per conversioni sicure
+def safe_float(value, default=0.0):
+    """Converte sicuramente un valore in float con gestione errori"""
+    if value is None or value == '' or value == 'None':
+        return default
+    try:
+        return float(str(value).strip())
+    except (ValueError, TypeError):
+        app.logger.warning(f"Conversione float fallita per valore: {value}, usando default: {default}")
+        return default
+
+def safe_int(value, default=0):
+    """Converte sicuramente un valore in int con gestione errori"""
+    if value is None or value == '' or value == 'None':
+        return default
+    try:
+        return int(str(value).strip())
+    except (ValueError, TypeError):
+        app.logger.warning(f"Conversione int fallita per valore: {value}, usando default: {default}")
+        return default
+
 # Setup detailed logging system
 logging.basicConfig(
     level=logging.INFO,  # Changed from DEBUG to INFO for production
@@ -92,10 +113,27 @@ def log_response_info(response):
 db_path = os.environ.get('DATABASE_URL') or 'sqlite:///ddt_database.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Security configurations for database connection pool
+if 'sqlite' not in db_path.lower():
+    # PostgreSQL/MySQL connection pool settings
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': 10,          # Numero connessioni nel pool
+        'pool_timeout': 20,       # Timeout per ottenere connessione
+        'pool_recycle': 3600,     # Ricrea connessioni ogni ora
+        'pool_pre_ping': True,    # Verifica connessioni prima dell'uso
+        'max_overflow': 20        # Connessioni extra oltre pool_size
+    }
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max per upload
 app.config['ITEMS_PER_PAGE'] = 50
 app.config['MAX_SEARCH_RESULTS'] = 10
+
+# Session security configuration
+app.config['SESSION_COOKIE_SECURE'] = True if os.getenv('FLASK_ENV') == 'production' else False
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour session timeout
 
 # Versione applicazione - legge da file
 def get_app_version():
@@ -690,8 +728,8 @@ def parse_pdf_claude_advanced():
                 pass
 
     except Exception as e:
-        print(f"Errore parsing evoluto: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        app.logger.error(f"Errore parsing evoluto: {e}")
+        return jsonify({'success': False, 'error': 'Errore durante il parsing del documento'}), 500
 
 @app.route('/ddt-import/parse-pdf-claude', methods=['POST'])
 def parse_pdf_claude():
@@ -2022,8 +2060,8 @@ def nuovo_ddt_in():
                     codice_interno=codice_interno_esistente,
                     codice_fornitore=codice_fornitore,
                     descrizione=descrizione,
-                    quantita=float(request.form.get(f'articoli[{i}][quantita]', 1)),
-                    costo_unitario=float(request.form.get(f'articoli[{i}][costo]', 0)),
+                    quantita=safe_float(request.form.get(f'articoli[{i}][quantita]'), 1.0),
+                    costo_unitario=safe_float(request.form.get(f'articoli[{i}][costo]'), 0.0),
                     unita_misura=request.form.get(f'articoli[{i}][unita_misura]', 'PZ'),
                     mastrino_riga=request.form.get(f'articoli[{i}][mastrino]', '')
                 )
@@ -2374,8 +2412,8 @@ def modifica_ddt_in(id):
                     codice_interno=codice_interno_generato,
                     codice_fornitore=codice_fornitore,
                     descrizione=request.form.get(f'articoli[{i}][descrizione]'),
-                    quantita=float(request.form.get(f'articoli[{i}][quantita]', 1)),
-                    costo_unitario=float(request.form.get(f'articoli[{i}][costo]', 0)),
+                    quantita=safe_float(request.form.get(f'articoli[{i}][quantita]'), 1.0),
+                    costo_unitario=safe_float(request.form.get(f'articoli[{i}][costo]'), 0.0),
                     unita_misura=request.form.get(f'articoli[{i}][unita_misura]', 'PZ'),
                     mastrino_riga=request.form.get(f'articoli[{i}][mastrino]', '')
                 )
@@ -3480,9 +3518,9 @@ def modifica_articolo(articolo_id):
         articolo.fornitore_principale = request.form.get('fornitore_principale', '')
         articolo.codice_produttore = request.form.get('codice_produttore', '')
         articolo.unita_misura = request.form.get('unita_misura', 'PZ')
-        articolo.costo_ultimo = float(request.form.get('costo_ultimo', 0))
-        articolo.giacenza_attuale = float(request.form.get('giacenza_attuale', 0))
-        articolo.scorta_minima = float(request.form.get('scorta_minima', 0))
+        articolo.costo_ultimo = safe_float(request.form.get('costo_ultimo'), 0.0)
+        articolo.giacenza_attuale = safe_float(request.form.get('giacenza_attuale'), 0.0)
+        articolo.scorta_minima = safe_float(request.form.get('scorta_minima'), 0.0)
         articolo.ubicazione = request.form.get('ubicazione', '')
         articolo.note = request.form.get('note', '')
         
