@@ -7096,13 +7096,18 @@ def invia_richiesta_offerta_email(id):
         
         # Ottieni configurazione email dal sistema esistente
         email_monitor = EmailMonitor(app)
-        
+
         # Controlla configurazione SMTP
         smtp_server = email_monitor.get_config('email_smtp_server')
         smtp_port = email_monitor.get_config('email_smtp_port', '587')
         email_mittente = email_monitor.get_config('email_address')
+        smtp_username = email_monitor.get_config('email_smtp_username')  # Username separato per SMTP
         email_password = email_monitor.get_config('email_password')
-        
+
+        # Se non c'è username SMTP separato, usa l'email come username (retrocompatibilità)
+        if not smtp_username:
+            smtp_username = email_mittente
+
         if not all([smtp_server, email_mittente, email_password]):
             return jsonify({'error': 'Configurazione email non completa nelle impostazioni sistema'}), 400
         
@@ -7169,12 +7174,12 @@ Messaggio generato automaticamente dal Sistema Gestione Richieste Offerte v{app.
         # Invia email
         import smtplib
         import ssl
-        
+
         context = ssl.create_default_context()
-        
+
         with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
             server.starttls(context=context)
-            server.login(email_mittente, email_password)
+            server.login(smtp_username, email_password)  # Usa username SMTP invece di email
             server.send_message(msg)
         
         # Registra l'invio nell'offerta
@@ -7752,12 +7757,17 @@ def test_smtp_invio():
         smtp_server = email_monitor.get_config('email_smtp_server')
         smtp_port = email_monitor.get_config('email_smtp_port', '587')
         email_mittente = email_monitor.get_config('email_address')
+        smtp_username = email_monitor.get_config('email_smtp_username')  # Username separato per SMTP
         email_password = email_monitor.get_config('email_password')
-        
+
+        # Se non c'è username SMTP separato, usa l'email come username (retrocompatibilità)
+        if not smtp_username:
+            smtp_username = email_mittente
+
         # Valida configurazioni
         if not all([smtp_server, email_mittente, email_password]):
             return jsonify({
-                'success': False, 
+                'success': False,
                 'error': 'Configurazioni SMTP incomplete. Verifica server, email e password.'
             }), 400
         
@@ -7777,7 +7787,7 @@ def test_smtp_invio():
         
         with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
             server.starttls(context=context)
-            server.login(email_mittente, email_password)
+            server.login(smtp_username, email_password)  # Usa username SMTP invece di email
             server.send_message(msg)
         
         return jsonify({

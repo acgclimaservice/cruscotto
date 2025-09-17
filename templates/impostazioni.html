@@ -305,24 +305,35 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
                     <div>
                         <label><strong>Email Mittente:</strong></label>
-                        <input type="email" id="email-smtp-address" placeholder="info@acgclimaservice.com"
+                        <input type="email" id="email-smtp-address" placeholder="alberto.contardi@acgclimaservice.com"
                                value="{{ configurazioni.email_address or '' }}"
                                style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
-                        <small style="color: #6c757d;">Email aziendale per invio offerte</small>
+                        <small style="color: #6c757d;">Email che apparirà come mittente</small>
                     </div>
                     <div>
-                        <label><strong>Password Email:</strong></label>
-                        <input type="password" id="email-smtp-password" placeholder="Password email"
+                        <label><strong>SMTP Username:</strong></label>
+                        <input type="text" id="email-smtp-username" placeholder="AKIAWFV... (per AWS SES)"
+                               value="{{ configurazioni.email_smtp_username or '' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small style="color: #6c757d;">Username per login SMTP (AWS SES, SendGrid, etc.)</small>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 15px;">
+                    <div>
+                        <label><strong>Password SMTP:</strong></label>
+                        <input type="password" id="email-smtp-password" placeholder="Password SMTP/API Key"
                                value="{{ configurazioni.email_password or '' }}"
                                style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
-                        <small style="color: #6c757d;">Password o App Password</small>
+                        <small style="color: #6c757d;">Password SMTP, App Password, o API Key</small>
                     </div>
                 </div>
 
                 <div style="margin-bottom: 15px;">
                     <p style="margin: 10px 0; color: #495057;">
-                        <strong>💡 Exchange:</strong> Usa remote.gruppobadano.it porta 587 con le tue credenziali aziendali.
-                        <strong>Gmail:</strong> Usa una "Password App" specifica invece della password normale.
+                        <strong>🟠 AWS SES:</strong> Server: email-smtp.region.amazonaws.com, Username: access key ID, Password: secret key<br>
+                        <strong>🔵 Gmail:</strong> Server: smtp.gmail.com, Username: email, Password: App Password<br>
+                        <strong>🟢 SendGrid:</strong> Server: smtp.sendgrid.net, Username: apikey, Password: API key
                     </p>
                 </div>
                 
@@ -1008,6 +1019,7 @@
             email_smtp_server: document.getElementById('email-smtp-server').value,
             email_smtp_port: document.getElementById('email-smtp-port').value,
             email_address: document.getElementById('email-smtp-address').value,
+            email_smtp_username: document.getElementById('email-smtp-username').value,
             email_password: document.getElementById('email-smtp-password').value
         };
         
