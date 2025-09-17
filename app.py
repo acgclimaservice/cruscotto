@@ -87,6 +87,7 @@ db_path = os.environ.get('DATABASE_URL') or 'sqlite:///ddt_database.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max per upload
 app.config['ITEMS_PER_PAGE'] = 50
 app.config['MAX_SEARCH_RESULTS'] = 10
 
