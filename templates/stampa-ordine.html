@@ -273,19 +273,17 @@
                 {% endif %}
             </div>
 
-            {% if ordine.oggetto %}
-            <div style="margin-top: 20px;">
-                <div class="info-row">
-                    <span class="label">Oggetto:</span>
-                    <span class="value">{{ ordine.oggetto }}</span>
-                </div>
-            </div>
-            {% endif %}
         </div>
 
         <!-- COLONNA DESTRA: DETTAGLI ORDINE -->
         <div class="info-section">
             <h3>Order Details</h3>
+            {% if ordine.oggetto %}
+            <div class="info-row">
+                <span class="label">Oggetto:</span>
+                <span class="value">{{ ordine.oggetto }}</span>
+            </div>
+            {% endif %}
             <div class="info-row">
                 <span class="label">Data Ordine:</span>
                 <span class="value">{{ ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else '-' }}</span>
