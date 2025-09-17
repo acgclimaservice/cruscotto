@@ -290,20 +290,6 @@
                 <span class="label">Data Ordine:</span>
                 <span class="value">{{ ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else '-' }}</span>
             </div>
-            <div class="info-row">
-                <span class="label">Stato:</span>
-                <span class="value">
-                    <span class="status-text">
-                        {% if ordine.stato == 'bozza' %}BOZZA
-                        {% elif ordine.stato == 'inviato' %}INVIATO
-                        {% elif ordine.stato == 'confermato' %}CONFERMATO
-                        {% elif ordine.stato == 'ricevuto' %}RICEVUTO
-                        {% elif ordine.stato == 'completato' %}COMPLETATO
-                        {% else %}{{ ordine.stato|upper }}
-                        {% endif %}
-                    </span>
-                </span>
-            </div>
             {% if ordine.priorita %}
             <div class="info-row">
                 <span class="label">Priorità:</span>
