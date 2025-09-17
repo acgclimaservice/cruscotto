@@ -288,24 +288,41 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
                     <div>
                         <label><strong>Server SMTP:</strong></label>
-                        <input type="text" id="email-smtp-server" placeholder="smtp.gmail.com" 
+                        <input type="text" id="email-smtp-server" placeholder="smtp.gmail.com"
                                value="{{ configurazioni.email_smtp_server or 'smtp.gmail.com' }}"
                                style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
-                        <small style="color: #6c757d;">Es: smtp.gmail.com, smtp.outlook.com</small>
+                        <small style="color: #6c757d;">Es: smtp.gmail.com, remote.gruppobadano.it</small>
                     </div>
                     <div>
                         <label><strong>Porta SMTP:</strong></label>
-                        <input type="number" id="email-smtp-port" placeholder="587" 
+                        <input type="number" id="email-smtp-port" placeholder="587"
                                value="{{ configurazioni.email_smtp_port or '587' }}"
                                style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
                         <small style="color: #6c757d;">Usa 587 per TLS, 465 per SSL</small>
                     </div>
                 </div>
-                
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+                    <div>
+                        <label><strong>Email Mittente:</strong></label>
+                        <input type="email" id="email-smtp-address" placeholder="info@acgclimaservice.com"
+                               value="{{ configurazioni.email_address or '' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small style="color: #6c757d;">Email aziendale per invio offerte</small>
+                    </div>
+                    <div>
+                        <label><strong>Password Email:</strong></label>
+                        <input type="password" id="email-smtp-password" placeholder="Password email"
+                               value="{{ configurazioni.email_password or '' }}"
+                               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small style="color: #6c757d;">Password o App Password</small>
+                    </div>
+                </div>
+
                 <div style="margin-bottom: 15px;">
                     <p style="margin: 10px 0; color: #495057;">
-                        <strong>ℹ️ Nota:</strong> Usa la stessa email e password configurata sopra per l'accesso IMAP.
-                        Per Gmail/Outlook, usa una "Password App" specifica invece della password normale.
+                        <strong>💡 Exchange:</strong> Usa remote.gruppobadano.it porta 587 con le tue credenziali aziendali.
+                        <strong>Gmail:</strong> Usa una "Password App" specifica invece della password normale.
                     </p>
                 </div>
                 
@@ -989,7 +1006,9 @@
         
         const configurazione = {
             email_smtp_server: document.getElementById('email-smtp-server').value,
-            email_smtp_port: document.getElementById('email-smtp-port').value
+            email_smtp_port: document.getElementById('email-smtp-port').value,
+            email_address: document.getElementById('email-smtp-address').value,
+            email_password: document.getElementById('email-smtp-password').value
         };
         
         statusSpan.style.color = '#ffc107';
