@@ -10119,9 +10119,7 @@ with app.app_context():
 # SEZIONE REPORT
 # ================================
 
-@app.route('/reports')
-def reports():
-    return render_template('reports.html')
+# RIMOSSO: duplicato del route reports già definito alla riga 4124
 
 @app.route('/reports/dashboard')
 def report_dashboard():

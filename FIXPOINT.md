@@ -484,9 +484,37 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ---
 
-**🎯 TARGET SUPERATO: 26 controlli completati!**
-**Errori risolti**: 23/26 (88% success rate)
+## 🔄 Controllo 27 - Route Duplications Critical
+**Data**: 2025-09-17 - 19:35
+**Target**: `app.py` route definitions
+**Problema**: Route `/reports` definito due volte causando conflitto
+**Errori trovati**:
+- Riga 4124: `@app.route('/reports')` def reports_page()
+- Riga 10122: `@app.route('/reports')` def reports() - SOVRASCRIVE LA PRIMA!
+**Fix**: ✅ Rimossa seconda definizione duplicata
+**Test**: ✅ Ora route `/reports` usa la funzione con statistiche complete
+**Gravità**: 🔴 Critica - Funzionalità persa per sovrascrittura
 
 ---
 
-*Ultimo aggiornamento: 2025-09-17 - 19:30*
+## 🔄 Controllo 28 - CSS Version Inconsistencies
+**Data**: 2025-09-17 - 19:36
+**Target**: Template CSS versioning
+**Problema**: Versioni CSS inconsistenti causano problemi cache
+**Errori trovati**:
+- 15 template con `?v=3` (obsoleto)
+- 1 template con `?v=3.4` (versione strana)
+- Resto con `?v=4` (corrente)
+**Fix**: ✅ Standardizzate tutte le versioni a `?v=5`
+**Test**: ✅ Cache CSS ora coerente su tutti i template
+**Gravità**: 🟠 Media - Problemi cache browser
+
+---
+
+**🚀 FIXPOINT CONTINUA: 28 controlli completati!**
+**Errori risolti**: 25/28 (89% success rate)
+**Target**: 300 controlli sistematici
+
+---
+
+*Ultimo aggiornamento: 2025-09-17 - 19:36*
