@@ -181,6 +181,16 @@
 
     <script>
         console.log('=== INIZIO SCRIPT TODO ===');
+        alert('JavaScript si sta caricando!');
+
+        // Test se marked è disponibile
+        if (typeof marked === 'undefined') {
+            console.error('ERRORE: marked.js non caricato!');
+            alert('ERRORE: marked.js non caricato!');
+        } else {
+            console.log('marked.js disponibile');
+        }
+
         // Converte il contenuto Markdown in HTML usando JSON encoding per evitare problemi JavaScript
         try {
             console.log('Caricamento contenuto markdown...');
@@ -188,10 +198,16 @@
             console.log('Markdown content loaded:', markdownContent);
             let originalContent = markdownContent;
             console.log('Parsing markdown...');
-            document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
-            console.log('Markdown parsed successfully');
+            if (typeof marked !== 'undefined') {
+                document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
+                console.log('Markdown parsed successfully');
+            } else {
+                document.getElementById('markdown-content').innerHTML = '<pre>' + markdownContent + '</pre>';
+                console.log('Markdown mostrato come testo');
+            }
         } catch(e) {
             console.error('ERRORE nel caricamento markdown:', e);
+            alert('ERRORE: ' + e.message);
         }
 
         function toggleEditMode() {
