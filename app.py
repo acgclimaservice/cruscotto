@@ -11049,23 +11049,38 @@ def save_todo():
         import os
         from flask import request, jsonify
 
+        print("=== DEBUG TODO SAVE ===")
+        print(f"Request method: {request.method}")
+        print(f"Request content type: {request.content_type}")
+        print(f"Request data: {request.data}")
+
         # Ottieni il contenuto dal POST
         data = request.get_json()
+        print(f"JSON parsed: {data}")
+
         if not data or 'content' not in data:
+            print("ERRORE: Contenuto mancante")
             return jsonify({'success': False, 'error': 'Contenuto mancante'}), 400
 
         new_content = data['content']
+        print(f"Nuovo contenuto (len={len(new_content)}): {new_content[:100]}...")
 
         # Scrivi nel file TODO.md
         todo_path = os.path.join(os.path.dirname(__file__), 'todo.md')
+        print(f"Path file: {todo_path}")
 
         with open(todo_path, 'w', encoding='utf-8') as f:
             f.write(new_content)
 
+        print("File scritto con successo!")
+        print("======================")
+
         return jsonify({'success': True, 'message': 'TODO salvato con successo'})
 
     except Exception as e:
-        print(f"Errore nel salvare TODO: {e}")
+        print(f"ERRORE nel salvare TODO: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':

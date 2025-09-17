@@ -205,9 +205,12 @@
         }
 
         function saveTodo() {
+            console.log('saveTodo() chiamata');
             const newContent = document.getElementById('todoEditor').value;
+            console.log('Contenuto da salvare:', newContent);
 
             // Invia i dati al server
+            console.log('Invio richiesta a /todo/save...');
             fetch('/todo/save', {
                 method: 'POST',
                 headers: {
@@ -217,8 +220,12 @@
                     content: newContent
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Risposta ricevuta:', response.status, response.statusText);
+                return response.json();
+            })
             .then(data => {
+                console.log('Dati ricevuti:', data);
                 if (data.success) {
                     // Aggiorna il contenuto visualizzato
                     originalContent = newContent;
@@ -233,8 +240,8 @@
                 }
             })
             .catch(error => {
-                console.error('Errore:', error);
-                alert('Errore nella comunicazione con il server');
+                console.error('Errore fetch:', error);
+                alert('Errore nella comunicazione con il server: ' + error.message);
             });
         }
     </script>
