@@ -5580,7 +5580,18 @@ def preventivi_pdf(id):
         print(f"Errore PDF preventivo v2: {e}")
         import traceback
         traceback.print_exc()
-        return f"Errore PDF: {e}", 500
+
+        # Fallback: rendering HTML diretto per stampa
+        print("Fallback: utilizzando template HTML semplice")
+        try:
+            preventivo = Preventivo.query.get_or_404(id)
+            dettagli = DettaglioPreventivo.query.filter_by(preventivo_id=id).all()
+            return render_template('pdf/preventivo-pdf-simple.html',
+                                 preventivo=preventivo,
+                                 dettagli=dettagli)
+        except Exception as fallback_error:
+            print(f"Errore anche nel fallback: {fallback_error}")
+            return f"Errore PDF: {e}<br>Errore fallback: {fallback_error}", 500
 
 @app.route('/ordini')
 def ordini_page():

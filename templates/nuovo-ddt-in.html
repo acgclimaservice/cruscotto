@@ -176,8 +176,8 @@
                             <td><input type="text" name="articoli[0][codice]" class="autocomplete-articolo-codice" placeholder="Auto: 4 lett. + cod. forn." readonly style="background: #f5f5f5;"></td>
                             <td><input type="text" name="articoli[0][codice_fornitore]" placeholder="Codice fornitore..." required></td>
                             <td><input type="text" name="articoli[0][descrizione]" class="autocomplete-articolo-desc" placeholder="Descrizione..." required></td>
-                            <td><input type="number" step="0.01" name="articoli[0][costo]" onchange="calcolaTotale(this)"></td>
-                            <td><input type="number" step="0.01" name="articoli[0][quantita]" onchange="calcolaTotale(this); controllaDecimali(this)"></td>
+                            <td><input type="number" step="0.01" name="articoli[0][costo]" onchange="calcolaTotale(this)" required></td>
+                            <td><input type="number" step="0.01" name="articoli[0][quantita]" onchange="calcolaTotale(this); controllaDecimali(this)" required></td>
                             <td>
                                 <select name="articoli[0][unita_misura]" onchange="controllaDecimali(this.closest('tr').querySelector('[name*=\"quantita\"]'))">
                                     <option value="PZ">PZ</option>
@@ -519,8 +519,8 @@
             row.innerHTML = `
                 <td><input type="text" name="articoli[${index}][codice]" value="${art.codice}"></td>
                 <td><input type="text" name="articoli[${index}][descrizione]" value="${art.descrizione}" required></td>
-                <td><input type="number" step="0.01" name="articoli[${index}][costo]" value="${art.costo_unitario}" onchange="calcolaTotale(this)"></td>
-                <td><input type="number" step="0.01" name="articoli[${index}][quantita]" value="${art.quantita}" onchange="calcolaTotale(this); controllaDecimali(this)"></td>
+                <td><input type="number" step="0.01" name="articoli[${index}][costo]" value="${art.costo_unitario}" onchange="calcolaTotale(this)" required></td>
+                <td><input type="number" step="0.01" name="articoli[${index}][quantita]" value="${art.quantita}" onchange="calcolaTotale(this); controllaDecimali(this)" required></td>
                 <td>
                     <select name="articoli[${index}][unita_misura]" onchange="controllaDecimali(this.closest('tr').querySelector('[name*=\\"quantita\\"]'))">
                         <option value="PZ" ${(art.unita_misura === 'PZ' || !art.unita_misura) ? 'selected' : ''}>PZ</option>
@@ -615,8 +615,8 @@
             <td><input type="text" name="articoli[${rigaCount}][codice]" class="autocomplete-articolo-codice" placeholder="Auto: 4 lett. + cod. forn." readonly style="background: #f5f5f5;"></td>
             <td><input type="text" name="articoli[${rigaCount}][codice_fornitore]" placeholder="Codice fornitore..." required></td>
             <td><input type="text" name="articoli[${rigaCount}][descrizione]" class="autocomplete-articolo-desc" placeholder="Descrizione..." required></td>
-            <td><input type="number" step="0.01" name="articoli[${rigaCount}][costo]" onchange="calcolaTotale(this)"></td>
-            <td><input type="number" step="0.01" name="articoli[${rigaCount}][quantita]" onchange="calcolaTotale(this); controllaDecimali(this)"></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][costo]" onchange="calcolaTotale(this)" required></td>
+            <td><input type="number" step="0.01" name="articoli[${rigaCount}][quantita]" onchange="calcolaTotale(this); controllaDecimali(this)" required></td>
             <td>
                 <select name="articoli[${rigaCount}][unita_misura]" onchange="controllaDecimali(this.closest('tr').querySelector('[name*=\\"quantita\\"]'))">
                     <option value="PZ">PZ</option>
