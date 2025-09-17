@@ -547,7 +547,7 @@
                 
                 <div style="text-align: right; margin-top: 20px;">
                     <button type="button" class="btn btn-secondary" onclick="chiudiModalEmail()">❌ Annulla</button>
-                    <button type="button" class="btn btn-success" onclick="preparaPerOutlook()">📧 Prepara Email in Outlook</button>
+                    <button type="button" class="btn btn-success" onclick="preparaPerOutlook()">📧 Invia Email Automatica</button>
                 </div>
             </form>
         </div>
@@ -675,22 +675,12 @@
                 const loadingMsg = document.querySelector('div[style*="position:fixed"]');
                 if (loadingMsg) document.body.removeChild(loadingMsg);
                 
-                // Apri email e scarica PDF
-                const mailtoLink = `mailto:${encodeURIComponent(emailFornitore)}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpoEmail)}`;
-                window.open(mailtoLink);
-                
-                // Scarica automaticamente il PDF
-                setTimeout(() => {
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-                    URL.revokeObjectURL(url);
-                    
-                    // Mostra modal con istruzioni dettagliate
-                    showPDFInstructions(pdfData.filename);
-                    chiudiModalEmail();
-                    
-                    setTimeout(() => window.location.reload(), 1500);
-                }, 1000);
+                // Invia email automaticamente invece di aprire Outlook
+                inviaEmailAutomatica(offertaId, emailFornitore, messaggio, true);
+
+                // Pulisci risorse PDF (non serve più scaricarlo)
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(url);
                 
             } catch (error) {
                 console.error('Errore creazione blob PDF:', error);
@@ -717,14 +707,10 @@
             
             corpoEmail += `\nRimaniamo in attesa di un vostro riscontro.\n\nCordiali saluti,\nACG Clima Service S.r.l.`;
             
-            const mailtoLink = `mailto:${encodeURIComponent(emailFornitore)}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpoEmail)}`;
-            window.location.href = mailtoLink;
+            // Invia email automaticamente invece di aprire Outlook
+            inviaEmailAutomatica(offertaId, emailFornitore, messaggio, includiAllegati);
             
-            setTimeout(() => {
-                alert(`📧 Email preparata per Outlook!\n📎 Ricorda di allegare il PDF della richiesta offerta.`);
-                chiudiModalEmail();
-                setTimeout(() => window.location.reload(), 1000);
-            }, 500);
+            // La funzione inviaEmailAutomatica gestisce già il feedback e il reload
         }
         
         function showPDFInstructions(filename) {
@@ -849,6 +835,64 @@
                 isDragging = false;
                 modal.style.cursor = 'move';
             }
+        }
+
+        // Funzione per invio email automatico tramite SMTP invece di mailto
+        function inviaEmailAutomatica(offertaId, emailFornitore, messaggio, includiAllegati) {
+            // Mostra loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 10000; display: flex;
+                align-items: center; justify-content: center; color: white;
+                font-size: 18px; font-weight: bold;
+            `;
+            loadingDiv.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="margin-bottom: 20px;">📧 Invio email in corso...</div>
+                    <div style="font-size: 14px; color: #ccc;">Invio automatico con allegati PDF</div>
+                </div>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            // Prepara dati per invio
+            const emailData = {
+                email: emailFornitore,
+                messaggio: messaggio || '',
+                includi_allegati: includiAllegati !== false
+            };
+
+            // Chiama API per invio email automatico
+            fetch(`/offerte/${offertaId}/invia-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(emailData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Rimuovi loading
+                document.body.removeChild(loadingDiv);
+
+                if (data.success) {
+                    // Successo
+                    alert(`✅ Email inviata con successo!\n\n📧 Destinatario: ${emailFornitore}\n📎 Allegati inclusi: ${data.allegati_inviati || 0}\n\nL'email è stata inviata automaticamente tramite il sistema.`);
+                    chiudiModalEmail();
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    // Errore
+                    alert(`❌ Errore nell'invio email:\n\n${data.error}\n\nControllare la configurazione SMTP nelle impostazioni.`);
+                }
+            })
+            .catch(error => {
+                // Rimuovi loading
+                if (document.body.contains(loadingDiv)) {
+                    document.body.removeChild(loadingDiv);
+                }
+                console.error('Errore invio email:', error);
+                alert(`❌ Errore di connessione durante l'invio email.\n\nProva di nuovo o controlla la connessione internet.`);
+            });
         }
     </script>
 </body>
