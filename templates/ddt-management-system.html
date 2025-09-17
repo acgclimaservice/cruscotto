@@ -54,7 +54,7 @@
                 <div style="margin: 20px 0;">
                     <div class="summary-item">
                         <span>Totale movimenti:</span>
-                        <strong>{{ ddt_in_count + ddt_out_count }}</strong>
+                        <strong>{{ (ddt_in_count|default(0)) + (ddt_out_count|default(0)) }}</strong>
                     </div>
                     <div class="summary-item">
                         <span>In attesa:</span>
@@ -62,7 +62,7 @@
                     </div>
                     <div class="summary-item">
                         <span>Completati:</span>
-                        <strong style="color: #10b981;">{{ ddt_in_count + ddt_out_count }}</strong>
+                        <strong style="color: #10b981;">{{ (ddt_in_count|default(0)) + (ddt_out_count|default(0)) }}</strong>
                     </div>
                 </div>
             </div>

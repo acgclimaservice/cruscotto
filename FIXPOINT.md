@@ -401,9 +401,22 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ---
 
+## 🔄 Controllo 21 - DDT Management Template Variables
+**Data**: 2025-09-17 - 19:15
+**Target**: `templates/ddt-management-system.html`
+**Problema**: Template variables senza filtri default causano errori di calcolo
+**Errori trovati**:
+- Riga 57: `{{ ddt_in_count + ddt_out_count }}` → `{{ (ddt_in_count|default(0)) + (ddt_out_count|default(0)) }}`
+- Riga 65: `{{ ddt_in_count + ddt_out_count }}` → `{{ (ddt_in_count|default(0)) + (ddt_out_count|default(0)) }}`
+**Fix**: ✅ Aggiunti filtri |default(0) per prevenire errori con valori None
+**Test**: ✅ Template ora gestisce correttamente valori mancanti
+**Gravità**: 🟠 Media - Errori runtime quando count sono None
+
+---
+
 ## 🔄 Prossimi Controlli Programmati
 
-- [ ] Sezione DDT IN/OUT - Template variables
+- [x] ✅ Sezione DDT IN/OUT - Template variables
 - [ ] Sezione MPLS - JavaScript calculations
 - [ ] Sezione Preventivi - PDF generation
 - [ ] Sezione Catalogo - Search functionality
@@ -411,4 +424,4 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ---
 
-*Ultimo aggiornamento: 2025-09-16 - 17:30*
+*Ultimo aggiornamento: 2025-09-17 - 19:15*
