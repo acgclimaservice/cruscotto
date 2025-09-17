@@ -3,207 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ordine {{ ordine.numero_ordine or ordine.id }}</title>
+    <title>Ordine al Fornitore #{{ ordine.numero_ordine or ('PO-' + ordine.id|string) }}</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-size: 12px;
             line-height: 1.4;
             margin: 0;
-            padding: 20px;
-            color: #333;
+            padding: 40px;
+            color: #000000;
+            background: #FFFFFF;
         }
-        
+
         .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #007bff;
-        }
-        
-        .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 20px;
-        }
-        
-        .company-logo {
-            height: 60px;
-            width: auto;
-        }
-        
-        .header-text {
-            text-align: center;
-        }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            color: #007bff;
-        }
-        
-        .header h2 {
-            margin: 5px 0 0 0;
-            font-size: 18px;
-            color: #666;
-        }
-        
-        .company-info {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 11px;
-            color: #666;
-        }
-        
-        .order-info {
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 20px;
             margin-bottom: 30px;
+            border-bottom: 3px solid #000000;
         }
-        
-        .order-info div {
+
+        .header-left {
             flex: 1;
         }
-        
-        .info-section {
-            margin-bottom: 20px;
+
+        .header-title {
+            font-size: 2.5em;
+            font-weight: 300;
+            letter-spacing: -0.5px;
+            color: #000000;
+            margin: 0;
+            text-transform: uppercase;
         }
-        
+
+        .header-subtitle {
+            font-size: 1em;
+            color: #666666;
+            margin-top: 10px;
+        }
+
+        .company-logo {
+            max-width: 150px;
+            max-height: 60px;
+            background: #f0f0f0;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .company-info {
+            margin: 30px 0;
+            color: #666666;
+            line-height: 1.6;
+        }
+
+        .company-info strong {
+            color: #000000;
+        }
+
+        .order-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 30px 0;
+        }
+
+        .order-info-single {
+            max-width: 500px;
+            margin: 30px 0;
+        }
+
         .info-section h3 {
+            font-size: 0.875em;
+            color: #999999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             margin: 0 0 10px 0;
-            font-size: 14px;
-            color: #007bff;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
+            font-weight: 600;
         }
-        
+
         .info-row {
             display: flex;
             margin-bottom: 5px;
         }
-        
+
         .info-row .label {
-            font-weight: bold;
             width: 120px;
-            color: #666;
+            color: #666666;
+            font-weight: normal;
         }
-        
+
         .info-row .value {
             flex: 1;
+            color: #000000;
         }
-        
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
+
+        .info-row .value strong {
+            color: #000000;
+        }
+
+        .status-text {
+            color: #666666;
             text-transform: uppercase;
+            font-size: 0.9em;
         }
-        
-        .status-bozza { background: #f3f4f6; color: #374151; }
-        .status-inviato { background: #dbeafe; color: #1e40af; }
-        .status-confermato { background: #dcfce7; color: #166534; }
-        .status-ricevuto { background: #fef3c7; color: #92400e; }
-        .status-completato { background: #dcfce7; color: #166534; }
-        
-        .priority-alta { color: #dc2626; }
-        .priority-media { color: #d97706; }
-        .priority-bassa { color: #059669; }
-        
+
+        .priority-text {
+            color: #666666;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin: 30px 0;
         }
-        
-        table th, table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-            font-size: 11px;
-        }
-        
+
         table th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            color: #495057;
+            background: #f8f9fa;
+            color: #000000;
+            font-weight: 600;
+            font-size: 0.875em;
+            padding: 12px 10px;
+            border: none;
+            text-align: left;
         }
-        
-        table tr:nth-child(even) {
-            background-color: #f8f9fa;
+
+        table th:nth-child(3),
+        table th:nth-child(4),
+        table th:nth-child(5),
+        table th:nth-child(6) {
+            text-align: center;
         }
-        
-        .totals-section {
-            margin-top: 30px;
+
+        table th:nth-child(5),
+        table th:nth-child(7) {
             text-align: right;
         }
-        
-        .totals-table {
-            display: inline-block;
-            text-align: left;
+
+        table td {
+            background: #FFFFFF;
+            border-bottom: 1px solid #f1f3f5;
+            padding: 12px 10px;
+            color: #000000;
+            font-size: 11px;
         }
-        
+
+        table td:nth-child(3),
+        table td:nth-child(4),
+        table td:nth-child(6) {
+            text-align: center;
+        }
+
+        table td:nth-child(5),
+        table td:nth-child(7) {
+            text-align: right;
+        }
+
+        table td small {
+            color: #666666;
+            font-style: italic;
+        }
+
+        .totals-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .totals-table {
+            width: 250px;
+        }
+
         .total-row {
             display: flex;
             justify-content: space-between;
-            padding: 5px 0;
-            min-width: 200px;
+            padding: 8px 0;
+            color: #666666;
         }
-        
+
         .total-row.final {
-            border-top: 2px solid #007bff;
-            padding-top: 10px;
-            margin-top: 10px;
-            font-weight: bold;
-            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2em;
+            color: #000000;
+            font-weight: 600;
+            border-top: 1px solid #dee2e6;
+            padding-top: 12px;
+            margin-top: 8px;
         }
-        
+
         .notes-section {
-            margin-top: 30px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-left: 4px solid #007bff;
+            margin-top: 40px;
         }
-        
+
         .notes-section h3 {
+            font-size: 0.875em;
+            color: #999999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             margin: 0 0 10px 0;
-            color: #007bff;
+            font-weight: 600;
         }
-        
+
+        .notes-section div {
+            color: #666666;
+            line-height: 1.6;
+        }
+
         .footer {
             margin-top: 50px;
             text-align: center;
             font-size: 10px;
-            color: #666;
-            border-top: 1px solid #ddd;
+            color: #666666;
+            border-top: 1px solid #f1f3f5;
             padding-top: 20px;
         }
-        
+
         @media print {
-            /* Rimuove intestazione e piè di pagina del browser */
             @page {
                 margin: 0;
             }
-            body { 
-                margin: 0.5cm; 
-                padding: 15px; 
+            body {
+                margin: 0.5cm;
+                padding: 15px;
             }
             .no-print { display: none !important; }
         }
     </style>
 </head>
 <body>
+    <!-- HEADER CON LOGO -->
     <div class="header">
-        <div class="header-content">
-            <img src="{{ url_for('static', filename='logo-acg.png') }}" alt="ACG Clima Service" class="company-logo">
-            <div class="header-text">
-                <h1>ORDINE FORNITORE</h1>
-                <h2>{{ ordine.numero_ordine or ('BOZZA #' + ordine.id|string) }}</h2>
-            </div>
+        <div class="header-left">
+            <h1 class="header-title">Ordine al Fornitore</h1>
+            <div class="header-subtitle">{{ ordine.numero_ordine or ('PO #' + ordine.id|string) }}</div>
         </div>
+        <div class="company-logo">LOGO ACG</div>
     </div>
-    
+
     <div class="company-info">
         <strong>ACG CLIMA SERVICE S.R.L.</strong><br>
         <strong>Sede Legale:</strong> Via Duccio Galimberti 47 - 15121 Alessandria (AL)<br>
@@ -211,22 +254,46 @@
         Tel: 0383/640606 | Email: info@acgclimaservice.com<br>
         P.IVA: 02735970069 | C.F: 02735970069
     </div>
-    
+
+    <!-- INFO ORDINE - LAYOUT A 2 COLONNE -->
     <div class="order-info">
+        <!-- COLONNA SINISTRA: FORNITORE -->
         <div class="info-section">
-            <h3>📋 Informazioni Ordine</h3>
+            <h3>Fornitore</h3>
+            <div style="color: #000000; line-height: 1.6;">
+                <strong>{{ ordine.fornitore_nome or 'Fornitore non specificato' }}</strong><br>
+                {% if ordine.fornitore %}
+                <span style="color: #666666;">
+                    {% if ordine.fornitore.indirizzo %}{{ ordine.fornitore.indirizzo }}<br>{% endif %}
+                    {% if ordine.fornitore.citta %}{{ ordine.fornitore.citta }}{% if ordine.fornitore.cap %} {{ ordine.fornitore.cap }}{% endif %}<br>{% endif %}
+                    {% if ordine.fornitore.telefono %}Tel: {{ ordine.fornitore.telefono }}<br>{% endif %}
+                    {% if ordine.fornitore.email %}{{ ordine.fornitore.email }}<br>{% endif %}
+                    {% if ordine.fornitore.partita_iva %}P.IVA: {{ ordine.fornitore.partita_iva }}{% endif %}
+                </span>
+                {% endif %}
+            </div>
+
+            {% if ordine.oggetto %}
+            <div style="margin-top: 20px;">
+                <div class="info-row">
+                    <span class="label">Oggetto:</span>
+                    <span class="value">{{ ordine.oggetto }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- COLONNA DESTRA: DETTAGLI ORDINE -->
+        <div class="info-section">
+            <h3>Order Details</h3>
             <div class="info-row">
                 <span class="label">Data Ordine:</span>
                 <span class="value">{{ ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else '-' }}</span>
             </div>
             <div class="info-row">
-                <span class="label">Oggetto:</span>
-                <span class="value">{{ ordine.oggetto or '-' }}</span>
-            </div>
-            <div class="info-row">
                 <span class="label">Stato:</span>
                 <span class="value">
-                    <span class="status-badge status-{{ ordine.stato }}">
+                    <span class="status-text">
                         {% if ordine.stato == 'bozza' %}BOZZA
                         {% elif ordine.stato == 'inviato' %}INVIATO
                         {% elif ordine.stato == 'confermato' %}CONFERMATO
@@ -237,122 +304,102 @@
                     </span>
                 </span>
             </div>
+            {% if ordine.priorita %}
             <div class="info-row">
                 <span class="label">Priorità:</span>
-                <span class="value priority-{{ ordine.priorita }}">
-                    {% if ordine.priorita == 'alta' %}🔴 ALTA
-                    {% elif ordine.priorita == 'media' %}🟡 MEDIA
-                    {% elif ordine.priorita == 'bassa' %}🟢 BASSA
-                    {% else %}{{ ordine.priorita|upper }}
-                    {% endif %}
+                <span class="value">
+                    <span class="priority-text">
+                        {% if ordine.priorita == 'alta' %}ALTA
+                        {% elif ordine.priorita == 'media' %}MEDIA
+                        {% elif ordine.priorita == 'bassa' %}BASSA
+                        {% else %}{{ ordine.priorita|upper }}
+                        {% endif %}
+                    </span>
                 </span>
             </div>
+            {% endif %}
             {% if ordine.data_scadenza %}
             <div class="info-row">
                 <span class="label">Scadenza:</span>
                 <span class="value">{{ ordine.data_scadenza.strftime('%d/%m/%Y') }}</span>
             </div>
             {% endif %}
-        </div>
-        
-        <div class="info-section">
-            <h3>🏭 Fornitore</h3>
+            {% if ordine.numero_offerta_fornitore %}
             <div class="info-row">
-                <span class="label">Ragione Sociale:</span>
-                <span class="value"><strong>{{ ordine.fornitore_nome }}</strong></span>
-            </div>
-            {% if ordine.fornitore %}
-            <div class="info-row">
-                <span class="label">Indirizzo:</span>
-                <span class="value">{{ ordine.fornitore.indirizzo or '-' }}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Città:</span>
-                <span class="value">{{ ordine.fornitore.citta or '-' }} {{ ordine.fornitore.cap or '' }}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">P.IVA:</span>
-                <span class="value">{{ ordine.fornitore.partita_iva or '-' }}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Telefono:</span>
-                <span class="value">{{ ordine.fornitore.telefono or '-' }}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Email:</span>
-                <span class="value">{{ ordine.fornitore.email or '-' }}</span>
+                <span class="label">Riferimento:</span>
+                <span class="value">{{ ordine.numero_offerta_fornitore }}</span>
             </div>
             {% endif %}
+            <div class="info-row">
+                <span class="label">Pagamento:</span>
+                <span class="value">{{ ordine.condizioni_pagamento or '30 gg D.F.' }}</span>
+            </div>
         </div>
     </div>
-    
+
+    <!-- TABELLA ARTICOLI -->
     {% if dettagli %}
-    <div class="info-section">
-        <h3>📦 Dettagli Articoli</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 80px;">Codice</th>
-                    <th style="width: 80px;">Cod. Fornitore</th>
-                    <th>Descrizione</th>
-                    <th style="width: 60px;">Qty</th>
-                    <th style="width: 40px;">U.M.</th>
-                    <th style="width: 80px;">Prezzo Unit.</th>
-                    <th style="width: 60px;">Sconto %</th>
-                    <th style="width: 90px;">Totale</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for dettaglio in dettagli %}
-                <tr>
-                    <td><strong>{{ dettaglio.codice_articolo or '-' }}</strong></td>
-                    <td>{{ dettaglio.codice_fornitore or '-' }}</td>
-                    <td>
-                        {{ dettaglio.descrizione }}
-                        {% if dettaglio.note %}
-                        <br><small style="color: #666; font-style: italic;">{{ dettaglio.note }}</small>
-                        {% endif %}
-                    </td>
-                    <td style="text-align: right;">{{ "{:.2f}".format(dettaglio.quantita) }}</td>
-                    <td style="text-align: center;">{{ dettaglio.unita_misura or 'PZ' }}</td>
-                    <td style="text-align: right;">€ {{ "{:.2f}".format(dettaglio.prezzo_unitario or 0) }}</td>
-                    <td style="text-align: right;">{{ "{:.1f}".format(dettaglio.sconto_percentuale or 0) }}%</td>
-                    <td style="text-align: right;"><strong>€ {{ "{:.2f}".format(dettaglio.totale_riga or 0) }}</strong></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 100px;">Cod. Fornitore</th>
+                <th>Descrizione</th>
+                <th style="width: 60px;">Qty</th>
+                <th style="width: 40px;">U.M.</th>
+                <th style="width: 80px;">Prezzo Unit.</th>
+                <th style="width: 60px;">Sconto %</th>
+                <th style="width: 90px;">Totale</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dettaglio in dettagli %}
+            <tr>
+                <td><strong>{{ dettaglio.codice_fornitore or '-' }}</strong></td>
+                <td>
+                    {{ dettaglio.descrizione }}
+                    {% if dettaglio.note %}
+                    <br><small>{{ dettaglio.note }}</small>
+                    {% endif %}
+                </td>
+                <td>{{ "{:.2f}".format(dettaglio.quantita) }}</td>
+                <td>{{ dettaglio.unita_misura or 'PZ' }}</td>
+                <td>€ {{ "{:.2f}".format(dettaglio.prezzo_unitario or 0) }}</td>
+                <td>{{ "{:.1f}".format(dettaglio.sconto_percentuale or 0) }}%</td>
+                <td><strong>€ {{ "{:.2f}".format(dettaglio.totale_riga or 0) }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% endif %}
-    
+
     <div class="totals-section">
         <div class="totals-table">
             <div class="total-row">
                 <span>Totale Netto:</span>
-                <strong>€ {{ "{:.2f}".format(ordine.totale_netto or 0) }}</strong>
+                <span>€ {{ "{:.2f}".format(ordine.totale_netto or 0) }}</span>
             </div>
             <div class="total-row">
                 <span>IVA ({{ ordine.iva or 22 }}%):</span>
-                <strong>€ {{ "{:.2f}".format((ordine.totale_lordo or 0) - (ordine.totale_netto or 0)) }}</strong>
+                <span>€ {{ "{:.2f}".format((ordine.totale_lordo or 0) - (ordine.totale_netto or 0)) }}</span>
             </div>
             <div class="total-row final">
                 <span>TOTALE LORDO:</span>
-                <strong>€ {{ "{:.2f}".format(ordine.totale_lordo or 0) }}</strong>
+                <span>€ {{ "{:.2f}".format(ordine.totale_lordo or 0) }}</span>
             </div>
         </div>
     </div>
-    
+
     {% if ordine.note %}
     <div class="notes-section">
-        <h3>📝 Note</h3>
+        <h3>Note</h3>
         <div>{{ ordine.note }}</div>
     </div>
     {% endif %}
-    
+
     {% if ordine.stato != 'bozza' %}
-    <div class="info-section" style="margin-top: 30px;">
-        <h3>📅 Cronologia</h3>
-        <div style="font-size: 11px;">
+    <div style="margin-top: 40px;">
+        <h3 style="font-size: 0.875em; color: #999999; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; font-weight: 600;">Cronologia</h3>
+        <div style="color: #666666; line-height: 1.6;">
             <div class="info-row">
                 <span class="label">Creato il:</span>
                 <span class="value">{{ ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else '-' }}</span>
@@ -372,7 +419,7 @@
         </div>
     </div>
     {% endif %}
-    
+
     <div class="footer">
         <div>Documento generato automaticamente il {{ datetime.now().strftime('%d/%m/%Y alle %H:%M') if datetime else '' }}</div>
         <div style="margin-top: 5px;">ACG CLIMA SERVICE S.R.L. - Sistema Gestione Ordini v2.7</div>
