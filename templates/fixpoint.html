@@ -125,10 +125,8 @@
     </style>
 
     <script>
-        // Converte il contenuto Markdown in HTML usando un elemento nascosto per evitare problemi di escaping
-        const markdownElement = document.createElement('textarea');
-        markdownElement.innerHTML = `{{ fixpoint_content|e }}`;
-        const markdownContent = markdownElement.value;
+        // Converte il contenuto Markdown in HTML usando JSON encoding per evitare problemi JavaScript
+        const markdownContent = {{ fixpoint_content|tojson }};
         document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
     </script>
 </body>
