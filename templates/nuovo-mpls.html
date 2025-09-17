@@ -551,7 +551,7 @@
             const speseBrevi = (!isGuazzotti && oreManodopera > 0 && oreManodopera < 3) ? 30.0 : 0;
             const speseBreviAcquisto = 0; // Sempre 0€ di costo acquisto
 
-            // Materiale Consumo: acquisto = 50% del vendita
+            // Materiale Consumo: vendita = max(10€, 3% del costo materiali), acquisto = 50% del vendita
             const materialeConsumoVendita = (!isGuazzotti && costoMaterialiAcquisto > 0) ? Math.max(10.0, costoMaterialiAcquisto * 0.03) : 0;
             const materialeConsumoAcquisto = materialeConsumoVendita * 0.5;
 

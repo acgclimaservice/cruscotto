@@ -11085,6 +11085,51 @@ def save_todo():
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/todo/edit', methods=['GET', 'POST'])
+def todo_edit():
+    """Editor TODO alternativo con form classico"""
+    import os
+
+    todo_path = os.path.join(os.path.dirname(__file__), 'todo.md')
+
+    if request.method == 'POST':
+        # Salva il contenuto
+        content = request.form.get('content', '')
+        with open(todo_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        from flask import redirect
+        return redirect('/todo')
+
+    # Carica il contenuto per modifica
+    if os.path.exists(todo_path):
+        with open(todo_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    else:
+        content = "# TODO - Lista vuota"
+
+    return f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Modifica TODO</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; padding: 20px; }}
+            textarea {{ width: 100%; height: 400px; font-family: monospace; }}
+            .btn {{ padding: 10px 20px; margin: 10px 5px; cursor: pointer; }}
+        </style>
+    </head>
+    <body>
+        <h1>✏️ Modifica TODO</h1>
+        <form method="POST">
+            <textarea name="content" placeholder="Inserisci il contenuto TODO...">{content}</textarea>
+            <br>
+            <button type="submit" class="btn">💾 Salva</button>
+            <a href="/todo" class="btn">❌ Annulla</a>
+        </form>
+    </body>
+    </html>
+    '''
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

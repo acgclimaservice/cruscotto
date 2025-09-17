@@ -414,14 +414,27 @@ Sezione dedicata ai controlli sistematici e riparazioni effettuate sul sistema C
 
 ---
 
+## 🔄 Controllo 22 - MPLS JavaScript Calculations
+**Data**: 2025-09-17 - 19:20
+**Target**: `templates/nuovo-mpls.html`, `templates/modifica-mpls.html`
+**Problema**: Commento non corrispondente alla logica di calcolo materiale consumo
+**Errori trovati**:
+- Riga 555 (nuovo-mpls): Commento "acquisto = 50% del vendita" prima della formula vendita
+- Riga 618 (modifica-mpls): Stesso problema di commento
+**Fix**: ✅ Chiariti commenti per spiegare formula: vendita = max(10€, 3% costo materiali)
+**Test**: ✅ Logica di calcolo corretta, solo commenti migliorati
+**Gravità**: 🟢 Bassa - Solo chiarezza documentazione
+
+---
+
 ## 🔄 Prossimi Controlli Programmati
 
 - [x] ✅ Sezione DDT IN/OUT - Template variables
-- [ ] Sezione MPLS - JavaScript calculations
+- [x] ✅ Sezione MPLS - JavaScript calculations
 - [ ] Sezione Preventivi - PDF generation
 - [ ] Sezione Catalogo - Search functionality
 - [ ] Sezione Commesse - Filters logic
 
 ---
 
-*Ultimo aggiornamento: 2025-09-17 - 19:15*
+*Ultimo aggiornamento: 2025-09-17 - 19:20*
