@@ -181,7 +181,7 @@
 
     <script>
         console.log('=== INIZIO SCRIPT TODO ===');
-        alert('JavaScript si sta caricando!');
+        // alert('JavaScript si sta caricando!'); // Rimosso alert di debug
 
         // Test se marked è disponibile
         if (typeof marked === 'undefined') {
@@ -194,7 +194,7 @@
         // Converte il contenuto Markdown in HTML usando JSON encoding per evitare problemi JavaScript
         try {
             console.log('Caricamento contenuto markdown...');
-            var markdownContent = "TEST CONTENT";
+            var markdownContent = {{ todo_content|tojson }};
             console.log('Markdown content loaded:', markdownContent);
             let originalContent = markdownContent;
             console.log('Parsing markdown...');
@@ -260,12 +260,19 @@
                 if (data.success) {
                     // Aggiorna il contenuto visualizzato
                     originalContent = newContent;
-                    document.getElementById('markdown-content').innerHTML = marked.parse(newContent);
+
+                    // Aggiorna il contenuto markdown visualizzato
+                    if (typeof marked !== 'undefined') {
+                        document.getElementById('markdown-content').innerHTML = marked.parse(newContent);
+                    } else {
+                        document.getElementById('markdown-content').innerHTML = '<pre>' + newContent + '</pre>';
+                    }
 
                     // Torna alla modalità visualizzazione
                     cancelEdit();
 
-                    alert('TODO salvato con successo!');
+                    console.log('TODO salvato e interfaccia aggiornata!');
+                    // Rimuovo alert per UX migliore: alert('TODO salvato con successo!');
                 } else {
                     alert('Errore nel salvare il TODO: ' + data.error);
                 }
