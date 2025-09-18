@@ -6036,16 +6036,43 @@ P.IVA: 02735970069
         app.logger.info(f"[DEBUG] Preparando corpo email per ordine {id}")
         msg.attach(MIMEText(corpo_email_debug, 'plain', 'utf-8'))
 
-        # Invia email
+        # Invia email con gestione porte SMTP
         import smtplib
         import ssl
 
-        context = ssl.create_default_context()
+        app.logger.info(f"[DEBUG] Tentativo connessione SMTP - Server: {smtp_server}, Porta: {smtp_port}")
 
-        with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
-            server.starttls(context=context)
-            server.login(smtp_username, email_password)
-            server.send_message(msg)
+        try:
+            # Gestisci diverse porte SMTP
+            if str(smtp_port) == '465':
+                # Porta 465 usa SSL diretto
+                context = ssl.create_default_context()
+                app.logger.info(f"[DEBUG] Usando SMTP_SSL per porta 465")
+
+                with smtplib.SMTP_SSL(smtp_server, int(smtp_port), context=context) as server:
+                    app.logger.info(f"[DEBUG] Connessione SSL stabilita")
+                    server.login(smtp_username, email_password)
+                    app.logger.info(f"[DEBUG] Login SMTP riuscito")
+                    server.send_message(msg)
+                    app.logger.info(f"[DEBUG] Email inviata con successo")
+
+            else:
+                # Porta 587 o altre usano STARTTLS
+                context = ssl.create_default_context()
+                app.logger.info(f"[DEBUG] Usando SMTP con STARTTLS per porta {smtp_port}")
+
+                with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
+                    app.logger.info(f"[DEBUG] Connessione SMTP stabilita")
+                    server.starttls(context=context)
+                    app.logger.info(f"[DEBUG] STARTTLS attivato")
+                    server.login(smtp_username, email_password)
+                    app.logger.info(f"[DEBUG] Login SMTP riuscito")
+                    server.send_message(msg)
+                    app.logger.info(f"[DEBUG] Email inviata con successo")
+
+        except Exception as smtp_error:
+            app.logger.error(f"[DEBUG] Errore SMTP dettagliato: {smtp_error}")
+            return jsonify({'errore': f'Errore invio email: {str(smtp_error)}'}), 500
 
         # Aggiorna ordine
         ordine.stato = 'inviato'
