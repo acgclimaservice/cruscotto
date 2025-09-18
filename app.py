@@ -5965,7 +5965,7 @@ def invia_ordine(id):
         if not all([smtp_server, email_mittente, email_password]):
             return jsonify({'errore': 'Configurazione email non completa nelle impostazioni sistema'}), 400
 
-        # Genera PDF dell'ordine
+        # Genera PDF dell'ordine con fallback per PythonAnywhere
         try:
             dettagli = DettaglioOrdine.query.filter_by(ordine_id=id).all()
             html_content = render_template('stampa-ordine.html',
@@ -5973,21 +5973,88 @@ def invia_ordine(id):
                                          dettagli=dettagli,
                                          datetime=datetime)
 
-            import pdfkit
-            options = {
-                'page-size': 'A4',
-                'margin-top': '0.75in',
-                'margin-right': '0.75in',
-                'margin-bottom': '0.75in',
-                'margin-left': '0.75in',
-                'encoding': "UTF-8",
-                'no-outline': None,
-                'enable-local-file-access': None
-            }
+            try:
+                # Prova prima con pdfkit
+                import pdfkit
+                options = {
+                    'page-size': 'A4',
+                    'margin-top': '0.75in',
+                    'margin-right': '0.75in',
+                    'margin-bottom': '0.75in',
+                    'margin-left': '0.75in',
+                    'encoding': "UTF-8",
+                    'no-outline': None,
+                    'enable-local-file-access': None
+                }
 
-            pdf_data = pdfkit.from_string(html_content, options=options)
+                pdf_data = pdfkit.from_string(html_content, options=options)
+                app.logger.info(f"PDF ordine {id} generato con pdfkit")
+
+            except Exception as pdf_error:
+                # Fallback: crea un PDF semplice con reportlab o invia solo il corpo email
+                app.logger.warning(f"pdfkit fallito per ordine {id}: {pdf_error}. Usando fallback.")
+
+                try:
+                    # Tentativo con reportlab se disponibile
+                    from reportlab.pdfgen import canvas
+                    from reportlab.lib.pagesizes import A4
+                    from reportlab.lib.units import cm
+                    import io
+
+                    buffer = io.BytesIO()
+                    p = canvas.Canvas(buffer, pagesize=A4)
+
+                    # Header
+                    p.setFont("Helvetica-Bold", 16)
+                    p.drawString(2*cm, 27*cm, f"Ordine {ordine.numero_ordine or f'BOZZA-{ordine.id}'}")
+                    p.setFont("Helvetica", 12)
+                    p.drawString(2*cm, 26*cm, "ACG Clima Service S.r.l.")
+
+                    # Dettagli ordine
+                    y = 24*cm
+                    p.drawString(2*cm, y, f"Data: {ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else 'N/A'}")
+                    y -= 0.6*cm
+                    p.drawString(2*cm, y, f"Fornitore: {ordine.fornitore_nome or 'N/A'}")
+                    y -= 0.6*cm
+                    p.drawString(2*cm, y, f"Oggetto: {ordine.oggetto or 'N/A'}")
+                    y -= 0.6*cm
+                    p.drawString(2*cm, y, f"Totale: € {ordine.totale_lordo or 0:.2f}")
+
+                    # Articoli
+                    if dettagli:
+                        y -= 1.2*cm
+                        p.setFont("Helvetica-Bold", 12)
+                        p.drawString(2*cm, y, "Articoli:")
+                        p.setFont("Helvetica", 10)
+
+                        for detail in dettagli[:10]:  # Massimo 10 articoli
+                            y -= 0.6*cm
+                            if y < 3*cm:
+                                break
+                            text = f"• {detail.descrizione[:50]}"
+                            if detail.quantita:
+                                text += f" - Qtà: {detail.quantita}"
+                            if detail.prezzo_unitario:
+                                text += f" - € {detail.prezzo_unitario:.2f}"
+                            p.drawString(2.5*cm, y, text)
+
+                    p.showPage()
+                    p.save()
+
+                    pdf_data = buffer.getvalue()
+                    app.logger.info(f"PDF ordine {id} generato con reportlab fallback")
+
+                except ImportError:
+                    # Reportlab non disponibile, invia email senza allegato
+                    app.logger.warning(f"Reportlab non disponibile. Invio email ordine {id} senza PDF allegato.")
+                    pdf_data = None
+
+                except Exception as reportlab_error:
+                    app.logger.warning(f"Reportlab fallito per ordine {id}: {reportlab_error}. Invio email senza PDF.")
+                    pdf_data = None
 
         except Exception as e:
+            app.logger.error(f"Errore critico generazione PDF ordine {id}: {str(e)}")
             return jsonify({'errore': f'Errore generazione PDF: {str(e)}'}), 500
 
         # Crea l'email
@@ -6023,15 +6090,38 @@ P.IVA: 02735970069
 
         msg.attach(MIMEText(corpo_email, 'plain', 'utf-8'))
 
-        # Allega PDF
-        attachment = MIMEBase('application', 'pdf')
-        attachment.set_payload(pdf_data)
-        encoders.encode_base64(attachment)
-        attachment.add_header(
-            'Content-Disposition',
-            f'attachment; filename="ordine_{ordine.numero_ordine or ordine.id}.pdf"'
-        )
-        msg.attach(attachment)
+        # Allega PDF se disponibile
+        pdf_allegato = False
+        if pdf_data:
+            try:
+                attachment = MIMEBase('application', 'pdf')
+                attachment.set_payload(pdf_data)
+                encoders.encode_base64(attachment)
+                attachment.add_header(
+                    'Content-Disposition',
+                    f'attachment; filename="ordine_{ordine.numero_ordine or ordine.id}.pdf"'
+                )
+                msg.attach(attachment)
+                pdf_allegato = True
+                app.logger.info(f"PDF allegato aggiunto all'email per ordine {id}")
+            except Exception as attach_error:
+                app.logger.warning(f"Errore allegato PDF per ordine {id}: {attach_error}")
+                # Continua senza allegato
+        else:
+            app.logger.info(f"Email ordine {id} inviata senza PDF allegato (fallback)")
+
+        # Aggiorna il corpo email se non c'è PDF
+        if not pdf_allegato:
+            # Invia nuova email con messaggio aggiornato
+            corpo_email_updated = corpo_email.replace(
+                "Vi trasmettiamo in allegato l'ordine",
+                "Vi trasmettiamo i dettagli dell'ordine (PDF non disponibile al momento)"
+            )
+            msg = MIMEMultipart()
+            msg['From'] = email_mittente
+            msg['To'] = email_fornitore
+            msg['Subject'] = f"Ordine {ordine.numero_ordine or f'BOZZA-{ordine.id}'} - ACG Clima Service"
+            msg.attach(MIMEText(corpo_email_updated, 'plain', 'utf-8'))
 
         # Invia email
         import smtplib
@@ -6063,7 +6153,8 @@ P.IVA: 02735970069
             'details': {
                 'email_destinatario': email_fornitore,
                 'data_invio': ordine.data_invio.strftime('%d/%m/%Y'),
-                'pdf_allegato': True
+                'pdf_allegato': pdf_allegato,
+                'note_pdf': 'PDF allegato' if pdf_allegato else 'Email inviata senza PDF (fallback attivo)'
             }
         })
 
