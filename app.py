@@ -5919,26 +5919,158 @@ def modifica_ordine(id):
 
 @app.route('/ordini/<int:id>/invia', methods=['POST'])
 def invia_ordine(id):
-    """Invia ordine al fornitore"""
+    """Invia ordine al fornitore via email con PDF allegato"""
     try:
         ordine = OrdineFornitore.query.get_or_404(id)
-        
+
         if ordine.stato != 'bozza':
             return jsonify({'errore': 'Solo gli ordini in bozza possono essere inviati'}), 400
-        
+
+        # Ottieni dati dal form per email (se forniti)
+        data = request.get_json() if request.is_json else {}
+
+        # Determina email fornitore - priorità: form, relazione fornitore, fallback vuoto
+        email_fornitore_default = ''
+        if ordine.fornitore and hasattr(ordine.fornitore, 'email'):
+            email_fornitore_default = ordine.fornitore.email
+
+        email_fornitore = data.get('email', email_fornitore_default).strip()
+        messaggio_personalizzato = data.get('messaggio', '').strip()
+
+        # Validazione email (se non fornita, chiedi all'utente)
+        if not email_fornitore:
+            return jsonify({
+                'errore': 'Email destinatario richiesta. Inserire email del fornitore.',
+                'needs_email': True
+            }), 400
+
+        # Validazione formato email
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email_fornitore):
+            return jsonify({'errore': 'Formato email non valido'}), 400
+
+        # Ottieni configurazioni email
+        email_monitor = app.email_monitor
+        smtp_server = email_monitor.get_config('email_smtp_server')
+        smtp_port = email_monitor.get_config('email_smtp_port', '587')
+        email_mittente = email_monitor.get_config('email_address')
+        smtp_username = email_monitor.get_config('email_smtp_username')
+        email_password = email_monitor.get_config('email_password')
+
+        # Se non c'è username SMTP separato, usa l'email come username (retrocompatibilità)
+        if not smtp_username:
+            smtp_username = email_mittente
+
+        if not all([smtp_server, email_mittente, email_password]):
+            return jsonify({'errore': 'Configurazione email non completa nelle impostazioni sistema'}), 400
+
+        # Genera PDF dell'ordine
+        try:
+            dettagli = DettaglioOrdine.query.filter_by(ordine_id=id).all()
+            html_content = render_template('stampa-ordine.html',
+                                         ordine=ordine,
+                                         dettagli=dettagli,
+                                         datetime=datetime)
+
+            import pdfkit
+            options = {
+                'page-size': 'A4',
+                'margin-top': '0.75in',
+                'margin-right': '0.75in',
+                'margin-bottom': '0.75in',
+                'margin-left': '0.75in',
+                'encoding': "UTF-8",
+                'no-outline': None,
+                'enable-local-file-access': None
+            }
+
+            pdf_data = pdfkit.from_string(html_content, options=options)
+
+        except Exception as e:
+            return jsonify({'errore': f'Errore generazione PDF: {str(e)}'}), 500
+
+        # Crea l'email
+        msg = MIMEMultipart()
+        msg['From'] = email_mittente
+        msg['To'] = email_fornitore
+        msg['Subject'] = f"Ordine {ordine.numero_ordine or f'BOZZA-{ordine.id}'} - ACG Clima Service"
+
+        # Corpo dell'email
+        nome_fornitore = ordine.fornitore_nome or 'Gentile Fornitore'
+        corpo_email = f"""Gentile {nome_fornitore},
+
+Vi trasmettiamo in allegato l'ordine {ordine.numero_ordine or f'BOZZA-{ordine.id}'} per i materiali/servizi richiesti.
+
+DETTAGLI ORDINE:
+- Numero: {ordine.numero_ordine or f'BOZZA-{ordine.id}'}
+- Data: {ordine.data_ordine.strftime('%d/%m/%Y') if ordine.data_ordine else 'N/A'}
+- Oggetto: {ordine.oggetto or 'N/A'}
+- Totale: € {ordine.totale_lordo or 0:.2f}
+{f'- Data Richiesta: {ordine.data_richiesta.strftime("%d/%m/%Y")}' if ordine.data_richiesta else ''}
+{f'- Scadenza: {ordine.data_scadenza.strftime("%d/%m/%Y")}' if ordine.data_scadenza else ''}
+
+{messaggio_personalizzato + chr(10) + chr(10) if messaggio_personalizzato else ''}Vi preghiamo di confermare la ricezione e i tempi di consegna.
+
+Cordiali saluti,
+
+ACG Clima Service S.r.l.
+Via Duccio Galimberti 47 - 15121 Alessandria (AL)
+Tel: 0383/640606
+Email: info@acgclimaservice.com
+P.IVA: 02735970069
+"""
+
+        msg.attach(MIMEText(corpo_email, 'plain', 'utf-8'))
+
+        # Allega PDF
+        attachment = MIMEBase('application', 'pdf')
+        attachment.set_payload(pdf_data)
+        encoders.encode_base64(attachment)
+        attachment.add_header(
+            'Content-Disposition',
+            f'attachment; filename="ordine_{ordine.numero_ordine or ordine.id}.pdf"'
+        )
+        msg.attach(attachment)
+
+        # Invia email
+        import smtplib
+        import ssl
+
+        context = ssl.create_default_context()
+
+        with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
+            server.starttls(context=context)
+            server.login(smtp_username, email_password)
+            server.send_message(msg)
+
+        # Aggiorna ordine
         ordine.stato = 'inviato'
         ordine.data_invio = datetime.now().date()
-        
+
+        # Registra l'invio nelle note
+        nota_invio = f"[{datetime.now().strftime('%d/%m/%Y %H:%M')}] Ordine inviato via email a: {email_fornitore}"
+        if messaggio_personalizzato:
+            nota_invio += f"\nMessaggio: {messaggio_personalizzato}"
+
+        ordine.note = f"{ordine.note}\n\n{nota_invio}" if ordine.note else nota_invio
+
         db.session.commit()
-        
+
         return jsonify({
             'success': True,
-            'message': 'Ordine inviato con successo'
+            'message': f'Ordine inviato con successo a {email_fornitore}',
+            'details': {
+                'email_destinatario': email_fornitore,
+                'data_invio': ordine.data_invio.strftime('%d/%m/%Y'),
+                'pdf_allegato': True
+            }
         })
-        
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({'errore': str(e)}), 500
+        app.logger.error(f"Errore invio ordine {id}: {str(e)}")
+        return jsonify({'errore': f'Errore durante l\'invio: {str(e)}'}), 500
 
 @app.route('/ordini/<int:id>/conferma', methods=['POST'])
 def conferma_ordine(id):
