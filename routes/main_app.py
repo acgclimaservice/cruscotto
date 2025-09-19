@@ -282,4 +282,4 @@ def inject_global_vars():
 
 if __name__ == '__main__':
     create_tables()  # Chiamata diretta invece del decorator deprecato
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)

@@ -5919,31 +5919,20 @@ def modifica_ordine(id):
 
 @app.route('/ordini/<int:id>/invia', methods=['POST'])
 def invia_ordine(id):
-    """Invia ordine al fornitore via email con PDF allegato"""
+    """Prepara email Outlook e scarica PDF per invio manuale"""
     try:
-        app.logger.info(f"[DEBUG] Inizio invio ordine {id}")
-
         ordine = OrdineFornitore.query.get_or_404(id)
-        app.logger.info(f"[DEBUG] Ordine {id} trovato, stato: {ordine.stato}")
 
         if ordine.stato != 'bozza':
             return jsonify({'errore': 'Solo gli ordini in bozza possono essere inviati'}), 400
 
-        # Ottieni dati dal form per email (se forniti)
-        try:
-            data = request.get_json() if request.is_json else {}
-            app.logger.info(f"[DEBUG] Dati ricevuti: {data}")
-        except Exception as json_error:
-            app.logger.error(f"[DEBUG] Errore parsing JSON: {json_error}")
-            data = {}
+        # Ottieni dati dal form per email
+        data = request.get_json() if request.is_json else {}
 
-        # Determina email fornitore - priorità: form, relazione fornitore, fallback vuoto
+        # Determina email fornitore
         email_fornitore_default = ''
-        try:
-            if ordine.fornitore and hasattr(ordine.fornitore, 'email'):
-                email_fornitore_default = ordine.fornitore.email or ''
-        except Exception as fornitore_error:
-            app.logger.warning(f"[DEBUG] Errore accesso fornitore: {fornitore_error}")
+        if ordine.fornitore and hasattr(ordine.fornitore, 'email'):
+            email_fornitore_default = ordine.fornitore.email or ''
 
         email_fornitore = data.get('email', email_fornitore_default)
         if email_fornitore:
@@ -5952,11 +5941,9 @@ def invia_ordine(id):
             email_fornitore = ''
 
         messaggio_personalizzato = data.get('messaggio', '').strip()
-        app.logger.info(f"[DEBUG] Email fornitore: {email_fornitore}")
 
         # Validazione email (se non fornita, chiedi all'utente)
         if not email_fornitore:
-            app.logger.info(f"[DEBUG] Email mancante, richiedo all'utente")
             return jsonify({
                 'errore': 'Email destinatario richiesta. Inserire email del fornitore.',
                 'needs_email': True
@@ -5966,43 +5953,11 @@ def invia_ordine(id):
         import re
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email_fornitore):
-            app.logger.warning(f"[DEBUG] Formato email non valido: {email_fornitore}")
             return jsonify({'errore': 'Formato email non valido'}), 400
 
-        # Ottieni configurazioni email
-        try:
-            email_monitor = app.email_monitor
-            smtp_server = email_monitor.get_config('email_smtp_server')
-            smtp_port = email_monitor.get_config('email_smtp_port', '587')
-            email_mittente = email_monitor.get_config('email_address')
-            smtp_username = email_monitor.get_config('email_smtp_username')
-            email_password = email_monitor.get_config('email_password')
-            app.logger.info(f"[DEBUG] Config SMTP - Server: {smtp_server}, Port: {smtp_port}, From: {email_mittente}")
+        # Prepara oggetto e corpo email
+        subject = f"Ordine {ordine.numero_ordine or f'BOZZA-{ordine.id}'} - ACG Clima Service"
 
-            # Se non c'è username SMTP separato, usa l'email come username (retrocompatibilità)
-            if not smtp_username:
-                smtp_username = email_mittente
-
-            if not all([smtp_server, email_mittente, email_password]):
-                app.logger.error(f"[DEBUG] Configurazione email incompleta")
-                return jsonify({'errore': 'Configurazione email non completa nelle impostazioni sistema'}), 400
-
-        except Exception as config_error:
-            app.logger.error(f"[DEBUG] Errore configurazione email: {config_error}")
-            return jsonify({'errore': f'Errore configurazione email: {str(config_error)}'}), 500
-
-        # Per il debugging, saltiamo temporaneamente la generazione PDF
-        app.logger.info(f"[DEBUG] Saltando generazione PDF per debug")
-        pdf_data = None
-        pdf_allegato = False
-
-        # Crea l'email
-        msg = MIMEMultipart()
-        msg['From'] = email_mittente
-        msg['To'] = email_fornitore
-        msg['Subject'] = f"Ordine {ordine.numero_ordine or f'BOZZA-{ordine.id}'} - ACG Clima Service"
-
-        # Corpo dell'email
         nome_fornitore = ordine.fornitore_nome or 'Gentile Fornitore'
         corpo_email = f"""Gentile {nome_fornitore},
 
@@ -6024,77 +5979,35 @@ ACG Clima Service S.r.l.
 Via Duccio Galimberti 47 - 15121 Alessandria (AL)
 Tel: 0383/640606
 Email: info@acgclimaservice.com
-P.IVA: 02735970069
-"""
+P.IVA: 02735970069"""
 
-        # Aggiorna il corpo email per la modalità debug (senza PDF)
-        corpo_email_debug = corpo_email.replace(
-            "Vi trasmettiamo in allegato l'ordine",
-            "Vi trasmettiamo i dettagli dell'ordine (modalità debug - PDF non allegato)"
-        )
+        # Aggiorna ordine come preparato per invio
+        ordine.stato = 'preparato'  # Nuovo stato intermedio
+        ordine.data_preparazione = datetime.now().date()
 
-        app.logger.info(f"[DEBUG] Preparando corpo email per ordine {id}")
-        msg.attach(MIMEText(corpo_email_debug, 'plain', 'utf-8'))
-
-        # Invia email con gestione porte SMTP
-        import smtplib
-        import ssl
-
-        app.logger.info(f"[DEBUG] Tentativo connessione SMTP - Server: {smtp_server}, Porta: {smtp_port}")
-
-        try:
-            # Gestisci diverse porte SMTP
-            if str(smtp_port) == '465':
-                # Porta 465 usa SSL diretto
-                context = ssl.create_default_context()
-                app.logger.info(f"[DEBUG] Usando SMTP_SSL per porta 465")
-
-                with smtplib.SMTP_SSL(smtp_server, int(smtp_port), context=context) as server:
-                    app.logger.info(f"[DEBUG] Connessione SSL stabilita")
-                    server.login(smtp_username, email_password)
-                    app.logger.info(f"[DEBUG] Login SMTP riuscito")
-                    server.send_message(msg)
-                    app.logger.info(f"[DEBUG] Email inviata con successo")
-
-            else:
-                # Porta 587 o altre usano STARTTLS
-                context = ssl.create_default_context()
-                app.logger.info(f"[DEBUG] Usando SMTP con STARTTLS per porta {smtp_port}")
-
-                with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
-                    app.logger.info(f"[DEBUG] Connessione SMTP stabilita")
-                    server.starttls(context=context)
-                    app.logger.info(f"[DEBUG] STARTTLS attivato")
-                    server.login(smtp_username, email_password)
-                    app.logger.info(f"[DEBUG] Login SMTP riuscito")
-                    server.send_message(msg)
-                    app.logger.info(f"[DEBUG] Email inviata con successo")
-
-        except Exception as smtp_error:
-            app.logger.error(f"[DEBUG] Errore SMTP dettagliato: {smtp_error}")
-            return jsonify({'errore': f'Errore invio email: {str(smtp_error)}'}), 500
-
-        # Aggiorna ordine
-        ordine.stato = 'inviato'
-        ordine.data_invio = datetime.now().date()
-
-        # Registra l'invio nelle note
-        nota_invio = f"[{datetime.now().strftime('%d/%m/%Y %H:%M')}] Ordine inviato via email a: {email_fornitore}"
+        # Registra la preparazione nelle note
+        nota_preparazione = f"[{datetime.now().strftime('%d/%m/%Y %H:%M')}] Email preparata per invio manuale a: {email_fornitore}"
         if messaggio_personalizzato:
-            nota_invio += f"\nMessaggio: {messaggio_personalizzato}"
+            nota_preparazione += f"\nMessaggio: {messaggio_personalizzato}"
 
-        ordine.note = f"{ordine.note}\n\n{nota_invio}" if ordine.note else nota_invio
+        ordine.note = f"{ordine.note}\n\n{nota_preparazione}" if ordine.note else nota_preparazione
 
         db.session.commit()
 
+        # Crea URL mailto per Outlook
+        import urllib.parse
+        mailto_url = f"mailto:{email_fornitore}?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(corpo_email)}"
+
         return jsonify({
             'success': True,
-            'message': f'Ordine inviato con successo a {email_fornitore}',
+            'message': 'Email preparata per invio manuale',
+            'mode': 'manual',
             'details': {
                 'email_destinatario': email_fornitore,
-                'data_invio': ordine.data_invio.strftime('%d/%m/%Y'),
-                'pdf_allegato': pdf_allegato,
-                'note_pdf': 'PDF allegato' if pdf_allegato else 'Email inviata senza PDF (fallback attivo)'
+                'subject': subject,
+                'mailto_url': mailto_url,
+                'pdf_download_url': f'/ordini/{ordine.id}/pdf',
+                'ordine_numero': ordine.numero_ordine or f'BOZZA-{ordine.id}'
             }
         })
 
@@ -6102,6 +6015,37 @@ P.IVA: 02735970069
         db.session.rollback()
         app.logger.error(f"Errore invio ordine {id}: {str(e)}")
         return jsonify({'errore': f'Errore durante l\'invio: {str(e)}'}), 500
+
+
+@app.route('/ordini/<int:id>/conferma-invio', methods=['POST'])
+def conferma_invio_ordine(id):
+    """Conferma che l'ordine è stato inviato manualmente"""
+    try:
+        ordine = OrdineFornitore.query.get_or_404(id)
+
+        if ordine.stato != 'preparato':
+            return jsonify({'errore': 'Solo gli ordini preparati possono essere confermati come inviati'}), 400
+
+        # Aggiorna ordine come definitivamente inviato
+        ordine.stato = 'inviato'
+        ordine.data_invio = datetime.now().date()
+
+        # Aggiorna note
+        nota_invio = f"[{datetime.now().strftime('%d/%m/%Y %H:%M')}] Confermato invio manuale email"
+        ordine.note = f"{ordine.note}\n{nota_invio}" if ordine.note else nota_invio
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Invio ordine confermato con successo'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Errore conferma invio ordine {id}: {str(e)}")
+        return jsonify({'errore': f'Errore durante la conferma: {str(e)}'}), 500
+
 
 @app.route('/ordini/<int:id>/conferma', methods=['POST'])
 def conferma_ordine(id):

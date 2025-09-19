@@ -557,9 +557,15 @@ function inviaOrdine(ordineId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            // Invio riuscito
-            alert(`✅ Ordine inviato con successo!\\n\\n📧 Destinatario: ${data.details.email_destinatario}\\n📅 Data invio: ${data.details.data_invio}\\n📎 PDF allegato: ${data.details.pdf_allegato ? 'Sì' : 'No'}`);
+        if (data.success && data.mode === 'manual') {
+            // Modalità invio manuale
+            btn.textContent = originalText;
+            btn.disabled = false;
+
+            mostraModalInvioManuale(ordineId, data.details);
+        } else if (data.success) {
+            // Invio automatico riuscito (per compatibilità futura)
+            alert(`✅ Ordine inviato con successo!\\n\\n📧 Destinatario: ${data.details.email_destinatario}\\n📅 Data invio: ${data.details.data_invio}`);
             location.reload();
         } else if (data.needs_email) {
             // Richiedi email e messaggio
@@ -653,6 +659,103 @@ function chiudiModalInvioEmail() {
     const modal = document.getElementById('modalInvioEmail');
     if (modal) {
         modal.remove();
+    }
+}
+
+function mostraModalInvioManuale(ordineId, details) {
+    const modal = document.createElement('div');
+    modal.id = 'modalInvioManuale';
+    modal.className = 'modal-overlay';
+
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>📧 Invio Manuale Ordine</h3>
+                <button class="close-btn" onclick="chiudiModalInvioManuale()">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding: 24px;">
+                <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 12px 0; color: #1976d2;">📋 Istruzioni per l'invio</h4>
+                    <ol style="margin: 0; padding-left: 20px; color: #333;">
+                        <li style="margin-bottom: 8px;">Clicca su "Apri Outlook" per creare una nuova email precompilata</li>
+                        <li style="margin-bottom: 8px;">Scarica il PDF dell'ordine cliccando su "Scarica PDF"</li>
+                        <li style="margin-bottom: 8px;">Allega manualmente il PDF alla email in Outlook</li>
+                        <li style="margin-bottom: 8px;">Invia l'email dal tuo Outlook</li>
+                        <li>Conferma l'invio cliccando su "Email Inviata" qui sotto</li>
+                    </ol>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <a href="${details.mailto_url}"
+                       class="btn"
+                       style="background: #0078d4; color: white; text-decoration: none; padding: 12px 16px; border-radius: 6px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        📧 Apri Outlook
+                    </a>
+
+                    <a href="/ordini/${ordineId}/pdf"
+                       download
+                       class="btn"
+                       style="background: #dc3545; color: white; text-decoration: none; padding: 12px 16px; border-radius: 6px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        📄 Scarica PDF
+                    </a>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                    <h5 style="margin: 0 0 8px 0; color: #666;">📧 Destinatario: ${details.email_destinatario}</h5>
+                    <h5 style="margin: 0 0 8px 0; color: #666;">📋 Oggetto: ${details.oggetto}</h5>
+                    <div style="max-height: 120px; overflow-y: auto; background: white; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6; color: #333; font-size: 14px; line-height: 1.4;">
+                        ${details.corpo_email.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+
+                <div style="text-align: center;">
+                    <button onclick="confermaInvioManuale(${ordineId})"
+                            class="btn"
+                            style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600;">
+                        ✅ Email Inviata - Conferma
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Chiudi modal cliccando fuori
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            chiudiModalInvioManuale();
+        }
+    });
+}
+
+function chiudiModalInvioManuale() {
+    const modal = document.getElementById('modalInvioManuale');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function confermaInvioManuale(ordineId) {
+    if (confirm('Confermi di aver inviato manualmente l\'email dell\'ordine?')) {
+        fetch(`/ordini/${ordineId}/conferma-invio`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Invio confermato! Lo stato dell\'ordine è stato aggiornato.');
+                chiudiModalInvioManuale();
+                location.reload();
+            } else {
+                alert(`❌ Errore durante la conferma: ${data.errore}`);
+            }
+        })
+        .catch(error => {
+            alert(`❌ Errore di connessione: ${error}`);
+        });
     }
 }
 

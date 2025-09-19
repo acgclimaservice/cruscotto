@@ -26,9 +26,10 @@ if __name__ == "__main__":
     
     setup_logging()
     
-    # Enable Flask debugging
-    app.config['DEBUG'] = True
+    # Enable Flask debugging only if in development
+    debug_mode = False  # Set to True only for local development
+    app.config['DEBUG'] = debug_mode
     app.config['TESTING'] = False
-    
+
     # Run server
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode, use_reloader=False)
