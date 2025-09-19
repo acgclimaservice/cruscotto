@@ -6072,11 +6072,7 @@ P.IVA: 02735970069
 
         except Exception as smtp_error:
             app.logger.error(f"[DEBUG] Errore SMTP dettagliato: {smtp_error}")
-
-            # Per ora, simula invio riuscito per il testing (fallback temporaneo)
-            app.logger.warning(f"[DEBUG] FALLBACK: Simulando invio riuscito per ordine {id} - Email fallita: {str(smtp_error)}")
-
-            # Continua con aggiornamento ordine anche se email fallisce
+            return jsonify({'errore': f'Errore invio email: {str(smtp_error)}'}), 500
 
         # Aggiorna ordine
         ordine.stato = 'inviato'
@@ -7949,13 +7945,35 @@ def test_smtp_invio():
         msg['To'] = 'alberto.contardi@acgclimaservice.com'  # Invia ad Alberto per test
         msg['Subject'] = "Test SMTP - Sistema Gestione DDT"
         
-        # Connessione e invio
-        context = ssl.create_default_context()
-        
-        with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
-            server.starttls(context=context)
-            server.login(smtp_username, email_password)  # Usa username SMTP invece di email
-            server.send_message(msg)
+        # Connessione e invio con gestione porte (come negli ordini)
+        app.logger.info(f"[TEST SMTP] Server: {smtp_server}, Porta: {smtp_port}, From: {email_mittente}")
+
+        # Gestisci diverse porte SMTP (stesso codice degli ordini)
+        if str(smtp_port) == '465':
+            # Porta 465 usa SSL diretto
+            context = ssl.create_default_context()
+            app.logger.info(f"[TEST SMTP] Usando SMTP_SSL per porta 465")
+
+            with smtplib.SMTP_SSL(smtp_server, int(smtp_port), context=context) as server:
+                app.logger.info(f"[TEST SMTP] Connessione SSL stabilita")
+                server.login(smtp_username, email_password)
+                app.logger.info(f"[TEST SMTP] Login SMTP riuscito")
+                server.send_message(msg)
+                app.logger.info(f"[TEST SMTP] Email inviata con successo")
+
+        else:
+            # Porta 587 o altre usano STARTTLS
+            context = ssl.create_default_context()
+            app.logger.info(f"[TEST SMTP] Usando SMTP con STARTTLS per porta {smtp_port}")
+
+            with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
+                app.logger.info(f"[TEST SMTP] Connessione SMTP stabilita")
+                server.starttls(context=context)
+                app.logger.info(f"[TEST SMTP] STARTTLS attivato")
+                server.login(smtp_username, email_password)
+                app.logger.info(f"[TEST SMTP] Login SMTP riuscito")
+                server.send_message(msg)
+                app.logger.info(f"[TEST SMTP] Email inviata con successo")
         
         return jsonify({
             'success': True,
