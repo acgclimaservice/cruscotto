@@ -218,13 +218,19 @@ def test_email_connection():
     try:
         import imaplib
         import ssl
-        
+
+        current_app.logger.info(f"[EMAIL TEST] Ricevuta richiesta test email")
+
         data = request.json
+        current_app.logger.info(f"[EMAIL TEST] Dati ricevuti: {list(data.keys()) if data else 'None'}")
+
         server = data.get('email_imap_server', 'imap.gmail.com')
         port = int(data.get('email_imap_port', 993))
         email_address = data.get('email_address')
         password = data.get('email_password')
-        
+
+        current_app.logger.info(f"[EMAIL TEST] Config: {server}:{port}, Email: {email_address}, Pass len: {len(password) if password else 0}")
+
         if not email_address or not password:
             return jsonify({'success': False, 'error': 'Email e password sono obbligatori'}), 400
         
@@ -253,7 +259,9 @@ def test_email_connection():
         })
         
     except Exception as e:
-        current_app.logger.error(f"Errore test email: {e}")
+        current_app.logger.error(f"[EMAIL TEST] Errore test email: {e}")
+        import traceback
+        current_app.logger.error(f"[EMAIL TEST] Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @impostazioni_bp.route('/email/verifica-immediata', methods=['POST'])
