@@ -147,6 +147,7 @@
         </div>
 
         <!-- Sezione Anteprima PDF -->
+        <!-- DEBUG: PDF allegato = {{ 'SI' if ddt.pdf_allegato else 'NO' }}, Filename = {{ ddt.pdf_filename or 'N/A' }} -->
         {% if ddt.pdf_allegato %}
         <div class="pdf-preview-section">
             <h3>📄 Anteprima PDF - {{ ddt.pdf_filename or 'Documento' }}</h3>
@@ -269,6 +270,15 @@
             {% endif %}
         });
         </script>
+        {% else %}
+        <!-- Nessun PDF allegato -->
+        <div class="pdf-preview-section">
+            <h3>📄 Nessun PDF allegato</h3>
+            <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 5px; color: #6c757d;">
+                ℹ️ Questo DDT non ha un PDF allegato.<br>
+                I PDF vengono allegati automaticamente durante l'importazione via email o upload manuale.
+            </div>
+        </div>
         {% endif %}
     </div>
 
