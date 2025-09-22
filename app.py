@@ -85,7 +85,7 @@ def log_response_info(response):
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-src 'self' blob:; object-src 'self' blob:"
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-src 'self' blob: https://mozilla.github.io; object-src 'self' blob:"
 
     # Log response body for JSON responses
     if response.content_type and 'application/json' in response.content_type:
