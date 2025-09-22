@@ -495,7 +495,11 @@
             // L'iframe dovrebbe già essere visibile, aggiorna solo la source
             const pdfPreview = document.getElementById('pdf-preview');
             if (pdfPreview) {
-                pdfPreview.src = data.pdf_url;
+                // Use PDF.js viewer for better compatibility
+                const fullPdfUrl = window.location.origin + data.pdf_url;
+                const pdfJsUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fullPdfUrl)}`;
+                pdfPreview.src = pdfJsUrl;
+                console.log('Using PDF.js viewer:', pdfJsUrl);
             }
         }
         
