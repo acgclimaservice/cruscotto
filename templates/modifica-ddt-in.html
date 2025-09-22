@@ -149,11 +149,17 @@
         <!-- Sezione Anteprima PDF -->
         {% if ddt.pdf_allegato %}
         <div class="pdf-preview-section">
-            <h3>📄 Anteprima PDF</h3>
+            <h3>📄 Anteprima PDF - {{ ddt.pdf_filename or 'Documento' }}</h3>
+            <div class="pdf-loading" id="pdf-loading" style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 5px; margin-bottom: 15px;">
+                🔄 Caricamento PDF in corso...
+            </div>
             <div class="pdf-container">
-                <iframe id="pdf-viewer" src="" width="100%" height="800px" style="border: 1px solid #ddd; border-radius: 5px;">
+                <iframe id="pdf-viewer" src="" width="100%" height="800px" style="border: 1px solid #ddd; border-radius: 5px; display: none;">
                     <p>Il tuo browser non supporta la visualizzazione diretta dei PDF. <a id="pdf-download" href="">Scarica il PDF</a></p>
                 </iframe>
+                <div id="pdf-error" style="display: none; text-align: center; padding: 20px; background: #f8d7da; color: #721c24; border-radius: 5px;">
+                    ❌ Errore caricamento PDF. <a id="pdf-download-fallback" href="">Clicca qui per scaricare</a>
+                </div>
             </div>
         </div>
 
@@ -195,12 +201,41 @@
             const pdfDownload = document.getElementById('pdf-download');
 
             if (pdfViewer && pdfDownload) {
-                // Usa PDF.js con CORS headers per migliore compatibilità
-                const fullPdfUrl = window.location.origin + pdfUrl;
-                const pdfJsUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fullPdfUrl)}`;
+                console.log('[PDF] Inizializzando anteprima PDF per DDT {{ ddt.id }}');
 
-                pdfViewer.src = pdfJsUrl;
+                // Imposta i link di download
                 pdfDownload.href = pdfUrl;
+                const pdfDownloadFallback = document.getElementById('pdf-download-fallback');
+                if (pdfDownloadFallback) {
+                    pdfDownloadFallback.href = pdfUrl;
+                }
+
+                // Prova prima PDF diretto, poi PDF.js se fallisce
+                console.log('[PDF] Tentativo caricamento PDF diretto...');
+                pdfViewer.src = pdfUrl;
+
+                // Gestione caricamento PDF
+                pdfViewer.onload = function() {
+                    console.log('[PDF] PDF caricato con successo');
+                    document.getElementById('pdf-loading').style.display = 'none';
+                    pdfViewer.style.display = 'block';
+                };
+
+                pdfViewer.onerror = function() {
+                    console.log('[PDF] Errore PDF diretto, tentativo PDF.js...');
+                    const fullPdfUrl = window.location.origin + pdfUrl;
+                    const pdfJsUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fullPdfUrl)}`;
+                    pdfViewer.src = pdfJsUrl;
+                };
+
+                // Timeout fallback
+                setTimeout(function() {
+                    if (pdfViewer.style.display === 'none') {
+                        console.log('[PDF] Timeout caricamento - mostra errore');
+                        document.getElementById('pdf-loading').style.display = 'none';
+                        document.getElementById('pdf-error').style.display = 'block';
+                    }
+                }, 10000); // 10 secondi timeout
             }
             {% endif %}
         });
