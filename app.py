@@ -2375,9 +2375,11 @@ def elimina_ddt_in(id):
 def modifica_ddt_in(id):
     """Modifica DDT IN esistente"""
     try:
+        print(f"[MODIFICA DDT] Method: {request.method}, DDT ID: {id}")
         ddt = DDTIn.query.get_or_404(id)
-        
+
         if request.method == 'GET':
+            print(f"[MODIFICA DDT] GET request - renderizzando template modifica per DDT {id}")
             # Mostra form di modifica
             mastrini = Mastrino.query.filter_by(attivo=True, tipo='acquisto').all()
             magazzini = Magazzino.query.filter_by(attivo=True).all()
@@ -2391,8 +2393,9 @@ def modifica_ddt_in(id):
                                  magazzini=magazzini,
                                  fornitori=fornitori,
                                  today=datetime.now().strftime('%Y-%m-%d'))
-        
+
         # POST - Salva modifiche
+        print(f"[MODIFICA DDT] POST request - salvando modifiche per DDT {id}")
         ddt.fornitore = request.form.get('fornitore', '')
         ddt.riferimento = request.form.get('riferimento', '')
         ddt.destinazione = request.form.get('destinazione', 'Magazzino Centrale')
