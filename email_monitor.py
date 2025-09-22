@@ -115,7 +115,9 @@ class EmailMonitor:
             email_address = self.get_config('email_address')
             password = self.get_config('email_password')
             max_attachments = int(self.get_config('email_max_attachments', '10'))
-            
+
+            self.logger.info(f"DEBUG: Using email config - Server: {server}:{port}, Email: {email_address}, Password length: {len(password) if password else 0}")
+
             if not email_address or not password:
                 self.logger.warning("Credenziali email non configurate")
                 return
