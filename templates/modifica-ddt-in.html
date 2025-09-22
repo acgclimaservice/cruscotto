@@ -145,6 +145,59 @@
                 </div>
             </form>
         </div>
+
+        <!-- Sezione Anteprima PDF -->
+        {% if ddt.pdf_allegato %}
+        <div class="pdf-preview-section">
+            <h3>📄 Anteprima PDF</h3>
+            <div class="pdf-container">
+                <iframe id="pdf-viewer" src="" width="100%" height="800px" style="border: 1px solid #ddd; border-radius: 5px;">
+                    <p>Il tuo browser non supporta la visualizzazione diretta dei PDF. <a id="pdf-download" href="">Scarica il PDF</a></p>
+                </iframe>
+            </div>
+        </div>
+
+        <style>
+        .pdf-preview-section {
+            margin-top: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .pdf-preview-section h3 {
+            margin-top: 0;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+
+        .pdf-container {
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .pdf-container iframe {
+                height: 500px;
+            }
+        }
+        </style>
+
+        <script>
+        // Carica il PDF nell'iframe quando la pagina è pronta
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if ddt.pdf_allegato %}
+            // Usa PDF.js per una migliore compatibilità cross-browser
+            const pdfUrl = '/ddt-in/{{ ddt.id }}/pdf';
+            const pdfJsUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(window.location.origin + pdfUrl)}`;
+
+            document.getElementById('pdf-viewer').src = pdfJsUrl;
+            document.getElementById('pdf-download').href = pdfUrl;
+            {% endif %}
+        });
+        </script>
+        {% endif %}
     </div>
 
     <script>
