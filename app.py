@@ -3012,8 +3012,11 @@ def process_batch_files(job_id):
 def ddt_out_list():
     """Lista DDT OUT"""
     try:
+        print("[DDT OUT] Iniziando caricamento lista DDT OUT")
+
         # Prepara query base
         query = DDTOut.query
+        print("[DDT OUT] Query base creata")
         
         # Applica filtri se presenti
         data_da = request.args.get('data_da')
@@ -3046,15 +3049,20 @@ def ddt_out_list():
             query = query.filter(DDTOut.stato == stato)
         
         # Applica ordinamento
+        print("[DDT OUT] Applicando ordinamento e query...")
         ddts = query.order_by(
             DDTOut.stato.asc(),  # bozza prima di confermato
             DDTOut.numero_ddt.desc().nulls_last(),  # numero documento decrescente, NULL alla fine
             DDTOut.id.desc()  # per DDT senza numero, ordina per ID decrescente
         ).all()
-        
+        print(f"[DDT OUT] Trovati {len(ddts)} DDT OUT")
+
+        print("[DDT OUT] Verificando buchi numerazione...")
         buchi_numerazione = verifica_buchi_numerazione(ddts, 'OUT')
+        print(f"[DDT OUT] Buchi trovati: {len(buchi_numerazione)}")
         
-        return render_template('ddt-out.html', 
+        print("[DDT OUT] Renderizzando template...")
+        return render_template('ddt-out.html',
                              ddts=ddts,
                              buchi_numerazione=buchi_numerazione,
                              datetime=datetime)
