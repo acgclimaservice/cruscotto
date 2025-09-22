@@ -3058,14 +3058,26 @@ def ddt_out_list():
         print(f"[DDT OUT] Trovati {len(ddts)} DDT OUT")
 
         print("[DDT OUT] Verificando buchi numerazione...")
-        buchi_numerazione = verifica_buchi_numerazione(ddts, 'OUT')
-        print(f"[DDT OUT] Buchi trovati: {len(buchi_numerazione)}")
+        try:
+            buchi_numerazione = verifica_buchi_numerazione(ddts, 'OUT')
+            print(f"[DDT OUT] Buchi trovati: {len(buchi_numerazione)}")
+        except Exception as buchi_error:
+            print(f"[DDT OUT] ERRORE in verifica_buchi_numerazione: {buchi_error}")
+            buchi_numerazione = []
         
         print("[DDT OUT] Renderizzando template...")
-        return render_template('ddt-out.html',
-                             ddts=ddts,
-                             buchi_numerazione=buchi_numerazione,
-                             datetime=datetime)
+        try:
+            result = render_template('ddt-out.html',
+                                   ddts=ddts,
+                                   buchi_numerazione=buchi_numerazione,
+                                   datetime=datetime)
+            print("[DDT OUT] Template renderizzato con successo")
+            return result
+        except Exception as template_error:
+            print(f"[DDT OUT] ERRORE nel template: {template_error}")
+            import traceback
+            print(f"[DDT OUT] Template traceback: {traceback.format_exc()}")
+            raise
     except Exception as e:
         print(f"Errore lista DDT OUT: {e}")
         import traceback
