@@ -516,15 +516,24 @@ def verifica_buchi_numerazione(ddts, tipo_ddt='IN'):
     """Verifica buchi nella numerazione sequenziale dei DDT"""
     buchi = []
     numeri = []
-    
+
     for ddt in ddts:
         if ddt.numero_ddt and ddt.stato == 'confermato':
             try:
-                # Estrae numero da formato "000001/2025"
+                # Estrae numero da formato diversi:
+                # DDT IN: "000001/2025"
+                # DDT OUT: "OUT/0001/2025"
                 if '/' in ddt.numero_ddt:
-                    numero = int(ddt.numero_ddt.split('/')[0])
+                    parts = ddt.numero_ddt.split('/')
+                    if tipo_ddt == 'OUT' and len(parts) >= 2:
+                        # Per DDT OUT: "OUT/0001/2025" -> prende il secondo elemento
+                        numero = int(parts[1])
+                    else:
+                        # Per DDT IN: "000001/2025" -> prende il primo elemento
+                        numero = int(parts[0])
                     numeri.append(numero)
-            except:
+            except Exception as e:
+                print(f"Errore parsing numero DDT {ddt.numero_ddt}: {e}")
                 continue
     
     if len(numeri) >= 2:
@@ -3051,6 +3060,8 @@ def ddt_out_list():
                              datetime=datetime)
     except Exception as e:
         print(f"Errore lista DDT OUT: {e}")
+        import traceback
+        print(f"Traceback DDT OUT: {traceback.format_exc()}")
         return render_template('ddt-out.html', ddts=[], buchi_numerazione=[])
 
 @app.route('/ddt-out/<int:id>')
