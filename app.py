@@ -605,7 +605,12 @@ def serve_pdf(filename):
     pdf_path = os.path.join(temp_dir, 'pdf_import', filename)
     
     if os.path.exists(pdf_path):
-        return send_file(pdf_path, mimetype='application/pdf')
+        response = make_response(send_file(pdf_path, mimetype='application/pdf'))
+        # Add CORS headers for Mozilla PDF.js viewer
+        response.headers['Access-Control-Allow-Origin'] = 'https://mozilla.github.io'
+        response.headers['Access-Control-Allow-Methods'] = 'GET'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
     else:
         return "PDF non trovato", 404
 
