@@ -134,9 +134,8 @@ class EmailMonitor:
             mail.login(email_address, password)
             mail.select('inbox')
             
-            # Cerca email non lette (temporaneamente tutte per debug)
-            status, messages = mail.search(None, 'ALL')
-            self.logger.info("DEBUG: Usando 'ALL' invece di 'UNSEEN' per debug")
+            # Cerca email non lette
+            status, messages = mail.search(None, 'UNSEEN')
             
             # DEBUG: Log dettagliato
             self.logger.info(f"DEBUG: IMAP search status: {status}")
