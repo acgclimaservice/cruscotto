@@ -254,8 +254,9 @@ class EmailMonitor:
                 # Crea job batch per processare i PDF
                 job_id = self._create_batch_job(pdf_files, subject, from_addr)
                 
-                # Segna email come letta
+                # Segna email come letta e aggiungi etichetta
                 mail.store(email_id, '+FLAGS', '\\Seen')
+                self._add_gmail_label(mail, email_id, 'DDT_PROCESSATO')
                 
                 # Invia email di conferma
                 self._send_confirmation_email(from_addr, subject, len(pdf_files), job_id)
@@ -263,11 +264,31 @@ class EmailMonitor:
                 self.logger.info(f"✅ Creato job batch {job_id} con {len(pdf_files)} file")
                 return True  # Email processata con successo
             else:
-                # Segna comunque come letta se non ci sono PDF  
+                # Segna comunque come letta se non ci sono PDF
                 mail.store(email_id, '+FLAGS', '\\Seen')
+                self._add_gmail_label(mail, email_id, 'SENZA_PDF')
                 self.logger.info(f"[EMAIL] Nessun PDF trovato in: {subject}")
                 return False  # Email senza PDF validi
-    
+
+    def _add_gmail_label(self, mail, email_id, label_name):
+        """Aggiunge un'etichetta Gmail all'email processata"""
+        try:
+            # Crea l'etichetta se non esiste (solo per Gmail)
+            # Le etichette in IMAP sono rappresentate come flag personalizzati
+            custom_flag = f'ACGCLIMA_{label_name}'
+
+            # Prova ad aggiungere l'etichetta personalizzata
+            try:
+                mail.store(email_id, '+FLAGS', f'\\{custom_flag}')
+                self.logger.info(f"[EMAIL] Aggiunta etichetta {label_name} all'email {email_id}")
+            except Exception as flag_error:
+                # Fallback: usa keyword flag se le etichette personalizzate non sono supportate
+                mail.store(email_id, '+FLAGS', f'{custom_flag}')
+                self.logger.info(f"[EMAIL] Aggiunto keyword {label_name} all'email {email_id}")
+
+        except Exception as e:
+            self.logger.warning(f"[EMAIL] Impossibile aggiungere etichetta {label_name}: {e}")
+
     def _create_batch_job(self, pdf_files, subject, from_addr):
         """Crea un job batch per processare i PDF"""
         # Crea job
