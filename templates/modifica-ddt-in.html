@@ -148,16 +148,6 @@
 
         <!-- Sezione Anteprima PDF -->
 
-        <!-- SEMPRE MOSTRA SEZIONE DEBUG -->
-        <div class="pdf-debug-section" style="background: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border: 1px solid #ffeaa7;">
-            <h4>🔍 Debug PDF Info</h4>
-            <p><strong>DDT ID:</strong> {{ ddt.id }}</p>
-            <p><strong>Ha PDF allegato:</strong> {{ 'SI' if ddt.pdf_allegato else 'NO' }}</p>
-            <p><strong>PDF filename:</strong> {{ ddt.pdf_filename or 'N/A' }}</p>
-            <p><strong>PDF è vuoto:</strong> {{ 'SI' if not ddt.pdf_allegato else 'NO' }}</p>
-            <p><strong>PDF è None:</strong> {{ 'SI' if ddt.pdf_allegato is none else 'NO' }}</p>
-            <p><strong>Test condizione:</strong> {% if ddt.pdf_allegato %}VERO{% else %}FALSO{% endif %}</p>
-        </div>
 
         {% if ddt.pdf_allegato %}
         <div class="pdf-preview-section">
