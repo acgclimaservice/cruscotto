@@ -210,32 +210,61 @@
                     pdfDownloadFallback.href = pdfUrl;
                 }
 
-                // Prova prima PDF diretto, poi PDF.js se fallisce
-                console.log('[PDF] Tentativo caricamento PDF diretto...');
-                pdfViewer.src = pdfUrl;
+                // Test prima se l'endpoint funziona
+                console.log('[PDF] Testando endpoint PDF...');
+                fetch(pdfUrl)
+                    .then(response => {
+                        console.log('[PDF] Response status:', response.status);
+                        console.log('[PDF] Response headers:', response.headers);
+                        if (response.ok) {
+                            console.log('[PDF] Endpoint OK, caricamento PDF...');
 
-                // Gestione caricamento PDF
-                pdfViewer.onload = function() {
-                    console.log('[PDF] PDF caricato con successo');
-                    document.getElementById('pdf-loading').style.display = 'none';
-                    pdfViewer.style.display = 'block';
-                };
+                            // Gestione caricamento PDF
+                            pdfViewer.onload = function() {
+                                console.log('[PDF] PDF caricato con successo');
+                                document.getElementById('pdf-loading').style.display = 'none';
+                                pdfViewer.style.display = 'block';
+                            };
 
-                pdfViewer.onerror = function() {
-                    console.log('[PDF] Errore PDF diretto, tentativo PDF.js...');
-                    const fullPdfUrl = window.location.origin + pdfUrl;
-                    const pdfJsUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fullPdfUrl)}`;
-                    pdfViewer.src = pdfJsUrl;
-                };
+                            pdfViewer.onerror = function() {
+                                console.log('[PDF] Errore PDF diretto, tentativo PDF.js...');
+                                const fullPdfUrl = window.location.origin + pdfUrl;
+                                const pdfJsUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fullPdfUrl)}`;
+                                console.log('[PDF] PDF.js URL:', pdfJsUrl);
+                                pdfViewer.src = pdfJsUrl;
 
-                // Timeout fallback
-                setTimeout(function() {
-                    if (pdfViewer.style.display === 'none') {
-                        console.log('[PDF] Timeout caricamento - mostra errore');
+                                // Secondo tentativo con timeout
+                                setTimeout(function() {
+                                    if (pdfViewer.style.display === 'none') {
+                                        console.log('[PDF] Anche PDF.js fallito');
+                                        document.getElementById('pdf-loading').style.display = 'none';
+                                        document.getElementById('pdf-error').style.display = 'block';
+                                    }
+                                }, 8000);
+                            };
+
+                            // Carica PDF
+                            pdfViewer.src = pdfUrl;
+                        } else {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('[PDF] Errore fetch endpoint:', error);
                         document.getElementById('pdf-loading').style.display = 'none';
                         document.getElementById('pdf-error').style.display = 'block';
+                        document.getElementById('pdf-error').innerHTML = `❌ Errore caricamento PDF: ${error.message}. <a href="${pdfUrl}" target="_blank">Prova ad aprire direttamente</a>`;
+                    });
+
+                // Timeout globale
+                setTimeout(function() {
+                    if (document.getElementById('pdf-loading').style.display !== 'none') {
+                        console.log('[PDF] Timeout globale - mostra errore');
+                        document.getElementById('pdf-loading').style.display = 'none';
+                        document.getElementById('pdf-error').style.display = 'block';
+                        document.getElementById('pdf-error').innerHTML = `❌ Timeout caricamento PDF. <a href="${pdfUrl}" target="_blank">Clicca qui per aprire direttamente</a>`;
                     }
-                }, 10000); // 10 secondi timeout
+                }, 15000); // 15 secondi timeout globale
             }
             {% endif %}
         });
