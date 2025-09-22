@@ -188,12 +188,20 @@
         // Carica il PDF nell'iframe quando la pagina è pronta
         document.addEventListener('DOMContentLoaded', function() {
             {% if ddt.pdf_allegato %}
-            // Usa PDF.js per una migliore compatibilità cross-browser
             const pdfUrl = '/ddt-in/{{ ddt.id }}/pdf';
-            const pdfJsUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(window.location.origin + pdfUrl)}`;
 
-            document.getElementById('pdf-viewer').src = pdfJsUrl;
-            document.getElementById('pdf-download').href = pdfUrl;
+            // Controlla se gli elementi esistono prima di impostare le proprietà
+            const pdfViewer = document.getElementById('pdf-viewer');
+            const pdfDownload = document.getElementById('pdf-download');
+
+            if (pdfViewer && pdfDownload) {
+                // Usa PDF.js con CORS headers per migliore compatibilità
+                const fullPdfUrl = window.location.origin + pdfUrl;
+                const pdfJsUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fullPdfUrl)}`;
+
+                pdfViewer.src = pdfJsUrl;
+                pdfDownload.href = pdfUrl;
+            }
             {% endif %}
         });
         </script>

@@ -1865,7 +1865,12 @@ def visualizza_pdf_ddt(id):
         response = make_response(pdf_data)
         response.headers['Content-Type'] = 'application/pdf'
         response.headers['Content-Disposition'] = f'inline; filename="ddt_in_{ddt.numero_ddt or ddt.id}.pdf"'
-        
+
+        # Aggiungi CORS headers per PDF.js
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+
         return response
     except Exception as e:
         print(f"Errore visualizzazione PDF DDT IN: {e}")
