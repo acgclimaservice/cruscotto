@@ -147,7 +147,20 @@
         </div>
 
         <!-- Sezione Anteprima PDF -->
-        <!-- DEBUG: PDF allegato = {{ 'SI' if ddt.pdf_allegato else 'NO' }}, Filename = {{ ddt.pdf_filename or 'N/A' }} -->
+        <!-- DEBUG: PDF allegato = {{ 'SI' if ddt.pdf_allegato else 'NO' }}, Filename = {{ ddt.pdf_filename or 'N/A' }}, Type = {{ ddt.pdf_allegato.__class__.__name__ if ddt.pdf_allegato else 'None' }}, Length = {{ ddt.pdf_allegato|length if ddt.pdf_allegato else 0 }} -->
+
+        <!-- SEMPRE MOSTRA SEZIONE DEBUG -->
+        <div class="pdf-debug-section" style="background: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border: 1px solid #ffeaa7;">
+            <h4>🔍 Debug PDF Info</h4>
+            <p><strong>DDT ID:</strong> {{ ddt.id }}</p>
+            <p><strong>Ha PDF allegato:</strong> {{ 'SI' if ddt.pdf_allegato else 'NO' }}</p>
+            <p><strong>PDF filename:</strong> {{ ddt.pdf_filename or 'N/A' }}</p>
+            <p><strong>PDF type:</strong> {{ ddt.pdf_allegato.__class__.__name__ if ddt.pdf_allegato else 'None' }}</p>
+            <p><strong>PDF length:</strong> {{ ddt.pdf_allegato|length if ddt.pdf_allegato else 0 }} bytes</p>
+            <p><strong>PDF bool test:</strong> {{ ddt.pdf_allegato|bool }}</p>
+            <p><strong>Test condizione:</strong> {% if ddt.pdf_allegato %}VERO{% else %}FALSO{% endif %}</p>
+        </div>
+
         {% if ddt.pdf_allegato %}
         <div class="pdf-preview-section">
             <h3>📄 Anteprima PDF - {{ ddt.pdf_filename or 'Documento' }}</h3>
