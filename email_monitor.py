@@ -32,12 +32,18 @@ class EmailMonitor:
         env_key = key.upper()
         env_value = os.getenv(env_key)
         if env_value:
+            self.logger.info(f"DEBUG: Config {key} from ENV: {len(env_value)} chars")
             return env_value
-            
+
         # Fallback al database
         with self.app.app_context():
             config = ConfigurazioneSistema.query.filter_by(chiave=key).first()
-            return config.valore if config else default
+            if config:
+                self.logger.info(f"DEBUG: Config {key} from DB: {len(config.valore)} chars")
+                return config.valore
+            else:
+                self.logger.info(f"DEBUG: Config {key} not found, using default: {default}")
+                return default
     
     def is_active(self):
         """Controlla se il monitoraggio è attivo"""
