@@ -764,21 +764,21 @@ def parse_pdf_claude():
         
         # Usa Multi-AI Parser con entrambe le AI simultaneamente
         try:
-            from enhanced_ai_parser import EnhancedAIParser
-            parser = EnhancedAIParser()
+            from multi_ai_pdf_parser import MultiAIPDFParser
+            parser = MultiAIPDFParser()
             
             # Ottieni status delle AI disponibili
             ai_status = parser.get_ai_status()
             print(f"AI Status: Claude={'OK' if ai_status['claude'] else 'NO'} | Gemini={'OK' if ai_status['gemini'] else 'NO'}")
             
             # Parse con AI - leggi preferenza AI dal frontend
-            preferred_ai = request.form.get('preferred_ai', 'gemini')
+            preferred_ai = request.form.get('preferred_ai', 'claude')
             print(f"DEBUG: AI selezionata dall'utente: {preferred_ai.upper()}")
-            
+
             file.seek(0)  # Reset per il parsing
             print(f"DEBUG: Avvio parsing con file object: {type(file)}")
             print(f"DEBUG: File size: {file.content_length if hasattr(file, 'content_length') else 'unknown'}")
-            result = parser.parse_ddt_with_ai(file, preferred_ai=preferred_ai)
+            result = parser.parse_ddt_with_ai(file, preferred_ai)
             print(f"DEBUG: Risultato parsing: success={result.get('success')}, error={result.get('error')}")
             
             if result and result.get('success'):
