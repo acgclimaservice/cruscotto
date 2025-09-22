@@ -2775,25 +2775,33 @@ def batch_import_status(job_id):
 
 def process_batch_files(job_id):
     """Processa i file del batch in background"""
-    print(f"DEBUG THREAD: ENTRATO in process_batch_files con job_id={job_id}")
-    
-    from models import BatchImportJob, BatchImportFile, DDTIn, ArticoloIn, Fornitore
-    from enhanced_ai_parser import EnhancedAIParser
-    
-    print(f"DEBUG THREAD: Import completati, iniziando processing per job {job_id}")
+    print(f"[BATCH THREAD] ENTRATO in process_batch_files con job_id={job_id}")
+
+    try:
+        from models import BatchImportJob, BatchImportFile, DDTIn, ArticoloIn, Fornitore
+        from multi_ai_pdf_parser import MultiAIPDFParser
+        print(f"[BATCH THREAD] Import completati, iniziando processing per job {job_id}")
+    except Exception as e:
+        print(f"[BATCH THREAD] ERRORE import: {e}")
+        import traceback
+        print(f"[BATCH THREAD] Import traceback: {traceback.format_exc()}")
+        return
     
     try:
         with app.app_context():
+            print(f"[BATCH THREAD] App context creato, cercando job {job_id}")
             job = BatchImportJob.query.get(job_id)
             if not job:
-                print(f"DEBUG THREAD: Job {job_id} non trovato")
+                print(f"[BATCH THREAD] Job {job_id} non trovato")
                 return
+
+            print(f"[BATCH THREAD] Job {job_id} trovato - status: {job.status}, total_files: {job.total_files}")
             
             # Recupera i file del batch dalla DB
             batch_files = BatchImportFile.query.filter_by(job_id=job_id).all()
             print(f"DEBUG THREAD: Trovati {len(batch_files)} file per il job {job_id}")
-            
-            parser = EnhancedAIParser()
+
+            parser = MultiAIPDFParser()
             job.status = 'processing'
             db.session.commit()
             
@@ -2976,15 +2984,18 @@ def process_batch_files(job_id):
             print(f"Batch processing completato: {job.successful_files} successi, {job.failed_files} fallimenti")
             
     except Exception as e:
-        print(f"Errore critico batch processing: {e}")
+        print(f"[BATCH THREAD] ERRORE CRITICO batch processing job {job_id}: {e}")
+        import traceback
+        print(f"[BATCH THREAD] Critical error traceback: {traceback.format_exc()}")
         try:
             with app.app_context():
                 job = BatchImportJob.query.get(job_id)
                 if job:
                     job.status = 'failed'
                     db.session.commit()
-        except:
-            pass
+                    print(f"[BATCH THREAD] Job {job_id} marcato come failed")
+        except Exception as cleanup_error:
+            print(f"[BATCH THREAD] Errore cleanup job: {cleanup_error}")
 
 # ========== SISTEMA DDT OUT ==========
 

@@ -316,10 +316,16 @@ class EmailMonitor:
         
         # Avvia processing in background (riutilizza sistema esistente)
         self.logger.info(f"[EMAIL] Starting background processing for job {job.id} with {len(pdf_files)} files")
-        from app import process_batch_files
-        thread = threading.Thread(target=process_batch_files, args=(job.id,), daemon=True)
-        thread.start()
-        self.logger.info(f"[EMAIL] Background processing started for job {job.id}")
+        try:
+            from app import process_batch_files
+            self.logger.info(f"[EMAIL] process_batch_files imported successfully")
+            thread = threading.Thread(target=process_batch_files, args=(job.id,), daemon=True)
+            thread.start()
+            self.logger.info(f"[EMAIL] Background processing thread started for job {job.id} - thread alive: {thread.is_alive()}")
+        except Exception as e:
+            self.logger.error(f"[EMAIL] ERRORE avvio thread processing job {job.id}: {e}")
+            import traceback
+            self.logger.error(f"[EMAIL] Thread error traceback: {traceback.format_exc()}")
         
         return job.id
     
