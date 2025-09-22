@@ -210,6 +210,11 @@ class EmailMonitor:
             total_parts = 0
             for part in email_message.walk():
                 total_parts += 1
+                content_type = part.get_content_type()
+                content_disposition = part.get_content_disposition()
+                filename = part.get_filename()
+                self.logger.info(f"DEBUG: Part {total_parts}: Type='{content_type}', Disposition='{content_disposition}', Filename='{filename}'")
+
                 if part.get_content_disposition() == 'attachment':
                     attachment_count += 1
                     filename = part.get_filename()
